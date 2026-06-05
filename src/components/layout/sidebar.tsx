@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Inbox,
   Users,
-  Megaphone,
   Smartphone,
   UsersRound,
   Settings,
@@ -24,7 +23,6 @@ const navItems = [
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/devices", label: "Devices", icon: Smartphone },
   { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/broadcast", label: "Broadcast", icon: Megaphone },
   { href: "/team", label: "Team", icon: UsersRound },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

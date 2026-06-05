@@ -82,6 +82,24 @@ class ApiClient {
     return this.request<T>(path, { ...options, method: "DELETE" });
   }
 
+  async upload<T>(path: string, file: File): Promise<ApiResponse<T>> {
+    const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+    const form = new FormData();
+    form.append("file", file);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: this.accessToken ? { Authorization: `Bearer ${this.accessToken}` } : {},
+      body: form,
+    });
+
+    const body = (await response.json()) as ApiResponse<T>;
+    if (!response.ok || body.success === false) {
+      throw new Error(body.message || "Upload failed");
+    }
+    return body;
+  }
+
   private async refreshTokens(): Promise<AuthTokens | null> {
     if (!this.refreshToken) {
       return null;

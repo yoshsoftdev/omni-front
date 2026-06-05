@@ -1,10 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { ContactsPage } from "@/features/contacts/components/contacts-page";
 
-export default function ContactsPage() {
-  return (
-    <PagePlaceholder
-      title="Contacts"
-      description="Contact management will be implemented in Phase 2."
-    />
-  );
+export default function Page() {
+  return <ContactsPage />;
 }

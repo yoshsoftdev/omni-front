@@ -4,7 +4,7 @@ export default function BroadcastPage() {
   return (
     <PagePlaceholder
       title="Broadcast"
-      description="Campaign broadcasting will be implemented in Phase 2."
+      description="Broadcast campaigns are paused. Team Inbox is the current product priority."
     />
   );
 }

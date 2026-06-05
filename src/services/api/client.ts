@@ -1,7 +1,7 @@
 import type { ApiResponse, AuthTokens } from "@/types/api";
 import { useAuthStore } from "@/store/auth-store";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 
 type RequestOptions = RequestInit & {
   skipAuth?: boolean;

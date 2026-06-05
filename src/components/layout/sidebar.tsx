@@ -7,6 +7,7 @@ import {
   Inbox,
   Users,
   Megaphone,
+  Smartphone,
   UsersRound,
   Settings,
   LogOut,
@@ -15,11 +16,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { authService } from "@/features/auth/services/auth.service";
 import { cn } from "@/lib/utils";
+import { websocketClient } from "@/services/websocket/client";
 import { useAuthStore } from "@/store/auth-store";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/devices", label: "Devices", icon: Smartphone },
   { href: "/contacts", label: "Contacts", icon: Users },
   { href: "/broadcast", label: "Broadcast", icon: Megaphone },
   { href: "/team", label: "Team", icon: UsersRound },
@@ -34,6 +37,7 @@ export function Sidebar() {
 
   async function handleLogout() {
     await authService.logout();
+    websocketClient.disconnect();
     router.replace("/login");
   }
 

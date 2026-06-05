@@ -1,6 +1,15 @@
 type MessageHandler = (data: MessageEvent) => void;
 
-const WS_BASE_URL = process.env.NEXT_PUBLIC_WS_URL ?? "ws://localhost:8080/ws";
+function resolveWsBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_WS_URL) {
+    return process.env.NEXT_PUBLIC_WS_URL;
+  }
+  const port = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8090";
+  if (typeof window !== "undefined") {
+    return `ws://${window.location.hostname}:${port}/ws`;
+  }
+  return `ws://127.0.0.1:${port}/ws`;
+}
 
 export class WebSocketClient {
   private socket: WebSocket | null = null;
@@ -39,7 +48,7 @@ export class WebSocketClient {
   private open() {
     if (!this.token) return;
 
-    const url = `${WS_BASE_URL}?token=${encodeURIComponent(this.token)}`;
+    const url = `${resolveWsBaseUrl()}?token=${encodeURIComponent(this.token)}`;
     this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {

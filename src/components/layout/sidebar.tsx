@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Inbox,
+  Megaphone,
   Users,
   Smartphone,
   UsersRound,
@@ -21,6 +22,7 @@ import { useAuthStore } from "@/store/auth-store";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Inbox", icon: Inbox },
+  { href: "/broadcast", label: "Broadcast", icon: Megaphone },
   { href: "/devices", label: "Devices", icon: Smartphone },
   { href: "/contacts", label: "Contacts", icon: Users },
   { href: "/team", label: "Team", icon: UsersRound },

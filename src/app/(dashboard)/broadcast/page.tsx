@@ -1,10 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { BroadcastPage } from "@/features/broadcast/components/broadcast-page";
 
-export default function BroadcastPage() {
-  return (
-    <PagePlaceholder
-      title="Broadcast"
-      description="Broadcast campaigns are paused. Team Inbox is the current product priority."
-    />
-  );
+export default function Page() {
+  return <BroadcastPage />;
 }

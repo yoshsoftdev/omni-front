@@ -4,48 +4,54 @@ import { useCallback, useEffect, useState } from "react";
 
 import { BroadcastsTable } from "@/features/broadcast/components/broadcasts-table";
 import { CreateBroadcastForm } from "@/features/broadcast/components/create-broadcast-form";
-import { broadcastService } from "@/features/broadcast/services/broadcast.service";
+import { SyncTemplatesPanel } from "@/features/broadcast/components/sync-templates-panel";
+import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import { useAuthStore } from "@/store/auth-store";
-import type { Broadcast } from "@/types/broadcast";
+import type { Campaign } from "@/types/broadcast";
 
 export function BroadcastPage() {
   const role = useAuthStore((state) => state.role);
   const canManage = role === "owner" || role === "admin";
-  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadBroadcasts = useCallback(async () => {
+  const loadCampaigns = useCallback(async () => {
     setError(null);
     try {
-      const data = await broadcastService.list();
-      setBroadcasts(data);
+      const data = await campaignService.list();
+      setCampaigns(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load broadcasts");
+      setError(err instanceof Error ? err.message : "Failed to load campaigns");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadBroadcasts();
-  }, [loadBroadcasts]);
+    loadCampaigns();
+    const interval = setInterval(loadCampaigns, 10000);
+    return () => clearInterval(interval);
+  }, [loadCampaigns]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Broadcast</h1>
-        <p className="text-muted-foreground">Create WhatsApp broadcast campaigns with scheduling.</p>
+        <p className="text-muted-foreground">
+          Send approved Meta WhatsApp templates to your audience. Free-text broadcast is not supported.
+        </p>
       </div>
 
-      {canManage ? <CreateBroadcastForm onCreated={loadBroadcasts} /> : null}
+      {canManage ? <SyncTemplatesPanel /> : null}
+      {canManage ? <CreateBroadcastForm onCreated={loadCampaigns} /> : null}
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading campaigns...</p>
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
       ) : (
-        <BroadcastsTable broadcasts={broadcasts} onChanged={loadBroadcasts} />
+        <BroadcastsTable campaigns={campaigns} onChanged={loadCampaigns} />
       )}
     </div>
   );

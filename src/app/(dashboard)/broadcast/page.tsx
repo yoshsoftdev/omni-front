@@ -1,5 +1,5 @@
-import { BroadcastPage } from "@/features/broadcast/components/broadcast-page";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <BroadcastPage />;
+  redirect("/broadcast/campaign");
 }

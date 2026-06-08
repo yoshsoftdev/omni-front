@@ -1,0 +1,82 @@
+import {
+  variableFieldLabels,
+  variableSampleValues,
+} from "@/features/broadcast/mock/create-template.mock";
+import type { CreateTemplateForm, DetectedVariable } from "@/features/broadcast/types/create-template";
+
+const NAME_PATTERN = /^[a-z0-9_]*$/;
+
+export function sanitizeTemplateName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 512);
+}
+
+export function isValidTemplateName(name: string): boolean {
+  return name.length > 0 && NAME_PATTERN.test(name) && name.length <= 512;
+}
+
+export function detectVariables(body: string): DetectedVariable[] {
+  const matches = body.match(/\{\{(\d+)\}\}/g) ?? [];
+  const uniqueKeys = [...new Set(matches.map((m) => m.replace(/\D/g, "")))].sort(
+    (a, b) => Number(a) - Number(b),
+  );
+
+  return uniqueKeys.map((key) => ({
+    key,
+    placeholder: `{{${key}}}`,
+    sampleValue: variableSampleValues[key] ?? `Value ${key}`,
+    fieldLabel: variableFieldLabels[key] ?? `field_${key}`,
+  }));
+}
+
+export function renderPreviewBody(body: string, variables: DetectedVariable[]): string {
+  let result = body;
+  for (const variable of variables) {
+    result = result.split(variable.placeholder).join(variable.sampleValue);
+  }
+  return result;
+}
+
+export function getLanguageLabel(language: string): string {
+  if (language === "id") return "Indonesian (ID)";
+  if (language === "en") return "English (EN)";
+  return language;
+}
+
+export function getCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    marketing: "Marketing",
+    utility: "Utility",
+    authentication: "Authentication",
+  };
+  return labels[category] ?? category;
+}
+
+export function validateCreateTemplateForm(form: CreateTemplateForm): string | null {
+  if (!isValidTemplateName(form.name)) {
+    return "Nama template harus huruf kecil, angka, dan underscore (maks. 512 karakter).";
+  }
+  if (!form.body.trim()) {
+    return "Body template wajib diisi.";
+  }
+  if (form.body.length > 1024) {
+    return "Body template maksimal 1024 karakter.";
+  }
+  if (form.footer.length > 60) {
+    return "Footer maksimal 60 karakter.";
+  }
+  if (form.buttons.length > 3) {
+    return "Maksimal 3 tombol per template.";
+  }
+  for (const button of form.buttons) {
+    if (!button.text.trim()) {
+      return "Semua tombol harus memiliki teks.";
+    }
+    if (button.type === "url" && !button.url?.trim()) {
+      return "URL Button memerlukan URL.";
+    }
+    if (button.type === "copy_code" && !button.code?.trim()) {
+      return "Copy Code Button memerlukan kode.";
+    }
+  }
+  return null;
+}

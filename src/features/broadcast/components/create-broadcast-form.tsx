@@ -72,7 +72,7 @@ export function CreateBroadcastForm({ onCreated }: CreateBroadcastFormProps) {
       setTemplateId("");
       return;
     }
-    templateService.list(deviceId).then((items) => {
+    templateService.list({ device_id: deviceId }).then((items) => {
       const approved = items.filter((item) => (item.status ?? "").toUpperCase() === "APPROVED");
       setTemplates(approved.length > 0 ? approved : items);
       setTemplateId("");

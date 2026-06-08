@@ -21,7 +21,7 @@ export function SyncTemplatesPanel() {
       setTemplates([]);
       return;
     }
-    const items = await templateService.list(selectedDeviceId);
+    const items = await templateService.list({ device_id: selectedDeviceId });
     setTemplates(items);
   }
 

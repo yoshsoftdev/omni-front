@@ -16,6 +16,7 @@ export interface WhatsAppTemplate {
   language: string;
   category?: string;
   status?: string;
+  preview?: string;
   components: unknown;
   created_at: string;
   updated_at: string;
@@ -38,6 +39,11 @@ export interface Campaign {
   delivered_count: number;
   read_count: number;
   failed_count: number;
+  device_name?: string;
+  device_phone?: string;
+  template_name?: string;
+  template_language?: string;
+  template_category?: string;
   created_at: string;
   updated_at: string;
 }
@@ -55,8 +61,8 @@ export interface CreateCampaignInput {
 }
 
 export const CONTACT_FIELD_OPTIONS = [
-  { value: "name", label: "Contact name" },
-  { value: "phone", label: "Phone" },
+  { value: "name", label: "Nama Kontak" },
+  { value: "phone", label: "Nomor Telepon" },
   { value: "email", label: "Email" },
-  { value: "notes", label: "Notes" },
+  { value: "notes", label: "Catatan" },
 ] as const;

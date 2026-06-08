@@ -2,15 +2,19 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import type { ComponentType } from "react";
 import {
   LayoutDashboard,
   Inbox,
   Megaphone,
   Users,
-  Smartphone,
   UsersRound,
   Settings,
   LogOut,
+  PlugZap,
+  CreditCard,
+  Sparkles,
+  ChevronDown,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -19,14 +23,29 @@ import { cn } from "@/lib/utils";
 import { websocketClient } from "@/services/websocket/client";
 import { useAuthStore } from "@/store/auth-store";
 
-const navItems = [
+const broadcastItems = [
+  { href: "/broadcast/campaign", label: "Campaign" },
+  { href: "/broadcast/templates", label: "Templates" },
+  { href: "/broadcast/schedule", label: "Schedule" },
+  { href: "/broadcast/reports", label: "Reports" },
+];
+
+const navItems: Array<{
+  href: string;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  badge?: string;
+  isBroadcastParent?: boolean;
+}> = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/broadcast", label: "Broadcast", icon: Megaphone },
-  { href: "/devices", label: "Devices", icon: Smartphone },
+  { href: "/inbox", label: "Inbox", icon: Inbox, badge: "18" },
   { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/broadcast/campaign", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
+  { href: "/automation", label: "Automation", icon: Sparkles },
   { href: "/team", label: "Team", icon: UsersRound },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/integrations", label: "Integrations", icon: PlugZap },
+  { href: "/billing", label: "Billing", icon: CreditCard },
 ];
 
 export function Sidebar() {
@@ -52,6 +71,49 @@ export function Sidebar() {
           const Icon = item.icon;
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
 
+          if (item.isBroadcastParent) {
+            const expanded = pathname.startsWith("/broadcast/");
+            return (
+              <div key={item.href} className="space-y-1">
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                    expanded ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                  <ChevronDown
+                    className={[
+                      "ml-auto h-4 w-4 transition-transform",
+                      expanded ? "rotate-180" : "",
+                    ].join(" ")}
+                  />
+                </Link>
+                {expanded ? (
+                  <div className="space-y-0.5 px-2">
+                    {broadcastItems.map((sub) => {
+                      const subActive = pathname === sub.href || pathname.startsWith(`${sub.href}/`);
+                      return (
+                        <Link
+                          key={sub.href}
+                          href={sub.href}
+                          className={cn(
+                            "block rounded-md px-3 py-2 text-sm transition-colors",
+                            subActive ? "bg-accent font-medium text-accent-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                          )}
+                        >
+                          {sub.label}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
+            );
+          }
+
           return (
             <Link
               key={item.href}
@@ -65,14 +127,17 @@ export function Sidebar() {
             >
               <Icon className="h-4 w-4" />
               {item.label}
+              {item.badge ? (
+                <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-[10px] font-medium text-primary-foreground">
+                  {item.badge}
+                </span>
+              ) : null}
             </Link>
           );
         })}
       </nav>
-      <div className="border-t p-3">
-        {user ? (
-          <p className="mb-2 truncate text-xs text-muted-foreground">{user.email}</p>
-        ) : null}
+      <div className="border-t p-3 space-y-3">
+        {user ? <p className="truncate text-xs text-muted-foreground">{user.email}</p> : null}
         <Button variant="outline" size="sm" className="w-full" onClick={handleLogout}>
           <LogOut className="mr-2 h-4 w-4" />
           Sign out

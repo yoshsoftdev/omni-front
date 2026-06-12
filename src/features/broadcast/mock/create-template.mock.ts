@@ -24,11 +24,12 @@ export const defaultTemplateButtons: TemplateButton[] = [
 ];
 
 export const defaultCreateTemplateForm: CreateTemplateForm = {
+  deviceId: "",
   name: "promo_hydrabalance_apr2024",
   language: "id",
   category: "marketing",
-  headerType: "image",
-  headerFileName: "hydrabalance-product.jpg",
+  headerType: "none",
+  headerFileName: undefined,
   body: `Halo {{1}} 👋
 
 Dapatkan diskon {{2}}% untuk semua produk Hydrabalance Moisturizer.

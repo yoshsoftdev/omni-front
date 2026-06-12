@@ -35,7 +35,9 @@ export function DevicesPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Devices</h1>
-        <p className="text-muted-foreground">Manage WhatsApp numbers connected to your workspace.</p>
+        <p className="text-muted-foreground">
+          Hubungkan nomor WhatsApp Business via Embedded Signup (Coexistence) atau koneksi manual.
+        </p>
       </div>
 
       {canManage ? <AddDeviceForm onCreated={loadDevices} /> : null}

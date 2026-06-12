@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -7,8 +9,10 @@ import {
   createTemplateLanguageOptions,
   headerTypeOptions,
 } from "@/features/broadcast/mock/create-template.mock";
+import { deviceService } from "@/features/devices/services/device.service";
 import type { CreateTemplateForm, HeaderType } from "@/features/broadcast/types/create-template";
 import { sanitizeTemplateName } from "@/features/broadcast/utils/create-template.utils";
+import type { Device } from "@/types/device";
 
 type TemplateInfoCardProps = {
   form: CreateTemplateForm;
@@ -16,11 +20,47 @@ type TemplateInfoCardProps = {
 };
 
 export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
+  const [devices, setDevices] = useState<Device[]>([]);
+
+  useEffect(() => {
+    deviceService.list().then((list) => {
+      const connected = list.filter((d) => d.status === "connected");
+      setDevices(connected);
+      if (!form.deviceId && connected[0]?.id) {
+        onChange({ deviceId: connected[0].id });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="rounded-lg border bg-card p-4 md:p-6">
       <h2 className="text-sm font-semibold">Informasi Template</h2>
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="template-device">WABA / Device</Label>
+          <select
+            id="template-device"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={form.deviceId}
+            onChange={(e) => onChange({ deviceId: e.target.value })}
+          >
+            <option value="">Pilih device...</option>
+            {devices.map((device) => (
+              <option key={device.id} value={device.id}>
+                {device.name}
+                {device.phone_number ? ` (${device.phone_number})` : ""}
+              </option>
+            ))}
+          </select>
+          {devices.length === 0 ? (
+            <p className="text-xs text-amber-600">
+              Tidak ada device terhubung. Hubungkan WABA di menu WhatsApp terlebih dahulu.
+            </p>
+          ) : null}
+        </div>
+
         <div className="space-y-2 md:col-span-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="template-name">Nama Template</Label>
@@ -90,7 +130,7 @@ export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
             ))}
           </select>
           <p className="text-xs text-muted-foreground">
-            Pilih jenis header untuk template Anda
+            Header media (gambar/video) belum didukung submit API — gunakan None.
           </p>
         </div>
       </div>

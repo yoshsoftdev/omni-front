@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         source: "/api/:path*",
         destination: `${backendUrl}/api/:path*`,
       },
+      {
+        // Proxy WebSocket upgrade to backend (dev + when frontend is the edge).
+        source: "/ws",
+        destination: `${backendUrl}/ws`,
+      },
     ];
   },
 };

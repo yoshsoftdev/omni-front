@@ -1,4 +1,5 @@
 import { apiClient } from "@/services/api/client";
+import type { CreateTemplatePayload } from "@/features/broadcast/utils/build-meta-template";
 import type { Campaign, CreateCampaignInput, WhatsAppTemplate } from "@/types/broadcast";
 
 export type TemplateListParams = {
@@ -37,6 +38,11 @@ export const templateService = {
 
   async sync(deviceId: string) {
     const response = await apiClient.post<{ synced: number }>("/templates/sync", { device_id: deviceId });
+    return response.data!;
+  },
+
+  async create(input: CreateTemplatePayload) {
+    const response = await apiClient.post<WhatsAppTemplate>("/templates", input);
     return response.data!;
   },
 };

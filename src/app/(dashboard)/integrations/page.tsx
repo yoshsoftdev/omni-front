@@ -1,11 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { redirect } from "next/navigation";
 
 export default function IntegrationsPage() {
-  return (
-    <PagePlaceholder
-      title="Integrations"
-      description="Integration settings will be implemented after Broadcast phase is approved."
-    />
-  );
+  redirect("/devices");
 }
-

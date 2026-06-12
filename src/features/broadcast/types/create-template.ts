@@ -11,6 +11,7 @@ export type TemplateButton = {
 };
 
 export type CreateTemplateForm = {
+  deviceId: string;
   name: string;
   language: string;
   category: string;

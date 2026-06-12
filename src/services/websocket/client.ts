@@ -1,15 +1,6 @@
-type MessageHandler = (data: MessageEvent) => void;
+import { resolveWsBaseUrl } from "@/services/websocket/resolve-ws-url";
 
-function resolveWsBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_WS_URL) {
-    return process.env.NEXT_PUBLIC_WS_URL;
-  }
-  const port = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8090";
-  if (typeof window !== "undefined") {
-    return `ws://${window.location.hostname}:${port}/ws`;
-  }
-  return `ws://127.0.0.1:${port}/ws`;
-}
+type MessageHandler = (data: MessageEvent) => void;
 
 export class WebSocketClient {
   private socket: WebSocket | null = null;

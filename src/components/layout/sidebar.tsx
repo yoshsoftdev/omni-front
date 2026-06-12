@@ -15,6 +15,7 @@ import {
   CreditCard,
   Sparkles,
   ChevronDown,
+  Smartphone,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ const navItems: Array<{
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Inbox", icon: Inbox, badge: "18" },
   { href: "/contacts", label: "Contacts", icon: Users },
+  { href: "/devices", label: "WhatsApp", icon: Smartphone },
   { href: "/broadcast/campaign", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
   { href: "/automation", label: "Automation", icon: Sparkles },
   { href: "/team", label: "Team", icon: UsersRound },

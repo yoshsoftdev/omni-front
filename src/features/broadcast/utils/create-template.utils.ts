@@ -1,8 +1,5 @@
-import {
-  variableFieldLabels,
-  variableSampleValues,
-} from "@/features/broadcast/mock/create-template.mock";
 import type { CreateTemplateForm, DetectedVariable } from "@/features/broadcast/types/create-template";
+import type { Contact } from "@/types/contact";
 
 const NAME_PATTERN = /^[a-z0-9_]*$/;
 
@@ -20,11 +17,28 @@ export function detectVariables(body: string): DetectedVariable[] {
     (a, b) => Number(a) - Number(b),
   );
 
-  return uniqueKeys.map((key) => ({
+  const fieldLabels = ["name", "phone", "email", "notes"];
+  return uniqueKeys.map((key, index) => ({
     key,
     placeholder: `{{${key}}}`,
-    sampleValue: variableSampleValues[key] ?? `Value ${key}`,
-    fieldLabel: variableFieldLabels[key] ?? `field_${key}`,
+    sampleValue: `Value ${key}`,
+    fieldLabel: fieldLabels[index] ?? `field_${key}`,
+  }));
+}
+
+export function applyContactSamples(
+  variables: DetectedVariable[],
+  contact?: Pick<Contact, "name" | "phone" | "email" | "notes">,
+): DetectedVariable[] {
+  if (!contact) return variables;
+
+  const samples = [contact.name, contact.phone, contact.email ?? "", contact.notes ?? ""].filter(
+    (value) => String(value).trim().length > 0,
+  );
+
+  return variables.map((variable, index) => ({
+    ...variable,
+    sampleValue: samples[index] ?? variable.sampleValue,
   }));
 }
 
@@ -52,6 +66,9 @@ export function getCategoryLabel(category: string): string {
 }
 
 export function validateCreateTemplateForm(form: CreateTemplateForm): string | null {
+  if (!form.deviceId) {
+    return "Pilih WABA / device terlebih dahulu.";
+  }
   if (!isValidTemplateName(form.name)) {
     return "Nama template harus huruf kecil, angka, dan underscore (maks. 512 karakter).";
   }
@@ -63,6 +80,9 @@ export function validateCreateTemplateForm(form: CreateTemplateForm): string | n
   }
   if (form.footer.length > 60) {
     return "Footer maksimal 60 karakter.";
+  }
+  if (form.headerType === "image" || form.headerType === "video" || form.headerType === "document") {
+    return "Header media belum didukung untuk submit API. Pilih header None.";
   }
   if (form.buttons.length > 3) {
     return "Maksimal 3 tombol per template.";

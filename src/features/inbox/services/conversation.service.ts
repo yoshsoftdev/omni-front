@@ -2,6 +2,11 @@ import { apiClient } from "@/services/api/client";
 import type { Conversation, ConversationStatus } from "@/types/conversation";
 
 export const conversationService = {
+  async unreadCount() {
+    const response = await apiClient.get<{ unread_count: number }>("/conversations/unread-count");
+    return response.data?.unread_count ?? 0;
+  },
+
   async list(params?: { search?: string; status?: ConversationStatus; assigned_to?: string }) {
     const query = new URLSearchParams();
     if (params?.search) query.set("search", params.search);

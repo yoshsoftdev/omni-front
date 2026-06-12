@@ -20,6 +20,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { authService } from "@/features/auth/services/auth.service";
+import { useInboxUnreadCount } from "@/features/inbox/hooks/use-inbox-unread-count";
 import { cn } from "@/lib/utils";
 import { websocketClient } from "@/services/websocket/client";
 import { useAuthStore } from "@/store/auth-store";
@@ -35,11 +36,10 @@ const navItems: Array<{
   href: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
-  badge?: string;
   isBroadcastParent?: boolean;
 }> = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: Inbox, badge: "18" },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/contacts", label: "Contacts", icon: Users },
   { href: "/devices", label: "WhatsApp", icon: Smartphone },
   { href: "/broadcast/campaign", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
@@ -55,6 +55,7 @@ export function Sidebar() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const team = useAuthStore((state) => state.team);
+  const { badge: inboxUnreadBadge } = useInboxUnreadCount();
 
   async function handleLogout() {
     await authService.logout();
@@ -129,9 +130,16 @@ export function Sidebar() {
             >
               <Icon className="h-4 w-4" />
               {item.label}
-              {item.badge ? (
-                <span className="ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-primary px-2 text-[10px] font-medium text-primary-foreground">
-                  {item.badge}
+              {item.href === "/inbox" && inboxUnreadBadge ? (
+                <span
+                  className={cn(
+                    "ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[10px] font-medium",
+                    active
+                      ? "bg-primary-foreground text-primary"
+                      : "bg-primary text-primary-foreground",
+                  )}
+                >
+                  {inboxUnreadBadge}
                 </span>
               ) : null}
             </Link>

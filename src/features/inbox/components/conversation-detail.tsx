@@ -1,8 +1,10 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { inboxUnreadCountQueryKey } from "@/features/inbox/query-keys";
 import { MessageComposer } from "@/features/inbox/components/message-composer";
 import { MessageThread } from "@/features/inbox/components/message-thread";
 import { conversationService } from "@/features/inbox/services/conversation.service";
@@ -24,6 +26,7 @@ export function ConversationDetail({
   liveMessage,
   onConversationPatched,
 }: ConversationDetailProps) {
+  const queryClient = useQueryClient();
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(false);
@@ -46,10 +49,11 @@ export function ConversationDetail({
     try {
       const updated = await conversationService.markRead(conversationId);
       onConversationPatched(updated);
+      void queryClient.invalidateQueries({ queryKey: inboxUnreadCountQueryKey });
     } catch {
       markedReadRef.current = null;
     }
-  }, [onConversationPatched]);
+  }, [onConversationPatched, queryClient]);
 
   useEffect(() => {
     teamService.listMembers().then(setMembers).catch(() => setMembers([]));

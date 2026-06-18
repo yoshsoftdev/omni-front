@@ -1,5 +1,5 @@
-import { ContactsPage } from "@/features/contacts/components/contacts-page";
+import { ContactsListPage } from "@/features/contacts/components/contacts-list-page";
 
 export default function Page() {
-  return <ContactsPage />;
+  return <ContactsListPage />;
 }

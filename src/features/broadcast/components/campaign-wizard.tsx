@@ -17,8 +17,9 @@ import {
   parseTemplateComponents,
   resolveContactFieldValue,
 } from "@/features/broadcast/utils/template-components";
+import { SegmentPicker, segmentAudienceSummary } from "@/features/contacts/components/segment-picker";
+import { MOCK_SEGMENTS } from "@/features/contacts/mock-data";
 import { contactService } from "@/features/contacts/services/contact.service";
-import { tagService } from "@/features/contacts/services/tag.service";
 import { deviceService } from "@/features/devices/services/device.service";
 import { CONTACT_FIELD_OPTIONS } from "@/types/broadcast";
 
@@ -92,8 +93,7 @@ export function CampaignWizard() {
   const [deviceId, setDeviceId] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [variableMapping, setVariableMapping] = useState<Record<string, string>>({});
-  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [selectedSegmentIds, setSelectedSegmentIds] = useState<string[]>([]);
   const [scheduledAt, setScheduledAt] = useState("");
 
   const { data: devices = [], isLoading: devicesLoading } = useQuery({
@@ -106,11 +106,6 @@ export function CampaignWizard() {
   const { data: contacts = [], isLoading: contactsLoading } = useQuery({
     queryKey: ["contacts"],
     queryFn: () => contactService.list(),
-  });
-
-  const { data: tags = [], isLoading: tagsLoading } = useQuery({
-    queryKey: ["tags"],
-    queryFn: () => tagService.list(),
   });
 
   const { data: templates = [], isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({
@@ -173,17 +168,8 @@ export function CampaignWizard() {
 
   const audienceText = useMemo(() => {
     if (activeStep < 3) return "Belum dipilih";
-    if (selectedContactIds.length > 0 && selectedTagIds.length === 0) {
-      return `${selectedContactIds.length} kontak terpilih`;
-    }
-    if (selectedTagIds.length > 0 && selectedContactIds.length === 0) {
-      return `${selectedTagIds.length} tag terpilih`;
-    }
-    if (selectedTagIds.length > 0 && selectedContactIds.length > 0) {
-      return `${selectedContactIds.length} kontak + ${selectedTagIds.length} tag`;
-    }
-    return "Belum dipilih";
-  }, [activeStep, selectedContactIds.length, selectedTagIds.length]);
+    return segmentAudienceSummary(MOCK_SEGMENTS, selectedSegmentIds);
+  }, [activeStep, selectedSegmentIds]);
 
   const scheduleText = useMemo(() => {
     if (activeStep < 4) return "Belum dijadwalkan";
@@ -219,8 +205,7 @@ export function CampaignWizard() {
         device_id: deviceId,
         template_id: templateId,
         variable_mapping: { body: bodyMapping },
-        contact_ids: selectedContactIds,
-        tag_ids: selectedTagIds,
+        segment_ids: selectedSegmentIds,
         scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
       };
 
@@ -248,8 +233,8 @@ export function CampaignWizard() {
       if (!deviceId) return "Pilih device WABA terlebih dahulu";
       if (!templateId) return "Pilih template terlebih dahulu";
     }
-    if (step === 3 && selectedContactIds.length === 0 && selectedTagIds.length === 0) {
-      return "Pilih minimal satu kontak atau tag";
+    if (step === 3 && selectedSegmentIds.length === 0) {
+      return "Pilih minimal satu segment";
     }
     return null;
   }
@@ -282,7 +267,7 @@ export function CampaignWizard() {
     }
   }
 
-  const isLoading = devicesLoading || contactsLoading || tagsLoading;
+  const isLoading = devicesLoading || contactsLoading || templatesLoading;
 
   return (
     <div className="space-y-6">
@@ -508,65 +493,16 @@ export function CampaignWizard() {
               {activeStep === 3 ? (
                 <div className="space-y-4">
                   <div className="rounded-lg border bg-card p-4">
-                    <div className="text-sm font-semibold">Pilih Audiences</div>
-                    <div className="mt-4 grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label>Contacts</Label>
-                        <div className="mt-2 max-h-64 space-y-2 overflow-y-auto rounded-md border bg-background p-3">
-                          {contacts.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Belum ada kontak.</p>
-                          ) : (
-                            contacts.map((c) => {
-                              const checked = selectedContactIds.includes(c.id);
-                              return (
-                                <label key={c.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={() =>
-                                      setSelectedContactIds((prev) =>
-                                        checked ? prev.filter((id) => id !== c.id) : [...prev, c.id],
-                                      )
-                                    }
-                                  />
-                                  <span className="flex-1">{c.name}</span>
-                                </label>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <Label>Tags</Label>
-                        <div className="mt-2 flex flex-wrap gap-2 rounded-md border bg-background p-3">
-                          {tags.length === 0 ? (
-                            <p className="text-sm text-muted-foreground">Belum ada tag.</p>
-                          ) : (
-                            tags.map((t) => {
-                              const active = selectedTagIds.includes(t.id);
-                              return (
-                                <button
-                                  key={t.id}
-                                  type="button"
-                                  className={[
-                                    "rounded-full border px-3 py-1 text-xs",
-                                    active
-                                      ? "border-primary bg-primary text-primary-foreground"
-                                      : "border-border bg-background text-muted-foreground",
-                                  ].join(" ")}
-                                  onClick={() =>
-                                    setSelectedTagIds((prev) =>
-                                      active ? prev.filter((id) => id !== t.id) : [...prev, t.id],
-                                    )
-                                  }
-                                >
-                                  {t.name}
-                                </button>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
+                    <div className="text-sm font-semibold">Pilih Segment Audience</div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Campaign audiences use saved segments (dynamic filters), not individual tags.
+                    </p>
+                    <div className="mt-4">
+                      <SegmentPicker
+                        segments={MOCK_SEGMENTS}
+                        selectedIds={selectedSegmentIds}
+                        onChange={setSelectedSegmentIds}
+                      />
                     </div>
                   </div>
 

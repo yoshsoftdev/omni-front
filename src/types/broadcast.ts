@@ -57,6 +57,7 @@ export interface CreateCampaignInput {
   };
   contact_ids?: string[];
   tag_ids?: string[];
+  segment_ids?: string[];
   scheduled_at?: string;
 }
 

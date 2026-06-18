@@ -1,5 +1,5 @@
-import { TeamPage } from "@/features/team/components/team-page";
+import { redirect } from "next/navigation";
 
-export default function TeamRoutePage() {
-  return <TeamPage />;
+export default function TeamPage() {
+  redirect("/team/users");
 }

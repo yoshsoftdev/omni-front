@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 
@@ -66,6 +67,12 @@ export function LoginForm() {
           {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        Belum punya akun?{" "}
+        <Link href="/register" className="text-foreground underline-offset-4 hover:underline">
+          Register
+        </Link>
+      </p>
     </div>
   );
 }

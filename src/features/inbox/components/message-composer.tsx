@@ -1,52 +1,131 @@
 "use client";
 
+import { FileText, Image as ImageIcon, Paperclip, Smile, Zap } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { InternalNotePanel } from "@/features/inbox/components/internal-note-panel";
+import { QuickReplySelector } from "@/features/inbox/components/quick-reply-selector";
+import type { QuickReplyItem } from "@/features/inbox/types";
+import { cn } from "@/lib/utils";
+
+type ComposerTab = "reply" | "note";
 
 interface MessageComposerProps {
-  disabled?: boolean;
-  onSend: (content: string) => Promise<void>;
+  quickReplies: QuickReplyItem[];
+  onSend: (content: string) => void;
+  onSaveNote: (content: string) => void;
 }
 
-export function MessageComposer({ disabled, onSend }: MessageComposerProps) {
+export function MessageComposer({ quickReplies, onSend, onSaveNote }: MessageComposerProps) {
+  const [activeTab, setActiveTab] = useState<ComposerTab>("reply");
   const [content, setContent] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  function handleSend() {
     const text = content.trim();
     if (!text) return;
+    onSend(text);
+    setContent("");
+  }
 
-    setError(null);
-    setLoading(true);
-    try {
-      await onSend(text);
-      setContent("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send message");
-    } finally {
-      setLoading(false);
-    }
+  function insertTemplate(text: string) {
+    setContent((prev) => (prev ? `${prev}\n${text}` : text));
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border-t bg-card p-3">
-      <div className="flex gap-2">
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Type a reply..."
-          disabled={disabled || loading}
-          className="min-h-10 flex-1 resize-none rounded-md border border-input bg-background px-3 py-2 text-sm"
-          rows={2}
-        />
-        <Button type="submit" disabled={disabled || loading || !content.trim()}>
-          {loading ? "..." : "Send"}
-        </Button>
+    <div className="border-t bg-card">
+      <div className="flex border-b">
+        <button
+          type="button"
+          onClick={() => setActiveTab("reply")}
+          className={cn(
+            "px-4 py-2.5 text-sm font-medium",
+            activeTab === "reply"
+              ? "border-b-2 border-primary text-primary"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          Reply
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("note")}
+          className={cn(
+            "px-4 py-2.5 text-sm font-medium",
+            activeTab === "note"
+              ? "border-b-2 border-primary text-primary"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          Internal Note
+        </button>
       </div>
-      {error ? <p className="mt-2 text-xs text-destructive">{error}</p> : null}
-    </form>
+
+      {activeTab === "reply" ? (
+        <div className="p-3">
+          <textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Type your message..."
+            className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm"
+            rows={3}
+          />
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                title="Attach file"
+              >
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                title="Image"
+              >
+                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                title="Document"
+              >
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <button
+                type="button"
+                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                title="Emoji"
+              >
+                <Smile className="h-4 w-4 text-muted-foreground" />
+              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  className="flex h-8 items-center gap-1 rounded-md px-2 text-xs hover:bg-muted"
+                  onClick={() => setTemplateOpen((v) => !v)}
+                >
+                  <Zap className="h-3.5 w-3.5 text-primary" />
+                  Template
+                </button>
+                <QuickReplySelector
+                  items={quickReplies}
+                  open={templateOpen}
+                  onClose={() => setTemplateOpen(false)}
+                  onSelect={insertTemplate}
+                />
+              </div>
+            </div>
+            <Button size="sm" onClick={handleSend} disabled={!content.trim()}>
+              Send
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <InternalNotePanel onSave={onSaveNote} />
+      )}
+    </div>
   );
 }

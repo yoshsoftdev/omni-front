@@ -1,74 +1,154 @@
 "use client";
 
+import { RefreshCw, Search } from "lucide-react";
+
+import { PaginationFooter } from "@/components/shared/pagination-footer";
+import { ConversationCard } from "@/features/inbox/components/conversation-card";
+import type { InboxConversation, InboxTab } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
-import type { Conversation } from "@/types/conversation";
+
+const TABS: { id: InboxTab; label: string }[] = [
+  { id: "open", label: "Open" },
+  { id: "assigned", label: "Assigned" },
+  { id: "unassigned", label: "Unassigned" },
+  { id: "closed", label: "Closed" },
+  { id: "all", label: "All" },
+];
 
 interface ConversationListProps {
-  conversations: Conversation[];
+  conversations: InboxConversation[];
   selectedId: string | null;
-  loading: boolean;
+  activeTab: InboxTab;
+  tabCounts: Record<InboxTab, number>;
+  channelFilter: string;
+  agentFilter: string;
   search: string;
+  page: number;
+  pageSize: number;
+  agents: { id: string; name: string }[];
+  onTabChange: (tab: InboxTab) => void;
+  onChannelFilterChange: (value: string) => void;
+  onAgentFilterChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onSelect: (id: string) => void;
+  onPageChange: (page: number) => void;
+  onRefresh: () => void;
 }
 
 export function ConversationList({
   conversations,
   selectedId,
-  loading,
+  activeTab,
+  tabCounts,
+  channelFilter,
+  agentFilter,
   search,
+  page,
+  pageSize,
+  agents,
+  onTabChange,
+  onChannelFilterChange,
+  onAgentFilterChange,
   onSearchChange,
   onSelect,
+  onPageChange,
+  onRefresh,
 }: ConversationListProps) {
-  return (
-    <div className="flex h-full flex-col border-r bg-card">
-      <div className="border-b p-3">
-        <h2 className="mb-2 text-sm font-semibold">Conversations</h2>
-        <input
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Search name or phone..."
-          className="flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-        />
-      </div>
+  const totalPages = Math.max(1, Math.ceil(conversations.length / pageSize));
+  const start = conversations.length === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, conversations.length);
+  const pageItems = conversations.slice((page - 1) * pageSize, page * pageSize);
 
-      <div className="flex-1 overflow-y-auto">
-        {loading ? (
-          <p className="p-4 text-sm text-muted-foreground">Loading...</p>
-        ) : conversations.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">No conversations yet.</p>
-        ) : (
-          conversations.map((conversation) => (
+  return (
+    <div className="flex h-full w-[340px] shrink-0 flex-col border-r bg-card">
+      <div className="border-b px-3 pt-3">
+        <div className="flex gap-1 overflow-x-auto pb-2">
+          {TABS.map((tab) => (
             <button
-              key={conversation.id}
+              key={tab.id}
               type="button"
-              onClick={() => onSelect(conversation.id)}
+              onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex w-full flex-col gap-1 border-b px-3 py-3 text-left transition-colors hover:bg-accent/50",
-                selectedId === conversation.id && "bg-accent",
+                "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
+                activeTab === tab.id
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted",
               )}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-medium">{conversation.contact_name}</span>
-                {conversation.unread_count > 0 ? (
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                    {conversation.unread_count}
-                  </span>
-                ) : null}
-              </div>
-              <span className="truncate text-xs text-muted-foreground">{conversation.contact_phone}</span>
-              {conversation.last_message_preview ? (
-                <span className="line-clamp-1 text-xs text-muted-foreground">
-                  {conversation.last_message_preview}
-                </span>
-              ) : null}
-              {conversation.assignee_name ? (
-                <span className="text-xs text-muted-foreground">Assigned: {conversation.assignee_name}</span>
-              ) : null}
+              {tab.label} ({tabCounts[tab.id]})
             </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-2 pb-3">
+          <select
+            value={channelFilter}
+            onChange={(e) => onChannelFilterChange(e.target.value)}
+            className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+          >
+            <option value="all">All Channels</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="instagram">Instagram</option>
+            <option value="messenger">Messenger</option>
+            <option value="email">Email</option>
+          </select>
+          <select
+            value={agentFilter}
+            onChange={(e) => onAgentFilterChange(e.target.value)}
+            className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+          >
+            <option value="all">All Agents</option>
+            {agents.map((agent) => (
+              <option key={agent.id} value={agent.id}>
+                {agent.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border hover:bg-muted"
+            aria-label="Refresh"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="relative pb-3">
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search conversations..."
+            className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm"
+          />
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {pageItems.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">No conversations found.</p>
+        ) : (
+          pageItems.map((conversation) => (
+            <ConversationCard
+              key={conversation.id}
+              conversation={conversation}
+              selected={selectedId === conversation.id}
+              onSelect={() => onSelect(conversation.id)}
+            />
           ))
         )}
       </div>
+
+      <PaginationFooter
+        start={start}
+        end={end}
+        total={conversations.length}
+        totalLabel="conversations"
+        currentPage={page}
+        totalPages={totalPages}
+        onPageChange={onPageChange}
+      />
     </div>
   );
 }

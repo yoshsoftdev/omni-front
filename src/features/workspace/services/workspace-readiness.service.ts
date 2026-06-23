@@ -1,8 +1,4 @@
-import { campaignQueryService } from "@/features/broadcast/services/campaign-query.service";
-import { templateQueryService } from "@/features/broadcast/services/template-query.service";
-import { channelQueryService } from "@/features/channels/services/channel-query.service";
-import { segmentService } from "@/features/segments/services/segment.service";
-import { teamService } from "@/features/team/services/team.service";
+import { apiClient } from "@/services/api/client";
 import type {
   QuickAction,
   ReadinessCheck,
@@ -76,61 +72,47 @@ const QUICK_ACTIONS: QuickAction[] = [
   },
 ];
 
+type ApiReadinessResponse = {
+  score: number;
+  status: WorkspaceReadinessStatus;
+  checks: Array<{ key: ReadinessCheckId; completed: boolean }>;
+};
+
+function mapApiReadiness(data: ApiReadinessResponse): WorkspaceReadiness {
+  const completionById = Object.fromEntries(
+    data.checks.map((check) => [check.key, check.completed]),
+  ) as Record<ReadinessCheckId, boolean>;
+
+  const checks: ReadinessCheck[] = Object.values(CHECK_DEFINITIONS).map((definition) => ({
+    ...definition,
+    completed: completionById[definition.id] ?? false,
+  }));
+
+  const completedCount = checks.filter((check) => check.completed).length;
+
+  return {
+    score: data.score,
+    completedCount,
+    totalCount: TOTAL_READINESS_CHECKS,
+    status: data.status,
+    checks,
+    quickActions: QUICK_ACTIONS,
+  };
+}
+
+export async function getWorkspaceReadiness(): Promise<WorkspaceReadiness> {
+  const response = await apiClient.get<ApiReadinessResponse>("/workspace/readiness");
+  return mapApiReadiness(response.data!);
+}
+
+export async function refreshWorkspaceReadiness(): Promise<WorkspaceReadiness> {
+  const response = await apiClient.post<ApiReadinessResponse>("/workspace/readiness/refresh");
+  return mapApiReadiness(response.data!);
+}
+
 /** Maps completed check count to 0%, 25%, 50%, 75%, or 100%. */
 export function calculateReadinessScore(completedCount: number, total = TOTAL_READINESS_CHECKS): number {
   if (completedCount <= 0) return 0;
   if (completedCount >= total) return 100;
   return Math.ceil((completedCount / total) * 4) * 25;
-}
-
-function resolveStatus(score: number): WorkspaceReadinessStatus {
-  if (score === 0) return "not_started";
-  if (score === 100) return "ready";
-  return "in_progress";
-}
-
-async function evaluateTeamMembersAdded(): Promise<boolean> {
-  try {
-    const members = await teamService.listMembers();
-    return members.length > 1;
-  } catch {
-    return false;
-  }
-}
-
-export async function getWorkspaceReadiness(): Promise<WorkspaceReadiness> {
-  const [connectedChannels, templates, segments, campaigns, teamMembersAdded] = await Promise.all([
-    channelQueryService.getConnectedChannels(),
-    templateQueryService.getTemplates(),
-    segmentService.list(),
-    campaignQueryService.getCampaigns(),
-    evaluateTeamMembersAdded(),
-  ]);
-
-  const totalContacts = segments.reduce((sum, segment) => sum + segment.contact_count, 0);
-
-  const completionById: Record<ReadinessCheckId, boolean> = {
-    channel_connected: connectedChannels.length > 0,
-    template_synced: templates.length > 0,
-    contacts_available: totalContacts > 0,
-    team_members_added: teamMembersAdded,
-    campaign_created: campaigns.length > 0,
-  };
-
-  const checks: ReadinessCheck[] = Object.values(CHECK_DEFINITIONS).map((definition) => ({
-    ...definition,
-    completed: completionById[definition.id],
-  }));
-
-  const completedCount = checks.filter((check) => check.completed).length;
-  const score = calculateReadinessScore(completedCount);
-
-  return {
-    score,
-    completedCount,
-    totalCount: TOTAL_READINESS_CHECKS,
-    status: resolveStatus(score),
-    checks,
-    quickActions: QUICK_ACTIONS,
-  };
 }

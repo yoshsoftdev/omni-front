@@ -18,6 +18,13 @@ class ApiClient {
     return useAuthStore.getState().tokens?.refreshToken ?? null;
   }
 
+  private errorMessage(body: ApiResponse<unknown>): string {
+    if (body.error?.message) {
+      return body.error.message;
+    }
+    return body.message || "Request failed";
+  }
+
   async request<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
     const { skipAuth, headers, ...init } = options;
     const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
@@ -44,7 +51,7 @@ class ApiClient {
     }
 
     if (!response.ok || body.success === false) {
-      throw new Error(body.message || "Request failed");
+      throw new Error(this.errorMessage(body));
     }
 
     return body;
@@ -95,7 +102,7 @@ class ApiClient {
 
     const body = (await response.json()) as ApiResponse<T>;
     if (!response.ok || body.success === false) {
-      throw new Error(body.message || "Upload failed");
+      throw new Error(this.errorMessage(body));
     }
     return body;
   }

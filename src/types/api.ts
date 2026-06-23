@@ -1,7 +1,13 @@
+export interface ApiErrorDetail {
+  code: string;
+  message: string;
+}
+
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   data?: T;
+  error?: ApiErrorDetail;
 }
 
 export interface AuthTokens {

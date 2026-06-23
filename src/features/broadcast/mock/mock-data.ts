@@ -1,7 +1,10 @@
-import type {
-  WhatsAppHeaderType,
-  WhatsAppPreviewButton,
-} from "@/features/broadcast/types/whatsapp-preview";
+import {
+  type TemplateListItem,
+  type TemplateStatus,
+  type WhatsAppTemplateMock,
+} from "@/features/broadcast/mock/template-legacy-adapters";
+
+export type { TemplateListItem, TemplateStatus, WhatsAppTemplateMock };
 
 export type BroadcastDevice = {
   id: string;
@@ -9,151 +12,8 @@ export type BroadcastDevice = {
   phone: string;
 };
 
-export type TemplateStatus = "APPROVED" | "PENDING" | "REJECTED";
-
-export type WhatsAppTemplateMock = {
-  id: string;
-  name: string;
-  language: string;
-  category: string;
-  status: TemplateStatus;
-  headerTitle: string;
-  headerType?: WhatsAppHeaderType;
-  body: string;
-  footer?: string;
-  buttons?: WhatsAppPreviewButton[];
-  variableCount: number;
-};
-
-export type TemplateListItem = {
-  id: string;
-  name: string;
-  preview: string;
-  language: string;
-  category: string;
-  status: TemplateStatus;
-  lastSyncAt: string;
-};
-
-export type ContactFieldOption = {
-  value: string;
-  label: string;
-};
-
 export const mockDevices: BroadcastDevice[] = [
   { id: "dev_1", name: "Skinsure Glow Official", phone: "+62 812-3456-7890" },
-];
-
-export const mockTemplates: WhatsAppTemplateMock[] = [
-  {
-    id: "promo_hydrabalance_apr2024",
-    name: "promo_hydrabalance_apr2024",
-    language: "Indonesia",
-    category: "Marketing",
-    status: "APPROVED",
-    headerTitle: "Hydrabalance Moisturizer",
-    headerType: "image",
-    body:
-      "Halo {{1}} 👋\n\nDapatkan diskon {{2}}% untuk semua produk Hydrabalance Moisturizer.\n\nBerlaku sampai {{3}}.\n\nTerima kasih telah menjadi pelanggan setia kami.",
-    buttons: [
-      { id: "btn_1", type: "url", text: "Belanja Sekarang" },
-      { id: "btn_2", type: "quick_reply", text: "Hubungi Kami" },
-    ],
-    variableCount: 3,
-  },
-];
-
-export const mockTemplateList: TemplateListItem[] = [
-  {
-    id: "tpl_1",
-    name: "promo_hydrabalance_apr2024",
-    preview: "Halo {{1}}, dapatkan diskon {{2}} untuk produk Hydrabalance...",
-    language: "Indonesia (ID)",
-    category: "Marketing",
-    status: "APPROVED",
-    lastSyncAt: "2024-04-08T09:30:00Z",
-  },
-  {
-    id: "tpl_2",
-    name: "order_confirmation_v2",
-    preview: "Halo {{1}}, pesanan Anda #{{2}} telah dikonfirmasi...",
-    language: "Indonesia (ID)",
-    category: "Utility",
-    status: "APPROVED",
-    lastSyncAt: "2024-04-08T09:30:00Z",
-  },
-  {
-    id: "tpl_3",
-    name: "shipping_update",
-    preview: "Paket Anda sedang dalam perjalanan. Estimasi tiba {{1}}...",
-    language: "Indonesia (ID)",
-    category: "Utility",
-    status: "APPROVED",
-    lastSyncAt: "2024-04-07T14:15:00Z",
-  },
-  {
-    id: "tpl_4",
-    name: "welcome_new_customer",
-    preview: "Selamat datang {{1}}! Terima kasih telah bergabung...",
-    language: "English (EN)",
-    category: "Marketing",
-    status: "APPROVED",
-    lastSyncAt: "2024-04-06T11:00:00Z",
-  },
-  {
-    id: "tpl_5",
-    name: "flash_sale_reminder",
-    preview: "Flash sale dimulai besok pukul {{1}}. Jangan lewatkan...",
-    language: "Indonesia (ID)",
-    category: "Marketing",
-    status: "PENDING",
-    lastSyncAt: "2024-04-05T16:45:00Z",
-  },
-  {
-    id: "tpl_6",
-    name: "payment_reminder",
-    preview: "Halo {{1}}, tagihan Anda sebesar {{2}} jatuh tempo...",
-    language: "Indonesia (ID)",
-    category: "Utility",
-    status: "APPROVED",
-    lastSyncAt: "2024-04-05T10:20:00Z",
-  },
-  {
-    id: "tpl_7",
-    name: "appointment_reminder",
-    preview: "Pengingat: Janji temu Anda pada {{1}} pukul {{2}}...",
-    language: "Indonesia (ID)",
-    category: "Utility",
-    status: "PENDING",
-    lastSyncAt: "2024-04-04T08:00:00Z",
-  },
-  {
-    id: "tpl_8",
-    name: "survey_feedback",
-    preview: "Halo {{1}}, bagaimana pengalaman Anda dengan layanan kami?",
-    language: "English (EN)",
-    category: "Marketing",
-    status: "REJECTED",
-    lastSyncAt: "2024-04-03T13:30:00Z",
-  },
-  {
-    id: "tpl_9",
-    name: "otp_verification",
-    preview: "Kode verifikasi Anda: {{1}}. Berlaku 5 menit.",
-    language: "Indonesia (ID)",
-    category: "Authentication",
-    status: "APPROVED",
-    lastSyncAt: "2024-04-03T09:00:00Z",
-  },
-  {
-    id: "tpl_10",
-    name: "birthday_greeting",
-    preview: "Selamat ulang tahun {{1}}! Nikmati voucher spesial...",
-    language: "Indonesia (ID)",
-    category: "Marketing",
-    status: "APPROVED",
-    lastSyncAt: "2024-04-02T07:30:00Z",
-  },
 ];
 
 export const templateLanguageOptions = [
@@ -175,6 +35,11 @@ export const templateStatusOptions = [
   { value: "PENDING", label: "Pending" },
   { value: "REJECTED", label: "Rejected" },
 ];
+
+export type ContactFieldOption = {
+  value: string;
+  label: string;
+};
 
 export const contactFieldOptions: ContactFieldOption[] = [
   { value: "name", label: "Nama Kontak" },

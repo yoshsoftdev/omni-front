@@ -10,15 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/layout/page-header";
 
-import { CampaignSummaryCard } from "@/features/broadcast/components/campaign-summary-card";
+import { CampaignSummaryCard } from "@/features/broadcast/_legacy/components/campaign-summary-card";
 import { LiveWhatsAppPreview } from "@/features/broadcast/components/live-whatsapp-preview";
 import { campaignService, templateService } from "@/features/broadcast/services/broadcast.service";
 import {
   parseTemplateComponents,
   resolveContactFieldValue,
 } from "@/features/broadcast/utils/template-components";
-import { SegmentPicker, segmentAudienceSummary } from "@/features/contacts/components/segment-picker";
-import { MOCK_SEGMENTS } from "@/features/contacts/mock-data";
+import { SegmentPicker } from "@/features/segments/components/segment-picker";
+import { segmentService } from "@/features/segments/services/segment.service";
+import type { Segment } from "@/features/segments/types/segment";
+import { segmentAudienceSummary } from "@/features/segments/utils/segment-audience";
 import { contactService } from "@/features/contacts/services/contact.service";
 import { deviceService } from "@/features/devices/services/device.service";
 import { CONTACT_FIELD_OPTIONS } from "@/types/broadcast";
@@ -95,6 +97,11 @@ export function CampaignWizard() {
   const [variableMapping, setVariableMapping] = useState<Record<string, string>>({});
   const [selectedSegmentIds, setSelectedSegmentIds] = useState<string[]>([]);
   const [scheduledAt, setScheduledAt] = useState("");
+  const [segments, setSegments] = useState<Segment[]>([]);
+
+  useEffect(() => {
+    segmentService.list().then(setSegments);
+  }, []);
 
   const { data: devices = [], isLoading: devicesLoading } = useQuery({
     queryKey: ["devices"],
@@ -168,8 +175,8 @@ export function CampaignWizard() {
 
   const audienceText = useMemo(() => {
     if (activeStep < 3) return "Belum dipilih";
-    return segmentAudienceSummary(MOCK_SEGMENTS, selectedSegmentIds);
-  }, [activeStep, selectedSegmentIds]);
+    return segmentAudienceSummary(segments, selectedSegmentIds);
+  }, [activeStep, segments, selectedSegmentIds]);
 
   const scheduleText = useMemo(() => {
     if (activeStep < 4) return "Belum dijadwalkan";
@@ -499,7 +506,7 @@ export function CampaignWizard() {
                     </p>
                     <div className="mt-4">
                       <SegmentPicker
-                        segments={MOCK_SEGMENTS}
+                        segments={segments}
                         selectedIds={selectedSegmentIds}
                         onChange={setSelectedSegmentIds}
                       />

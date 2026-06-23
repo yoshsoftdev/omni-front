@@ -16,11 +16,10 @@ import {
   DataTableRow,
 } from "@/components/shared/data-table";
 import { PageTabs } from "@/components/shared/page-tabs";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { StatusBadge } from "@/features/broadcast/components/campaigns/campaign-table";
 import { Button } from "@/components/ui/button";
 import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import {
-  campaignStatusLabels,
   matchesScheduleTab,
   scheduleTabs,
 } from "@/features/broadcast/utils/campaign-status";
@@ -53,7 +52,11 @@ export function SchedulePage() {
   const filtered = useMemo(
     () =>
       campaigns
-        .filter((c) => c.scheduled_at || ["scheduled", "queued", "sending", "completed", "cancelled", "failed"].includes(c.status))
+        .filter(
+          (c) =>
+            c.scheduled_at ||
+            ["scheduled", "running", "completed", "cancelled", "failed"].includes(c.status),
+        )
         .filter((c) => matchesScheduleTab(c.status, tab))
         .sort((a, b) => {
           const aTime = a.scheduled_at ?? a.created_at;
@@ -140,7 +143,7 @@ export function SchedulePage() {
                       {campaign.total_contacts.toLocaleString("id-ID")} kontak
                     </DataTableCell>
                     <DataTableCell>
-                      <StatusBadge status={campaignStatusLabels[campaign.status]} />
+                      <StatusBadge status={campaign.status} />
                     </DataTableCell>
                     <DataTableCell className="text-right">
                       <div className="relative inline-flex items-center justify-end gap-1">

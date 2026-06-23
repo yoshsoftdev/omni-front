@@ -9,7 +9,7 @@ export type OnboardingStatus =
   | "completed"
   | "failed";
 
-export interface DeviceOnboarding {
+export interface DeviceOnboardingDTO {
   status?: OnboardingStatus;
   contacts_synced_count: number;
   history_messages_synced: number;
@@ -18,8 +18,13 @@ export interface DeviceOnboarding {
   completed_at?: string;
 }
 
-export interface Device {
+/** @deprecated Use DeviceOnboardingDTO */
+export type DeviceOnboarding = DeviceOnboardingDTO;
+
+/** Backend API wire format for devices (channels). */
+export interface DeviceDTO {
   id: string;
+  workspace_id?: string;
   name: string;
   phone_number?: string;
   waba_id?: string;
@@ -28,11 +33,14 @@ export interface Device {
   status: DeviceStatus;
   connection_type?: ConnectionType;
   is_coex?: boolean;
-  onboarding?: DeviceOnboarding;
+  onboarding?: DeviceOnboardingDTO;
   last_connected_at?: string;
   created_at: string;
   updated_at: string;
 }
+
+/** @deprecated Use DeviceDTO */
+export type Device = DeviceDTO;
 
 export interface ConnectDeviceInput {
   phone_number_id: string;

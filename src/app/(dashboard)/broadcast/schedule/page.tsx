@@ -1,5 +1,5 @@
-import { SchedulePage } from "@/features/broadcast/components/schedule-page";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-  return <SchedulePage />;
+  redirect("/broadcast/schedules");
 }

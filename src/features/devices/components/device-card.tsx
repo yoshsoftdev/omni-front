@@ -5,7 +5,6 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { ConnectMetaForm } from "@/features/devices/components/connect-meta-form";
-import { EmbeddedCoexConnect } from "@/features/devices/components/embedded-coex-connect";
 import { DeviceStatusBadge } from "@/features/devices/components/device-status-badge";
 import { deviceService } from "@/features/devices/services/device.service";
 import { useAuthStore } from "@/store/auth-store";
@@ -16,7 +15,7 @@ interface DeviceCardProps {
   onChanged: () => void;
 }
 
-type ConnectMode = "none" | "manual" | "coex";
+type ConnectMode = "none" | "manual";
 
 export function DeviceCard({ device, onChanged }: DeviceCardProps) {
   const role = useAuthStore((state) => state.role);
@@ -89,8 +88,10 @@ export function DeviceCard({ device, onChanged }: DeviceCardProps) {
           <div className="flex flex-wrap gap-2">
             {device.status === "disconnected" && connectMode === "none" ? (
               <>
-                <Button size="sm" disabled={loading} onClick={() => setConnectMode("coex")}>
-                  Connect Coex
+                <Button size="sm" asChild>
+                  <Link href={`/devices/embedded-signup?deviceId=${device.id}&returnTo=/devices`}>
+                    Connect Coex
+                  </Link>
                 </Button>
                 <Button size="sm" variant="outline" disabled={loading} onClick={() => setConnectMode("manual")}>
                   Manual Connect
@@ -125,18 +126,6 @@ export function DeviceCard({ device, onChanged }: DeviceCardProps) {
           onConnected={() => {
             setConnectMode("none");
             onChanged();
-          }}
-          onCancel={() => setConnectMode("none")}
-        />
-      ) : null}
-
-      {connectMode === "coex" && device.status === "disconnected" ? (
-        <EmbeddedCoexConnect
-          deviceId={device.id}
-          onConnected={() => {
-            setConnectMode("none");
-            onChanged();
-            window.location.href = `/devices/onboarding/${device.id}`;
           }}
           onCancel={() => setConnectMode("none")}
         />

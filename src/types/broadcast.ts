@@ -1,4 +1,4 @@
-export type CampaignStatus =
+export type CampaignApiStatus =
   | "draft"
   | "scheduled"
   | "queued"
@@ -7,7 +7,38 @@ export type CampaignStatus =
   | "failed"
   | "cancelled";
 
-export interface WhatsAppTemplate {
+export type TemplateApiStatus = "APPROVED" | "PENDING" | "REJECTED";
+
+export type TemplateComponentButtonDTO = {
+  type: "URL" | "QUICK_REPLY" | "PHONE_NUMBER" | "OTP" | "COPY_CODE";
+  text: string;
+  url?: string;
+  phone_number?: string;
+  otp_type?: string;
+};
+
+export type TemplateComponentDTO =
+  | {
+      type: "HEADER";
+      format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
+      text?: string;
+    }
+  | {
+      type: "BODY";
+      text: string;
+      example?: { body_text?: string[][] };
+    }
+  | {
+      type: "FOOTER";
+      text: string;
+    }
+  | {
+      type: "BUTTONS";
+      buttons: TemplateComponentButtonDTO[];
+    };
+
+/** Backend API wire format for templates. */
+export interface TemplateDTO {
   id: string;
   device_id: string;
   waba_id: string;
@@ -15,19 +46,28 @@ export interface WhatsAppTemplate {
   name: string;
   language: string;
   category?: string;
-  status?: string;
+  status?: TemplateApiStatus | string;
   preview?: string;
-  components: unknown;
+  components: TemplateComponentDTO[];
   created_at: string;
   updated_at: string;
 }
 
-export interface Campaign {
+/** @deprecated Use TemplateDTO */
+export type WhatsAppTemplate = TemplateDTO;
+
+/** Backend API wire format for campaigns. */
+export interface CampaignDTO {
   id: string;
-  device_id: string;
-  template_id: string;
   name: string;
-  status: CampaignStatus;
+  status: CampaignApiStatus;
+  device_id: string;
+  device_name?: string;
+  device_phone?: string;
+  template_id: string;
+  template_name?: string;
+  template_category?: string;
+  template_language?: string;
   variable_mapping: {
     body?: Record<string, string>;
   };
@@ -39,11 +79,6 @@ export interface Campaign {
   delivered_count: number;
   read_count: number;
   failed_count: number;
-  device_name?: string;
-  device_phone?: string;
-  template_name?: string;
-  template_language?: string;
-  template_category?: string;
   created_at: string;
   updated_at: string;
 }

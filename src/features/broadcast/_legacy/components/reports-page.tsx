@@ -17,11 +17,10 @@ import {
 } from "@/components/shared/data-table";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { StatsCard } from "@/components/shared/stats-card";
-import { StatusBadge } from "@/components/shared/status-badge";
+import { StatusBadge } from "@/features/broadcast/components/campaigns/campaign-table";
 import { PerformanceLineChart } from "@/features/broadcast/components/performance-line-chart";
 import { campaignService } from "@/features/broadcast/services/broadcast.service";
-import { campaignStatusLabels } from "@/features/broadcast/utils/campaign-status";
-import type { Campaign } from "@/types/broadcast";
+import type { Campaign } from "@/features/broadcast/types/campaign";
 import type { PerformanceDataPoint } from "@/features/broadcast/mock/mock-data";
 
 const reportDateRangeOptions = [
@@ -35,7 +34,7 @@ function filterByDateRange(campaigns: Campaign[], range: string): Campaign[] {
   const days = range === "30d" ? 30 : 7;
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
-  return campaigns.filter((c) => new Date(c.created_at) >= cutoff);
+  return campaigns.filter((c) => c.created_at && new Date(c.created_at) >= cutoff);
 }
 
 function buildTimeline(campaigns: Campaign[]): PerformanceDataPoint[] {
@@ -47,7 +46,7 @@ function buildTimeline(campaigns: Campaign[]): PerformanceDataPoint[] {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
-    const dayCampaigns = campaigns.filter((c) => c.created_at.slice(0, 10) === key);
+    const dayCampaigns = campaigns.filter((c) => c.created_at?.slice(0, 10) === key);
     points.push({
       date: key,
       label: d.toLocaleDateString("id-ID", { day: "numeric", month: "short" }),
@@ -91,7 +90,10 @@ export function ReportsPage() {
     if (deviceId !== "all") {
       items = items.filter((c) => c.device_id === deviceId);
     }
-    return items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return items.sort(
+      (a, b) =>
+        new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+    );
   }, [allCampaigns, dateRange, deviceId]);
 
   const timeline = useMemo(() => buildTimeline(campaigns), [campaigns]);
@@ -181,7 +183,7 @@ export function ReportsPage() {
                     <DataTableRow key={campaign.id}>
                       <DataTableCell className="font-medium">{campaign.name}</DataTableCell>
                       <DataTableCell>
-                        <StatusBadge status={campaignStatusLabels[campaign.status]} />
+                        <StatusBadge status={campaign.status} />
                       </DataTableCell>
                       <DataTableCell className="text-muted-foreground">
                         {campaign.sent_count.toLocaleString("id-ID")}

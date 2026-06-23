@@ -1,20 +1,11 @@
-export type SegmentRuleField = "tag" | "city" | "last_activity" | "consent_status" | "source";
-export type SegmentRuleOperator = "equals" | "not_equals" | "contains" | "less_than" | "greater_than";
+export type {
+  SegmentRuleField,
+  SegmentRuleOperator,
+  SegmentRule,
+  Segment,
+} from "@/features/segments/types/segment";
 
-export interface SegmentRule {
-  id: string;
-  field: SegmentRuleField;
-  operator: SegmentRuleOperator;
-  value: string;
-}
+import type { Segment } from "@/features/segments/types/segment";
 
-export interface ContactSegment {
-  id: string;
-  name: string;
-  description: string;
-  color: string;
-  contact_count: number;
-  updated_at: string;
-  created_at: string;
-  rules: SegmentRule[];
-}
+/** @deprecated Use Segment from features/segments */
+export type ContactSegment = Segment;

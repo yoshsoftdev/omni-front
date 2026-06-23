@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { AddDeviceForm } from "@/features/devices/components/add-device-form";
 import { DeviceCard } from "@/features/devices/components/device-card";
+import { Button } from "@/components/ui/button";
 import { deviceService } from "@/features/devices/services/device.service";
 import { useAuthStore } from "@/store/auth-store";
 import type { Device } from "@/types/device";
@@ -33,11 +35,18 @@ export function DevicesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Devices</h1>
-        <p className="text-muted-foreground">
-          Hubungkan nomor WhatsApp Business via Embedded Signup (Coexistence) atau koneksi manual.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Devices</h1>
+          <p className="text-muted-foreground">
+            Hubungkan nomor WhatsApp Business via Embedded Signup (Coexistence) atau koneksi manual.
+          </p>
+        </div>
+        {canManage ? (
+          <Button asChild>
+            <Link href="/devices/embedded-signup?returnTo=/devices">Connect WhatsApp</Link>
+          </Button>
+        ) : null}
       </div>
 
       {canManage ? <AddDeviceForm onCreated={loadDevices} /> : null}

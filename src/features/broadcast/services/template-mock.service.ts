@@ -1,7 +1,6 @@
-import {
-  mockTemplateList,
-  type TemplateListItem,
-} from "@/features/broadcast/mock/mock-data";
+import { toTemplateListItem } from "@/features/broadcast/mock/template-legacy-adapters";
+import { templateQueryService } from "@/features/broadcast/services/template-query.service";
+import type { TemplateListItem } from "@/features/broadcast/mock/template-legacy-adapters";
 
 export type TemplateListFilters = {
   search?: string;
@@ -32,7 +31,7 @@ export async function fetchTemplateList(filters: TemplateListFilters = {}): Prom
 
   await new Promise((resolve) => setTimeout(resolve, 150));
 
-  let items = [...mockTemplateList];
+  let items = (await templateQueryService.getTemplates()).map(toTemplateListItem);
 
   const query = search.trim().toLowerCase();
   if (query) {
@@ -65,7 +64,6 @@ export async function fetchTemplateList(filters: TemplateListFilters = {}): Prom
   };
 }
 
-export async function syncTemplates(): Promise<{ synced: number }> {
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  return { synced: mockTemplateList.length };
+export async function syncTemplates(deviceId: string): Promise<{ synced: number }> {
+  return templateQueryService.syncTemplates(deviceId);
 }

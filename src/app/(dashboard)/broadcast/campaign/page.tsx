@@ -1,6 +1,5 @@
-import { CampaignWizard } from "@/features/broadcast/components/campaign-wizard";
+import { redirect } from "next/navigation";
 
-export default function CampaignPage() {
-  return <CampaignWizard />;
+export default function Page() {
+  redirect("/broadcast/campaigns/create");
 }
-

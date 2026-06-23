@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import { useAuthStore } from "@/store/auth-store";
-import type { Campaign } from "@/types/broadcast";
+import type { Campaign } from "@/features/broadcast/types/campaign";
 
 interface BroadcastsTableProps {
   campaigns: Campaign[];
@@ -15,8 +15,7 @@ interface BroadcastsTableProps {
 const statusStyles: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
   scheduled: "bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200",
-  queued: "bg-indigo-100 text-indigo-900 dark:bg-indigo-900/30 dark:text-indigo-200",
-  sending: "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200",
+  running: "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-200",
   completed: "bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-green-200",
   failed: "bg-red-100 text-red-900 dark:bg-red-900/30 dark:text-red-200",
   cancelled: "bg-muted text-muted-foreground",

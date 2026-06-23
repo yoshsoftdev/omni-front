@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { BroadcastsTable } from "@/features/broadcast/components/broadcasts-table";
-import { CreateBroadcastForm } from "@/features/broadcast/components/create-broadcast-form";
-import { SyncTemplatesPanel } from "@/features/broadcast/components/sync-templates-panel";
+import { BroadcastsTable } from "@/features/broadcast/_legacy/components/broadcasts-table";
+import { CreateBroadcastForm } from "@/features/broadcast/_legacy/components/create-broadcast-form";
+import { SyncTemplatesPanel } from "@/features/broadcast/_legacy/components/sync-templates-panel";
 import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import { useAuthStore } from "@/store/auth-store";
-import type { Campaign } from "@/types/broadcast";
+import type { Campaign } from "@/features/broadcast/types/campaign";
 
 export function BroadcastPage() {
   const role = useAuthStore((state) => state.role);

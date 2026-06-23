@@ -1,6 +1,8 @@
 import { apiClient } from "@/services/api/client";
 import type { CreateTemplatePayload } from "@/features/broadcast/utils/build-meta-template";
-import type { Campaign, CreateCampaignInput, WhatsAppTemplate } from "@/types/broadcast";
+import { parseCampaignDto, parseCampaignDtoList } from "@/features/broadcast/boundary/campaign.boundary";
+import type { Campaign } from "@/features/broadcast/types/campaign";
+import type { CampaignDTO, CreateCampaignInput, WhatsAppTemplate } from "@/types/broadcast";
 
 export type TemplateListParams = {
   search?: string;
@@ -16,6 +18,11 @@ export type CampaignOverview = {
   delivered_rate: number;
   read_rate: number;
   failed_rate: number;
+};
+
+type CampaignReportDTO = CampaignDTO & {
+  delivery_breakdown?: { label: string; value: number }[];
+  hourly_performance?: { hour: number; count: number }[];
 };
 
 export type CampaignReport = Campaign & {
@@ -48,9 +55,9 @@ export const templateService = {
 };
 
 export const campaignService = {
-  async list() {
-    const response = await apiClient.get<{ campaigns: Campaign[] }>("/campaigns");
-    return response.data?.campaigns ?? [];
+  async list(): Promise<Campaign[]> {
+    const response = await apiClient.get<{ campaigns: CampaignDTO[] }>("/campaigns");
+    return parseCampaignDtoList(response.data?.campaigns ?? []);
   },
 
   async overview() {
@@ -58,25 +65,30 @@ export const campaignService = {
     return response.data!;
   },
 
-  async create(input: CreateCampaignInput) {
-    const response = await apiClient.post<Campaign>("/campaigns", input);
-    return response.data!;
+  async create(input: CreateCampaignInput): Promise<Campaign> {
+    const response = await apiClient.post<CampaignDTO>("/campaigns", input);
+    return parseCampaignDto(response.data!);
   },
 
-  async send(id: string, contactIds?: string[]) {
-    const response = await apiClient.post<Campaign>(`/campaigns/${id}/send`, {
+  async send(id: string, contactIds?: string[]): Promise<Campaign> {
+    const response = await apiClient.post<CampaignDTO>(`/campaigns/${id}/send`, {
       contact_ids: contactIds ?? [],
     });
-    return response.data!;
+    return parseCampaignDto(response.data!);
   },
 
-  async cancel(id: string) {
-    const response = await apiClient.post<Campaign>(`/campaigns/${id}/cancel`, {});
-    return response.data!;
+  async cancel(id: string): Promise<Campaign> {
+    const response = await apiClient.post<CampaignDTO>(`/campaigns/${id}/cancel`, {});
+    return parseCampaignDto(response.data!);
   },
 
-  async report(id: string) {
-    const response = await apiClient.get<CampaignReport>(`/campaigns/${id}/report`);
-    return response.data!;
+  async report(id: string): Promise<CampaignReport> {
+    const response = await apiClient.get<CampaignReportDTO>(`/campaigns/${id}/report`);
+    const dto = response.data!;
+    return {
+      ...parseCampaignDto(dto),
+      delivery_breakdown: dto.delivery_breakdown,
+      hourly_performance: dto.hourly_performance,
+    };
   },
 };

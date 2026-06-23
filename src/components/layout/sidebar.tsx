@@ -26,9 +26,9 @@ import { websocketClient } from "@/services/websocket/client";
 import { useAuthStore } from "@/store/auth-store";
 
 const broadcastItems = [
-  { href: "/broadcast/campaign", label: "Campaign" },
+  { href: "/broadcast/campaigns", label: "Campaigns" },
   { href: "/broadcast/templates", label: "Templates" },
-  { href: "/broadcast/schedule", label: "Schedule" },
+  { href: "/broadcast/schedules", label: "Schedules" },
   { href: "/broadcast/reports", label: "Reports" },
 ];
 
@@ -42,7 +42,7 @@ const navItems: Array<{
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/contacts", label: "Contacts", icon: Users },
   { href: "/devices", label: "WhatsApp", icon: Smartphone },
-  { href: "/broadcast/campaign", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
+  { href: "/broadcast/campaigns", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
   { href: "/automation", label: "Automation", icon: Sparkles },
   { href: "/team/users", label: "Team", icon: UsersRound },
   { href: "/settings", label: "Settings", icon: Settings },

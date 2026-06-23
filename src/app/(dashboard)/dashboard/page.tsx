@@ -1,10 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { WorkspaceReadinessDashboard } from "@/features/workspace/components/workspace-readiness-dashboard";
 
 export default function DashboardPage() {
-  return (
-    <PagePlaceholder
-      title="Dashboard"
-      description="Overview metrics and activity will appear here in a later phase."
-    />
-  );
+  return <WorkspaceReadinessDashboard />;
 }

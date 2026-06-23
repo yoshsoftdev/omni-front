@@ -1,6 +1,7 @@
-import type { CampaignStatus } from "@/types/broadcast";
+import type { CampaignStatus } from "@/features/broadcast/types/campaign";
+import type { CampaignApiStatus } from "@/types/broadcast";
 
-export const campaignStatusLabels: Record<CampaignStatus, string> = {
+export const campaignStatusLabels: Record<CampaignApiStatus, string> = {
   draft: "DRAFT",
   scheduled: "TERJADWAL",
   queued: "BERJALAN",
@@ -21,7 +22,7 @@ export const scheduleTabs = [
 export function matchesScheduleTab(status: CampaignStatus, tab: string): boolean {
   if (tab === "all") return true;
   if (tab === "scheduled") return status === "scheduled";
-  if (tab === "running") return status === "queued" || status === "sending";
+  if (tab === "running") return status === "running";
   if (tab === "completed") return status === "completed";
   if (tab === "cancelled") return status === "cancelled" || status === "failed";
   return true;

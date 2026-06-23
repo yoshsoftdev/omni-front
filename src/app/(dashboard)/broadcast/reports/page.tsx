@@ -1,5 +1,5 @@
-import { ReportsPage } from "@/features/broadcast/components/reports-page";
+import { ReportsDashboardPage } from "@/features/broadcast/components/reports/reports-dashboard-page";
 
 export default function Page() {
-  return <ReportsPage />;
+  return <ReportsDashboardPage />;
 }

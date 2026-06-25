@@ -40,9 +40,11 @@ export type TemplateComponentDTO =
 /** Backend API wire format for templates. */
 export interface TemplateDTO {
   id: string;
-  device_id: string;
-  waba_id: string;
-  meta_template_id: string;
+  channel_id?: string;
+  /** @deprecated Use channel_id */
+  device_id?: string;
+  waba_id?: string;
+  meta_template_id?: string;
   name: string;
   language: string;
   category?: string;

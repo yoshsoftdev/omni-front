@@ -5,7 +5,7 @@ import { channelQueryService } from "@/features/channels/services/channel-query.
 import { segmentService } from "@/features/segments/services/segment.service";
 import { teamService } from "@/features/team/services/team.service";
 import { getWorkspaceReadiness } from "@/features/workspace/services/workspace-readiness.service";
-import type { OnboardingStepSnapshot, RecentImport } from "@/features/workspace/types/onboarding";
+import type { OnboardingStepSnapshot } from "@/features/workspace/types/onboarding";
 import type { TeamMember } from "@/types/team";
 
 function resolveLastTemplateSync(templates: Template[]): string | null {
@@ -16,26 +16,6 @@ function resolveLastTemplateSync(templates: Template[]): string | null {
   return timestamps.sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null;
 }
 
-function buildRecentImports(totalContacts: number): RecentImport[] {
-  if (totalContacts <= 0) return [];
-  const imports: RecentImport[] = [
-    {
-      id: "imp_1",
-      name: "VIP Customer segment",
-      count: Math.min(1240, totalContacts),
-      imported_at: "2026-06-17T08:00:00Z",
-      source: "csv",
-    },
-    {
-      id: "imp_2",
-      name: "Jakarta Customer segment",
-      count: Math.min(3890, Math.max(totalContacts - 1240, 0)),
-      imported_at: "2026-06-16T14:00:00Z",
-      source: "excel",
-    },
-  ];
-  return imports.filter((item) => item.count > 0);
-}
 
 export async function getOnboardingSnapshot(): Promise<OnboardingStepSnapshot> {
   const [allChannels, connectedChannels, templates, segments, campaigns, readiness] = await Promise.all([
@@ -66,7 +46,7 @@ export async function getOnboardingSnapshot(): Promise<OnboardingStepSnapshot> {
     segments,
     totalContacts,
     importedContacts: totalContacts,
-    recentImports: buildRecentImports(totalContacts),
+    recentImports: [],
     members,
     pendingInvites,
     campaigns,

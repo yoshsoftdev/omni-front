@@ -1,4 +1,4 @@
-import { campaignRepositoryMock } from "@/features/broadcast/repositories/campaign.repository.mock";
+import { campaignRepositoryApi } from "@/features/broadcast/repositories/campaign.repository.api";
 import type {
   Campaign,
   CampaignReportDetail,
@@ -30,5 +30,5 @@ export interface CampaignQueryRepository extends CampaignRepository {
 }
 
 export function getCampaignRepository(): CampaignQueryRepository {
-  return campaignRepositoryMock;
+  return campaignRepositoryApi;
 }

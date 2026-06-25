@@ -1,29 +1,31 @@
+import { assertDomainChannel, assertDomainChannelList } from "@/features/channels/boundary/channel.boundary";
 import {
-  parseDeviceDto,
-  parseDeviceDtoList,
-  parseOnboardingStatusDto,
-} from "@/features/channels/boundary/channel.boundary";
+  mapApiChannelListToChannels,
+  mapApiChannelToChannel,
+} from "@/features/channels/mappers/channel.mapper";
 import type {
   ChannelRepository,
   ConnectEmbeddedPayload,
   ConnectManualPayload,
+  CreateManualChannelInput,
+  VerifyManualChannelInput,
 } from "@/features/channels/repositories/channel.repository";
 import type { Channel, ChannelOnboarding } from "@/features/channels/types/channel";
-import { deviceService } from "@/features/devices/services/device.service";
+import { channelsApiService } from "@/features/channels/services/channels-api.service";
 
-/**
- * API channel repository — sole consumer of deviceService.
- * All DeviceDTO responses pass through channel.boundary before returning Channel.
- */
 class ApiChannelRepository implements ChannelRepository {
   async list(): Promise<Channel[]> {
-    const dtos = await deviceService.list();
-    return parseDeviceDtoList(dtos);
+    const items = await channelsApiService.list();
+    return assertDomainChannelList(mapApiChannelListToChannels(items));
   }
 
   async getById(id: string): Promise<Channel | undefined> {
-    const channels = await this.list();
-    return channels.find((channel) => channel.id === id);
+    try {
+      const item = await channelsApiService.getById(id);
+      return assertDomainChannel(mapApiChannelToChannel(item));
+    } catch {
+      return undefined;
+    }
   }
 
   async getConnected(): Promise<Channel[]> {
@@ -31,29 +33,43 @@ class ApiChannelRepository implements ChannelRepository {
     return channels.filter((channel) => channel.status === "connected");
   }
 
-  async connectManual(id: string, input: ConnectManualPayload): Promise<Channel> {
-    const dto = await deviceService.connect(id, input);
-    return parseDeviceDto(dto);
+  async verifyManual(input: VerifyManualChannelInput) {
+    return channelsApiService.verifyManual(input);
   }
 
-  async connectEmbedded(id: string, input: ConnectEmbeddedPayload): Promise<Channel> {
-    const dto = await deviceService.connectEmbedded(id, input);
-    return parseDeviceDto(dto);
+  async createManual(input: CreateManualChannelInput): Promise<Channel> {
+    const item = await channelsApiService.createManual({
+      name: input.name,
+      access_token: input.access_token,
+      waba_id: input.waba_id,
+      phone_number_id: input.phone_number_id,
+      phone_number: input.phone_number,
+    });
+    return assertDomainChannel(mapApiChannelToChannel(item));
   }
 
-  async disconnect(id: string): Promise<Channel> {
-    const dto = await deviceService.disconnect(id);
-    return parseDeviceDto(dto);
+  async delete(id: string): Promise<void> {
+    await channelsApiService.delete(id);
   }
 
-  async getOnboardingStatus(id: string): Promise<ChannelOnboarding> {
-    const dto = await deviceService.getOnboardingStatus(id);
-    return parseOnboardingStatusDto(dto);
+  async connectManual(_id: string, _input: ConnectManualPayload): Promise<Channel> {
+    throw new Error("Use createManual for new manual WhatsApp connections");
   }
 
-  async startOnboardingSync(id: string): Promise<ChannelOnboarding> {
-    const dto = await deviceService.startOnboardingSync(id);
-    return parseOnboardingStatusDto(dto);
+  async connectEmbedded(_id: string, _input: ConnectEmbeddedPayload): Promise<Channel> {
+    throw new Error("Embedded Signup is not available yet");
+  }
+
+  async disconnect(_id: string): Promise<Channel> {
+    throw new Error("Disconnect is not supported; delete the channel instead");
+  }
+
+  async getOnboardingStatus(_id: string): Promise<ChannelOnboarding> {
+    throw new Error("Onboarding status is not available for manual channels");
+  }
+
+  async startOnboardingSync(_id: string): Promise<ChannelOnboarding> {
+    throw new Error("Onboarding sync is not available for manual channels");
   }
 }
 

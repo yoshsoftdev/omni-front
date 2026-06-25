@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, MessageCircle, UserCog, Users, WandSparkles } from "lucide-react";
 
-import { MOCK_WORKSPACE_ACTIVITY } from "@/features/team/mock-data";
+import { EmptyState } from "@/components/shared/empty-state";
 
 export function TeamActivityPage() {
   return (
@@ -24,28 +23,7 @@ export function TeamActivityPage() {
       </div>
 
       <section className="rounded-xl border bg-card p-5 shadow-sm">
-        <div className="space-y-3">
-          {MOCK_WORKSPACE_ACTIVITY.map((item) => (
-            <div key={item.id} className="flex items-start gap-3 rounded-lg border bg-background p-3">
-              {item.type === "invite" ? (
-                <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
-              ) : item.type === "role" ? (
-                <UserCog className="mt-0.5 h-4 w-4 text-muted-foreground" />
-              ) : item.type === "wa" ? (
-                <MessageCircle className="mt-0.5 h-4 w-4 text-muted-foreground" />
-              ) : (
-                <WandSparkles className="mt-0.5 h-4 w-4 text-muted-foreground" />
-              )}
-              <div>
-                <div className="text-sm">{item.text}</div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  <CalendarDays className="mr-1 inline h-3 w-3" />
-                  {item.time}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <EmptyState message="No workspace activity yet." />
       </section>
     </div>
   );

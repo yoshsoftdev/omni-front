@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { templateService } from "@/features/broadcast/services/broadcast.service";
-import { deviceService } from "@/features/devices/services/device.service";
+import { channelQueryService } from "@/features/channels/services/channel-query.service";
 
 const PAGE_SIZE = 8;
 
@@ -64,15 +64,14 @@ export function TemplatesPage() {
   const [page, setPage] = useState(1);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [syncDeviceId, setSyncDeviceId] = useState("");
+  const [syncChannelId, setSyncChannelId] = useState("");
 
-  const { data: devices = [] } = useQuery({
-    queryKey: ["devices"],
-    queryFn: () => deviceService.list(),
+  const { data: connectedChannels = [] } = useQuery({
+    queryKey: ["channels", "connected"],
+    queryFn: () => channelQueryService.getConnectedChannels(),
   });
 
-  const connectedDevices = devices.filter((d) => d.status === "connected");
-  const effectiveSyncDeviceId = syncDeviceId || connectedDevices[0]?.id || "";
+  const effectiveSyncChannelId = syncChannelId || connectedChannels[0]?.id || "";
 
   const filters = useMemo(
     () => ({ search, language, category, status }),
@@ -89,14 +88,14 @@ export function TemplatesPage() {
   const items = allTemplates.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   async function handleSync() {
-    if (!effectiveSyncDeviceId) {
-      setSyncError("Tidak ada device terhubung. Hubungkan WABA terlebih dahulu.");
+    if (!effectiveSyncChannelId) {
+      setSyncError("Tidak ada channel terhubung. Hubungkan WABA terlebih dahulu.");
       return;
     }
     setSyncing(true);
     setSyncError(null);
     try {
-      await templateService.sync(effectiveSyncDeviceId);
+      await templateService.sync(effectiveSyncChannelId);
       await refetch();
     } catch (err) {
       setSyncError(err instanceof Error ? err.message : "Gagal sync template");
@@ -118,15 +117,15 @@ export function TemplatesPage() {
                 Create Template
               </Link>
             </Button>
-            {connectedDevices.length > 1 ? (
+            {connectedChannels.length > 1 ? (
               <select
                 className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                value={effectiveSyncDeviceId}
-                onChange={(e) => setSyncDeviceId(e.target.value)}
+                value={effectiveSyncChannelId}
+                onChange={(e) => setSyncChannelId(e.target.value)}
               >
-                {connectedDevices.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
+                {connectedChannels.map((channel) => (
+                  <option key={channel.id} value={channel.id}>
+                    {channel.label}
                   </option>
                 ))}
               </select>
@@ -135,7 +134,7 @@ export function TemplatesPage() {
               type="button"
               variant="outline"
               onClick={handleSync}
-              disabled={syncing || isFetching || !effectiveSyncDeviceId}
+              disabled={syncing || isFetching || !effectiveSyncChannelId}
             >
               <RefreshCw className={syncing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
               Sync Template
@@ -213,7 +212,12 @@ export function TemplatesPage() {
               <DataTableEmpty message="Tidak ada template ditemukan. Sync dari Meta untuk memuat template." />
             ) : (
               items.map((template) => (
-                <DataTableRow key={template.id}>
+                <DataTableRow
+                  key={
+                    template.id ||
+                    `${template.meta_template_id ?? template.name}-${template.language}`
+                  }
+                >
                   <DataTableCell>
                     <div className="font-medium">{template.name}</div>
                     <div className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
@@ -255,9 +259,9 @@ export function TemplatesPage() {
         ) : null}
       </div>
 
-      {connectedDevices.length === 0 ? (
+      {connectedChannels.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          <Label>Tip:</Label> Hubungkan device WABA di pengaturan untuk dapat sync template dari Meta.
+          <Label>Tip:</Label> Hubungkan channel WhatsApp di halaman Devices untuk dapat sync template dari Meta.
         </p>
       ) : null}
     </div>

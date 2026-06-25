@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Pencil, X } from "lucide-react";
 
 import { ColorDot } from "@/components/shared/color-dot";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { SegmentAnalyticsPanel } from "@/features/contacts/components/segments/segment-analytics";
 import { SegmentRuleBuilder } from "@/features/contacts/components/segments/segment-rule-builder";
-import { MOCK_SEGMENTS } from "@/features/contacts/mock-data";
+import { segmentService } from "@/features/segments/services/segment.service";
 import { useToast } from "@/hooks/use-toast";
 import type { ContactSegment } from "@/types/segment";
 
@@ -20,11 +21,35 @@ function formatDate(date: string) {
 
 export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
   const { notify, Toast } = useToast();
-  const initial = MOCK_SEGMENTS.find((s) => s.id === segmentId) ?? MOCK_SEGMENTS[0];
-  const [segment, setSegment] = useState<ContactSegment>({ ...initial, rules: [...initial.rules] });
+  const [segment, setSegment] = useState<ContactSegment | null>(null);
+  const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
-  const [name, setName] = useState(segment.name);
-  const [description, setDescription] = useState(segment.description);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+
+  useEffect(() => {
+    segmentService
+      .getById(segmentId)
+      .then((data) => {
+        if (!data) {
+          setSegment(null);
+          return;
+        }
+        setSegment({ ...data, rules: [...data.rules] });
+        setName(data.name);
+        setDescription(data.description);
+      })
+      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load segment"))
+      .finally(() => setLoading(false));
+  }, [segmentId, notify]);
+
+  if (loading) {
+    return <EmptyState message="Loading segment..." className="m-8" />;
+  }
+
+  if (!segment) {
+    return <EmptyState message="Segment not found." className="m-8" />;
+  }
 
   return (
     <div className="space-y-6">
@@ -70,7 +95,7 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
             </div>
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-              <Button onClick={() => { setSegment({ ...segment, name: name.trim(), description: description.trim(), updated_at: new Date().toISOString() }); setEditOpen(false); notify("success", "Segment updated"); }}>Save</Button>
+              <Button onClick={() => { setSegment({ ...segment, name: name.trim(), description: description.trim(), updated_at: new Date().toISOString() }); setEditOpen(false); notify("success", "Segment updated locally — API update pending"); }}>Save</Button>
             </div>
           </div>
         </div>

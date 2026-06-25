@@ -1,4 +1,3 @@
-import { templateQueryService } from "@/features/broadcast/services/template-query.service";
 import type { EmbeddedSignupResult } from "@/features/channels/types/embedded-signup";
 
 const MOCK_WABA_NAME = "Skinsure Glow WABA";
@@ -11,17 +10,13 @@ export async function simulateEmbeddedSignupCompletion(
   businessName: string,
 ): Promise<EmbeddedSignupResult> {
   await delay(1200);
-  const templates = await templateQueryService.getTemplates();
 
   return {
-    channelId: deviceId ?? `ch_${Date.now()}`,
-    label: businessName || "WhatsApp Business",
+    channel_id: deviceId ?? `ch_${Date.now()}`,
     phone_number: MOCK_PHONE,
     waba_id: MOCK_WABA_ID,
     waba_name: MOCK_WABA_NAME,
     business_name: businessName || "Your Business",
-    provider: "meta",
-    templates_imported: templates.length || 10,
   };
 }
 

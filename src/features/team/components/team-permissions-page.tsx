@@ -23,7 +23,7 @@ export function TeamPermissionsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Permission Matrix</h1>
         <p className="text-muted-foreground">
-          Review role capabilities. Toggle UI uses mock data only.
+          Review role capabilities. Matrix data loads from the API when available.
         </p>
       </div>
 
@@ -31,6 +31,8 @@ export function TeamPermissionsPage() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading permissions...</p>
+      ) : matrix.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No permission matrix data available yet.</p>
       ) : (
         <PermissionMatrix rows={matrix} editable />
       )}

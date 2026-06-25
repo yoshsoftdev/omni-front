@@ -1,6 +1,6 @@
 "use client";
 
-import type { DeliveryBreakdown } from "@/features/broadcast/mock/mock-data";
+import type { DeliveryBreakdown } from "@/features/broadcast/types/campaign";
 
 const SEGMENT_COLORS = ["#0F9D8A", "#3B82F6", "#F59E0B", "#EF4444"];
 

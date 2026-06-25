@@ -11,14 +11,14 @@ import { EMBEDDED_SIGNUP_REQUIREMENTS } from "@/features/channels/types/embedded
 
 type EmbeddedSignupState = {
   step: EmbeddedSignupStep;
-  deviceId: string | null;
+  channelId: string | null;
   returnTo: string;
   requirements: EmbeddedSignupRequirement[];
   progressState: EmbeddedSignupProgressState;
   result: EmbeddedSignupResult | null;
   startedAt: string | null;
   setStep: (step: EmbeddedSignupStep) => void;
-  setDeviceId: (deviceId: string | null) => void;
+  setChannelId: (channelId: string | null) => void;
   setReturnTo: (returnTo: string) => void;
   toggleRequirement: (id: EmbeddedSignupRequirement["id"]) => void;
   setProgressState: (state: EmbeddedSignupProgressState) => void;
@@ -33,7 +33,7 @@ const defaultRequirements: EmbeddedSignupRequirement[] = EMBEDDED_SIGNUP_REQUIRE
 
 const initialState = {
   step: "about" as EmbeddedSignupStep,
-  deviceId: null as string | null,
+  channelId: null as string | null,
   returnTo: "/devices",
   requirements: defaultRequirements,
   progressState: "initializing" as EmbeddedSignupProgressState,
@@ -50,7 +50,7 @@ export const useEmbeddedSignupStore = create<EmbeddedSignupState>()(
           step,
           startedAt: get().startedAt ?? new Date().toISOString(),
         }),
-      setDeviceId: (deviceId) => set({ deviceId }),
+      setChannelId: (channelId) => set({ channelId }),
       setReturnTo: (returnTo) => set({ returnTo }),
       toggleRequirement: (id) =>
         set((state) => ({
@@ -70,7 +70,7 @@ export const useEmbeddedSignupStore = create<EmbeddedSignupState>()(
       name: "omni-chan-embedded-signup",
       partialize: (state) => ({
         step: state.step,
-        deviceId: state.deviceId,
+        channelId: state.channelId,
         returnTo: state.returnTo,
         requirements: state.requirements,
         progressState: state.progressState,

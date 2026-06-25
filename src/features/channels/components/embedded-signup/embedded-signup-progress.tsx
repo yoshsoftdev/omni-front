@@ -2,7 +2,6 @@
 
 import { CheckCircle2, Circle, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import type { EmbeddedSignupProgressState } from "@/features/channels/types/embedded-signup";
 import { PROGRESS_STATE_LABELS } from "@/features/channels/types/embedded-signup";
 import { cn } from "@/lib/utils";
@@ -17,11 +16,10 @@ const STATE_ORDER: EmbeddedSignupProgressState[] = [
 
 type EmbeddedSignupProgressProps = {
   state: EmbeddedSignupProgressState;
-  onConfirmUserAction?: () => void;
   error?: string | null;
 };
 
-export function EmbeddedSignupProgress({ state, onConfirmUserAction, error }: EmbeddedSignupProgressProps) {
+export function EmbeddedSignupProgress({ state, error }: EmbeddedSignupProgressProps) {
   const currentIndex = STATE_ORDER.indexOf(state);
 
   return (
@@ -59,14 +57,11 @@ export function EmbeddedSignupProgress({ state, onConfirmUserAction, error }: Em
 
       {state === "waiting_user_action" ? (
         <div className="rounded-md border bg-muted/30 p-4 text-sm">
-          <p className="font-medium">Action required</p>
+          <p className="font-medium">Complete Meta Embedded Signup</p>
           <p className="mt-1 text-muted-foreground">
-            In a real integration, Meta Embedded Signup would open here. For this demo, confirm when
-            you have completed the Meta authorization steps.
+            Finish the steps in the Meta popup window. This page will continue automatically when
+            authorization completes.
           </p>
-          <Button className="mt-3" size="sm" onClick={onConfirmUserAction}>
-            I completed Meta setup
-          </Button>
         </div>
       ) : null}
 

@@ -111,3 +111,21 @@ export interface ChannelBreakdown {
   percentage: number;
   count: number;
 }
+
+export type PerformanceDataPoint = {
+  date: string;
+  label: string;
+  sent: number;
+  read: number;
+  failed: number;
+};
+
+export type DeliveryBreakdown = {
+  label: string;
+  value: number;
+};
+
+export type HourlyPerformance = {
+  hour: number;
+  count: number;
+};

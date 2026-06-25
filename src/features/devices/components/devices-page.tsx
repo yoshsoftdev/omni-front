@@ -1,68 +1,65 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
-import { AddDeviceForm } from "@/features/devices/components/add-device-form";
-import { DeviceCard } from "@/features/devices/components/device-card";
-import { Button } from "@/components/ui/button";
-import { deviceService } from "@/features/devices/services/device.service";
+import { ChannelCard } from "@/features/channels/components/channel-card";
+import { EmbeddedSignupComingSoonCard } from "@/features/channels/components/embedded-signup-coming-soon-card";
+import { ManualConnectForm } from "@/features/channels/components/manual-connect-form";
+import { channelQueryService } from "@/features/channels/services/channel-query.service";
+import type { Channel } from "@/features/channels/types/channel";
 import { useAuthStore } from "@/store/auth-store";
-import type { Device } from "@/types/device";
 
 export function DevicesPage() {
   const role = useAuthStore((state) => state.role);
   const canManage = role === "owner" || role === "admin";
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadDevices = useCallback(async () => {
+  const loadChannels = useCallback(async () => {
     setError(null);
     try {
-      const data = await deviceService.list();
-      setDevices(data);
+      const data = await channelQueryService.getChannels();
+      setChannels(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load devices");
+      setError(err instanceof Error ? err.message : "Failed to load channels");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadDevices();
-  }, [loadDevices]);
+    loadChannels();
+  }, [loadChannels]);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Devices</h1>
-          <p className="text-muted-foreground">
-            Hubungkan nomor WhatsApp Business via Embedded Signup (Coexistence) atau koneksi manual.
-          </p>
-        </div>
-        {canManage ? (
-          <Button asChild>
-            <Link href="/devices/embedded-signup?returnTo=/devices">Connect WhatsApp</Link>
-          </Button>
-        ) : null}
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">WhatsApp Channels</h1>
+        <p className="text-muted-foreground">
+          Manage WhatsApp Business channels for broadcasts and inbox messaging.
+        </p>
       </div>
 
-      {canManage ? <AddDeviceForm onCreated={loadDevices} /> : null}
+      {canManage ? (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <EmbeddedSignupComingSoonCard />
+          <ManualConnectForm onConnected={loadChannels} />
+        </div>
+      ) : null}
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading devices...</p>
+        <p className="text-sm text-muted-foreground">Loading channels...</p>
       ) : error ? (
         <p className="text-sm text-destructive">{error}</p>
-      ) : devices.length === 0 ? (
+      ) : channels.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No devices yet. Add a WhatsApp device to get started.
+          No channels yet. Connect a WhatsApp channel using Manual Connection above.
         </div>
       ) : (
         <div className="grid gap-4">
-          {devices.map((device) => (
-            <DeviceCard key={device.id} device={device} onChanged={loadDevices} />
+          {channels.map((channel) => (
+            <ChannelCard key={channel.id} channel={channel} onChanged={loadChannels} />
           ))}
         </div>
       )}

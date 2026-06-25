@@ -8,7 +8,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { contactService } from "@/features/contacts/services/contact.service";
-import { deviceService } from "@/features/devices/services/device.service";
+import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import { TemplateBodyEditor } from "@/features/broadcast/components/create-template/template-body-editor";
 import { TemplateButtonEditor } from "@/features/broadcast/components/create-template/template-button-editor";
 import { TemplateCreateStepper } from "@/features/broadcast/components/create-template/template-create-stepper";
@@ -19,7 +19,6 @@ import {
 import { TemplateInfoCard } from "@/features/broadcast/components/create-template/template-info-card";
 import { VariableDetector } from "@/features/broadcast/components/create-template/variable-detector";
 import { WhatsAppPreview } from "@/features/broadcast/components/create-template/whatsapp-preview";
-import { defaultCreateTemplateForm } from "@/features/broadcast/mock/create-template.mock";
 import { templateService } from "@/features/broadcast/services/broadcast.service";
 import type { CreateTemplateForm } from "@/features/broadcast/types/create-template";
 import { buildCreateTemplatePayload } from "@/features/broadcast/utils/build-meta-template";
@@ -29,6 +28,17 @@ import {
   validateCreateTemplateForm,
 } from "@/features/broadcast/utils/create-template.utils";
 import { useAuthStore } from "@/store/auth-store";
+
+const defaultCreateTemplateForm: CreateTemplateForm = {
+  name: "",
+  language: "id",
+  category: "marketing",
+  headerType: "none",
+  body: "",
+  footer: "",
+  buttons: [],
+  deviceId: "",
+};
 
 function ImportantNotes() {
   return (
@@ -50,9 +60,9 @@ export function CreateTemplatePage() {
   const [submitting, setSubmitting] = useState(false);
   const team = useAuthStore((state) => state.team);
 
-  const { data: devices = [] } = useQuery({
-    queryKey: ["devices"],
-    queryFn: () => deviceService.list(),
+  const { data: channels = [] } = useQuery({
+    queryKey: ["channels", "connected"],
+    queryFn: () => channelQueryService.getConnectedChannels(),
   });
 
   const { data: contacts = [] } = useQuery({
@@ -60,10 +70,10 @@ export function CreateTemplatePage() {
     queryFn: () => contactService.list(),
   });
 
-  const previewDeviceName = useMemo(() => {
-    const selected = devices.find((device) => device.id === form.deviceId);
-    return selected?.name ?? team?.name ?? "WhatsApp Business";
-  }, [devices, form.deviceId, team?.name]);
+  const previewChannelName = useMemo(() => {
+    const selected = channels.find((channel) => channel.id === form.deviceId);
+    return selected?.label ?? team?.name ?? "WhatsApp Business";
+  }, [channels, form.deviceId, team?.name]);
 
   const variables = useMemo(
     () => applyContactSamples(detectVariables(form.body), contacts[0]),
@@ -74,7 +84,7 @@ export function CreateTemplatePage() {
     setForm((prev) => {
       const next = { ...prev, ...patch };
       if (patch.headerType && patch.headerType !== "none" && !next.headerFileName) {
-        next.headerFileName = "hydrabalance-product.jpg";
+        next.headerFileName = undefined;
       }
       if (patch.headerType === "none") {
         next.headerFileName = undefined;
@@ -164,7 +174,7 @@ export function CreateTemplatePage() {
         </div>
 
         <div className="w-full shrink-0 space-y-4 xl:sticky xl:top-6 xl:w-[360px]">
-          <WhatsAppPreview form={form} variables={variables} deviceName={previewDeviceName} />
+          <WhatsAppPreview form={form} variables={variables} deviceName={previewChannelName} />
           <VariableDetector variables={variables} />
           <ImportantNotes />
         </div>

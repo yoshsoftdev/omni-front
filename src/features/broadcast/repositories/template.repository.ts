@@ -1,4 +1,4 @@
-import { templateRepositoryMock } from "@/features/broadcast/repositories/template.repository.mock";
+import { templateRepositoryApi } from "@/features/broadcast/repositories/template.repository.api";
 import type { Template } from "@/features/broadcast/types/template";
 
 export type CreateTemplatePayload = Omit<Template, "id" | "created_at" | "updated_at" | "last_sync_at">;
@@ -13,5 +13,5 @@ export interface TemplateRepository {
 }
 
 export function getTemplateRepository(): TemplateRepository {
-  return templateRepositoryMock;
+  return templateRepositoryApi;
 }

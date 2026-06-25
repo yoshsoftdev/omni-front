@@ -5,33 +5,32 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { deviceService } from "@/features/devices/services/device.service";
+import { channelQueryService } from "@/features/channels/services/channel-query.service";
+import type { Channel } from "@/features/channels/types/channel";
 import { inboxService } from "@/features/inbox/services/inbox.service";
-import type { Device } from "@/types/device";
 
 interface SendMessageFormProps {
   onSent: () => void;
 }
 
 export function SendMessageForm({ onSent }: SendMessageFormProps) {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [deviceId, setDeviceId] = useState("");
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [channelId, setChannelId] = useState("");
   const [recipient, setRecipient] = useState("");
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    deviceService
-      .list()
+    channelQueryService
+      .getConnectedChannels()
       .then((list) => {
-        const connected = list.filter((d) => d.status === "connected");
-        setDevices(connected);
-        if (connected.length > 0) {
-          setDeviceId(connected[0].id);
+        setChannels(list);
+        if (list.length > 0) {
+          setChannelId(list[0].id);
         }
       })
-      .catch(() => setDevices([]));
+      .catch(() => setChannels([]));
   }, []);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -40,7 +39,7 @@ export function SendMessageForm({ onSent }: SendMessageFormProps) {
     setLoading(true);
     try {
       await inboxService.sendMessage({
-        device_id: deviceId,
+        device_id: channelId,
         recipient: recipient.trim(),
         content: content.trim(),
       });
@@ -53,10 +52,10 @@ export function SendMessageForm({ onSent }: SendMessageFormProps) {
     }
   }
 
-  if (devices.length === 0) {
+  if (channels.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-        Connect a Meta WhatsApp device before sending messages.
+        No channels found. Connect a Meta WhatsApp channel before sending messages.
       </div>
     );
   }
@@ -69,17 +68,17 @@ export function SendMessageForm({ onSent }: SendMessageFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="inbox-device">Device</Label>
+        <Label htmlFor="inbox-channel">Channel</Label>
         <select
-          id="inbox-device"
+          id="inbox-channel"
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          value={deviceId}
-          onChange={(e) => setDeviceId(e.target.value)}
+          value={channelId}
+          onChange={(e) => setChannelId(e.target.value)}
           required
         >
-          {devices.map((device) => (
-            <option key={device.id} value={device.id}>
-              {device.name} {device.phone_number ? `(${device.phone_number})` : ""}
+          {channels.map((channel) => (
+            <option key={channel.id} value={channel.id}>
+              {channel.label} {channel.phone_number ? `(${channel.phone_number})` : ""}
             </option>
           ))}
         </select>

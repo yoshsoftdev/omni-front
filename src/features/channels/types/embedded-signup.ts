@@ -21,14 +21,13 @@ export type EmbeddedSignupRequirement = {
 };
 
 export type EmbeddedSignupResult = {
-  channelId: string;
-  label: string;
+  channel_id: string;
   phone_number: string;
   waba_id: string;
-  waba_name: string;
-  business_name: string;
-  provider: string;
-  templates_imported: number;
+  business_id?: string;
+  phone_number_id?: string;
+  waba_name?: string;
+  business_name?: string;
 };
 
 export const EMBEDDED_SIGNUP_REQUIREMENTS: Omit<EmbeddedSignupRequirement, "ready">[] = [

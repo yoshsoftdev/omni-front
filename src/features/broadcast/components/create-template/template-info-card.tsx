@@ -8,11 +8,11 @@ import {
   createTemplateCategoryOptions,
   createTemplateLanguageOptions,
   headerTypeOptions,
-} from "@/features/broadcast/mock/create-template.mock";
-import { deviceService } from "@/features/devices/services/device.service";
+} from "@/features/broadcast/constants/create-template";
+import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { CreateTemplateForm, HeaderType } from "@/features/broadcast/types/create-template";
 import { sanitizeTemplateName } from "@/features/broadcast/utils/create-template.utils";
-import type { Device } from "@/types/device";
+import type { Channel } from "@/features/channels/types/channel";
 
 type TemplateInfoCardProps = {
   form: CreateTemplateForm;
@@ -20,14 +20,13 @@ type TemplateInfoCardProps = {
 };
 
 export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [channels, setChannels] = useState<Channel[]>([]);
 
   useEffect(() => {
-    deviceService.list().then((list) => {
-      const connected = list.filter((d) => d.status === "connected");
-      setDevices(connected);
-      if (!form.deviceId && connected[0]?.id) {
-        onChange({ deviceId: connected[0].id });
+    channelQueryService.getConnectedChannels().then((list) => {
+      setChannels(list);
+      if (!form.deviceId && list[0]?.id) {
+        onChange({ deviceId: list[0].id });
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,24 +38,24 @@ export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
 
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="template-device">WABA / Device</Label>
+          <Label htmlFor="template-device">WABA / Channel</Label>
           <select
             id="template-device"
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             value={form.deviceId}
             onChange={(e) => onChange({ deviceId: e.target.value })}
           >
-            <option value="">Pilih device...</option>
-            {devices.map((device) => (
-              <option key={device.id} value={device.id}>
-                {device.name}
-                {device.phone_number ? ` (${device.phone_number})` : ""}
+            <option value="">Pilih channel...</option>
+            {channels.map((channel) => (
+              <option key={channel.id} value={channel.id}>
+                {channel.label}
+                {channel.phone_number ? ` (${channel.phone_number})` : ""}
               </option>
             ))}
           </select>
-          {devices.length === 0 ? (
+          {channels.length === 0 ? (
             <p className="text-xs text-amber-600">
-              Tidak ada device terhubung. Hubungkan WABA di menu WhatsApp terlebih dahulu.
+              No channels found. Connect a WABA in Channels first.
             </p>
           ) : null}
         </div>

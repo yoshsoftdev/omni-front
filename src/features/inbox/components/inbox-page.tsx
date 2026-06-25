@@ -1,18 +1,18 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { ContactSidebar } from "@/features/inbox/components/contact-sidebar";
 import { ConversationDetail } from "@/features/inbox/components/conversation-detail";
 import { ConversationList } from "@/features/inbox/components/conversation-list";
 import {
-  getContactForConversation,
-  MOCK_ACTIVITIES,
-  MOCK_CONVERSATIONS,
-  MOCK_MESSAGES,
-  MOCK_WORKSPACE_NOTES,
-} from "@/features/inbox/mock-data";
+  mapConversationToInbox,
+  mapConversationToInboxContact,
+  mapMessageToInbox,
+} from "@/features/inbox/mappers/inbox.mapper";
+import { conversationService } from "@/features/inbox/services/conversation.service";
+import { messageService } from "@/features/inbox/services/message.service";
 import type {
   InboxActivityEvent,
   InboxChatMessage,
@@ -52,28 +52,67 @@ function computeTabCounts(conversations: InboxConversation[]) {
 
 export function InboxPage() {
   const { notify, Toast } = useToast();
-  const [conversations, setConversations] = useState<InboxConversation[]>(MOCK_CONVERSATIONS);
-  const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>(
-    () => ({ ...MOCK_MESSAGES }),
-  );
-  const [contacts, setContacts] = useState<Record<string, InboxContact>>(() => {
-    const map: Record<string, InboxContact> = {};
-    for (const conv of MOCK_CONVERSATIONS) {
-      map[conv.contact_id] = getContactForConversation(conv);
-    }
-    return map;
-  });
-  const [activities, setActivities] = useState<Record<string, InboxActivityEvent[]>>(MOCK_ACTIVITIES);
-  const [workspaceNotes, setWorkspaceNotes] = useState<Record<string, InboxWorkspaceNote[]>>(
-    MOCK_WORKSPACE_NOTES,
-  );
+  const [conversations, setConversations] = useState<InboxConversation[]>([]);
+  const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>({});
+  const [contacts, setContacts] = useState<Record<string, InboxContact>>({});
+  const [activities] = useState<Record<string, InboxActivityEvent[]>>({});
+  const [workspaceNotes, setWorkspaceNotes] = useState<Record<string, InboxWorkspaceNote[]>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selectedId, setSelectedId] = useState<string | null>(MOCK_CONVERSATIONS[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<InboxTab>("open");
   const [channelFilter, setChannelFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  const loadConversations = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const items = await conversationService.list({ page_size: 100 });
+      const mapped = items.map(mapConversationToInbox);
+      setConversations(mapped);
+      const contactMap: Record<string, InboxContact> = {};
+      for (const item of items) {
+        contactMap[item.contact_id] = mapConversationToInboxContact(item);
+      }
+      setContacts(contactMap);
+      setSelectedId((current) => current ?? mapped[0]?.id ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load conversations");
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadConversations();
+  }, [loadConversations]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    let cancelled = false;
+    messageService
+      .list(selectedId)
+      .then((messages) => {
+        if (cancelled) return;
+        setMessagesByConversation((prev) => ({
+          ...prev,
+          [selectedId]: messages.map(mapMessageToInbox),
+        }));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMessagesByConversation((prev) => ({ ...prev, [selectedId]: [] }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId]);
 
   const tabCounts = useMemo(() => computeTabCounts(conversations), [conversations]);
 
@@ -100,7 +139,15 @@ export function InboxPage() {
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
   const selectedMessages = selectedId ? (messagesByConversation[selectedId] ?? []) : [];
   const selectedContact = selectedConversation
-    ? (contacts[selectedConversation.contact_id] ?? getContactForConversation(selectedConversation))
+    ? (contacts[selectedConversation.contact_id] ?? mapConversationToInboxContact({
+        id: selectedConversation.id,
+        contact_id: selectedConversation.contact_id,
+        contact_name: selectedConversation.contact_name,
+        contact_phone: selectedConversation.contact_phone,
+        device_id: "",
+        status: "open",
+        unread_count: selectedConversation.unread_count,
+      }))
     : null;
   const selectedActivities = selectedContact ? (activities[selectedContact.id] ?? []) : [];
   const selectedNotes = selectedContact ? (workspaceNotes[selectedContact.id] ?? []) : [];
@@ -127,7 +174,7 @@ export function InboxPage() {
   }, []);
 
   const handleMessagesChange = useCallback(
-    (messages: InboxChatMessage[]) => {
+    async (messages: InboxChatMessage[]) => {
       if (!selectedId) return;
       setMessagesByConversation((prev) => ({ ...prev, [selectedId]: messages }));
     },
@@ -189,6 +236,18 @@ export function InboxPage() {
       </div>
 
       <div className="flex min-h-0 flex-1">
+        {error ? (
+          <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">{error}</div>
+        ) : loading ? (
+          <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
+            Loading conversations...
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
+            No conversations found.
+          </div>
+        ) : (
+        <>
         <ConversationList
           conversations={filteredConversations}
           selectedId={selectedId}
@@ -218,7 +277,7 @@ export function InboxPage() {
           }}
           onSelect={handleSelect}
           onPageChange={setPage}
-          onRefresh={() => notify("success", "Conversations refreshed")}
+          onRefresh={() => void loadConversations()}
         />
 
         <ConversationDetail
@@ -238,6 +297,8 @@ export function InboxPage() {
           onAddTag={handleAddTag}
           onToggleSubscription={handleToggleSubscription}
         />
+        </>
+        )}
       </div>
 
       <Toast />

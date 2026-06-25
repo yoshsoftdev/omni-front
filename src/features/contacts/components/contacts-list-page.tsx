@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Upload, X } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
@@ -13,13 +13,16 @@ import { ContactFilterBar } from "@/features/contacts/components/contact-filter-
 import { ContactStatsRow } from "@/features/contacts/components/contact-stats-row";
 import { ContactTable } from "@/features/contacts/components/contact-table";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
-import { CONTACT_STATS, MOCK_CONTACTS, MOCK_TAGS } from "@/features/contacts/mock-data";
+import { contactService } from "@/features/contacts/services/contact.service";
+import { tagService } from "@/features/contacts/services/tag.service";
 import { useToast } from "@/hooks/use-toast";
-import type { Contact, ConsentStatus, CreateContactInput } from "@/types/contact";
+import type { Contact, ConsentStatus, CreateContactInput, ContactStats, ContactTag } from "@/types/contact";
 
 export function ContactsListPage() {
   const { notify, Toast } = useToast();
-  const [contacts, setContacts] = useState<Contact[]>(MOCK_CONTACTS);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [tags, setTags] = useState<ContactTag[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
@@ -31,6 +34,23 @@ export function ContactsListPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [form, setForm] = useState<CreateContactInput>({ name: "", phone: "", email: "", consent_status: "unknown" });
+
+  useEffect(() => {
+    Promise.all([contactService.list(), tagService.list()])
+      .then(([contactItems, tagItems]) => {
+        setContacts(contactItems);
+        setTags(tagItems);
+      })
+      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load contacts"))
+      .finally(() => setLoading(false));
+  }, [notify]);
+
+  const stats = useMemo<ContactStats>(() => ({
+    total: contacts.length,
+    opt_in: contacts.filter((c) => c.consent_status === "opt_in").length,
+    opt_out: contacts.filter((c) => c.consent_status === "opt_out").length,
+    unknown: contacts.filter((c) => c.consent_status === "unknown").length,
+  }), [contacts]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -50,18 +70,23 @@ export function ContactsListPage() {
   const start = (currentPage - 1) * pageSize;
   const paged = filtered.slice(start, start + pageSize);
 
-  function handleAddContact() {
+  async function handleAddContact() {
     if (!form.name.trim() || !form.phone.trim()) return notify("error", "Name and phone are required");
-    const now = new Date().toISOString();
-    setContacts((prev) => [{
-      id: `c-${Date.now()}`, name: form.name.trim(), phone: form.phone.trim(), email: form.email?.trim(),
-      source: "manual", tags: [], consent_status: form.consent_status ?? "unknown",
-      created_at: now, updated_at: now, last_activity_at: now,
-      conversations_count: 0, campaigns_received: 0, campaigns_clicked: 0,
-    }, ...prev]);
-    setAddOpen(false);
-    setForm({ name: "", phone: "", email: "", consent_status: "unknown" });
-    notify("success", "Contact added");
+    try {
+      const created = await contactService.create({
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email?.trim(),
+        consent_status: form.consent_status ?? "unknown",
+        source: "manual",
+      });
+      setContacts((prev) => [created, ...prev]);
+      setAddOpen(false);
+      setForm({ name: "", phone: "", email: "", consent_status: "unknown" });
+      notify("success", "Contact added");
+    } catch (err) {
+      notify("error", err instanceof Error ? err.message : "Failed to add contact");
+    }
   }
 
   return (
@@ -81,7 +106,7 @@ export function ContactsListPage() {
           onSourceChange={(v) => { setSourceFilter(v); setPage(1); }}
           tagFilter={tagFilter}
           onTagChange={(v) => { setTagFilter(v); setPage(1); }}
-          tags={MOCK_TAGS}
+          tags={tags}
           onMoreFilters={() => setMoreFiltersOpen(true)}
         />
         <div className="flex gap-2">
@@ -90,10 +115,12 @@ export function ContactsListPage() {
         </div>
       </div>
 
-      <ContactStatsRow stats={CONTACT_STATS} />
+      <ContactStatsRow stats={stats} />
 
       <section className="rounded-xl border bg-card shadow-sm">
-        {paged.length === 0 ? (
+        {loading ? (
+          <EmptyState message="Loading contacts..." className="m-4" />
+        ) : paged.length === 0 ? (
           <EmptyState message="No contacts found." className="m-4" />
         ) : (
           <ContactTable
@@ -106,7 +133,7 @@ export function ContactsListPage() {
         <PaginationFooter
           start={total === 0 ? 0 : start + 1}
           end={Math.min(start + pageSize, total)}
-          total={CONTACT_STATS.total}
+          total={total}
           totalLabel="contacts"
           currentPage={currentPage}
           totalPages={totalPages}
@@ -119,7 +146,7 @@ export function ContactsListPage() {
       {selectedContact ? (
         <ContactDetailDrawer
           contact={selectedContact}
-          tags={MOCK_TAGS}
+          tags={tags}
           onClose={() => setSelectedContact(null)}
           onUpdate={(updated) => { setContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c))); setSelectedContact(updated); }}
           onNotify={notify}

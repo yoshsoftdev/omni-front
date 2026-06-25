@@ -5,7 +5,7 @@ import { Search, SlidersHorizontal } from "lucide-react";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CONTACT_SOURCES } from "@/features/contacts/mock-data";
+import { CONTACT_SOURCES } from "@/features/contacts/constants";
 import type { ContactTag } from "@/types/contact";
 
 export function ContactFilterBar({

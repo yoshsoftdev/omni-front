@@ -1,6 +1,6 @@
 "use client";
 
-import type { HourlyPerformance } from "@/features/broadcast/mock/mock-data";
+import type { HourlyPerformance } from "@/features/broadcast/types/campaign";
 
 export function HourlyBarChart({ data }: { data: HourlyPerformance[] }) {
   const max = Math.max(...data.map((d) => d.count), 1);

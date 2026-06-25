@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, ArrowRight, Pencil } from "lucide-react";
 
 import { ColorDot } from "@/components/shared/color-dot";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
+import { EmptyState } from "@/components/shared/empty-state";
 import { EntityMetaCard } from "@/components/shared/entity-meta-card";
 import { Button } from "@/components/ui/button";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { TagFormModal } from "@/features/contacts/components/tags/tag-form-modal";
-import { MOCK_CONTACTS, MOCK_TAGS } from "@/features/contacts/mock-data";
+import { contactService } from "@/features/contacts/services/contact.service";
+import { tagService } from "@/features/contacts/services/tag.service";
 import { useToast } from "@/hooks/use-toast";
+import type { Contact, ContactTag } from "@/types/contact";
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
@@ -19,12 +22,35 @@ function formatDate(date: string) {
 
 export function TagDetailPage({ tagId }: { tagId: string }) {
   const { notify, Toast } = useToast();
-  const initial = MOCK_TAGS.find((t) => t.id === tagId) ?? MOCK_TAGS[0];
-  const [tag, setTag] = useState({ ...initial });
+  const [tag, setTag] = useState<ContactTag | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
-  const [name, setName] = useState(tag.name);
-  const [description, setDescription] = useState(tag.description);
-  const recentContacts = useMemo(() => MOCK_CONTACTS.filter((c) => c.tags.some((t) => t.id === tag.id)).slice(0, 5), [tag.id]);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+
+  useEffect(() => {
+    Promise.all([tagService.getById(tagId), contactService.list({ tag_id: tagId })])
+      .then(([tagDto, contactItems]) => {
+        const mapped = { ...tagDto, contact_count: contactItems.length };
+        setTag(mapped);
+        setName(mapped.name);
+        setDescription(mapped.description);
+        setContacts(contactItems.slice(0, 5));
+      })
+      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load tag"))
+      .finally(() => setLoading(false));
+  }, [tagId, notify]);
+
+  const recentContacts = useMemo(() => contacts, [contacts]);
+
+  if (loading) {
+    return <EmptyState message="Loading tag..." className="m-8" />;
+  }
+
+  if (!tag) {
+    return <EmptyState message="Tag not found." className="m-8" />;
+  }
 
   return (
     <div className="space-y-6">
@@ -42,7 +68,7 @@ export function TagDetailPage({ tagId }: { tagId: string }) {
           <ColorDot color={tag.color} className="h-4 w-4" />
           <div>
             <h2 className="text-xl font-semibold">{tag.name}</h2>
-            <p className="text-sm text-muted-foreground">{tag.description}</p>
+            <p className="text-sm text-muted-foreground">{tag.description || "—"}</p>
           </div>
         </div>
         <Button variant="outline" onClick={() => { setName(tag.name); setDescription(tag.description); setEditOpen(true); }}>
@@ -63,19 +89,43 @@ export function TagDetailPage({ tagId }: { tagId: string }) {
           </Button>
         </div>
         <div className="mt-4 space-y-2">
-          {recentContacts.map((contact) => (
-            <div key={contact.id} className="flex items-center gap-3 rounded-lg border p-3">
-              <ContactAvatar name={contact.name} />
-              <div className="min-w-0 flex-1">
-                <div className="font-medium">{contact.name}</div>
-                <div className="text-xs text-muted-foreground">{contact.phone}</div>
+          {recentContacts.length === 0 ? (
+            <EmptyState message="No contacts found with this tag." />
+          ) : (
+            recentContacts.map((contact) => (
+              <div key={contact.id} className="flex items-center gap-3 rounded-lg border p-3">
+                <ContactAvatar name={contact.name} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">{contact.name}</div>
+                  <div className="text-xs text-muted-foreground">{contact.phone}</div>
+                </div>
+                <span className="text-xs text-muted-foreground">{contact.email}</span>
               </div>
-              <span className="text-xs text-muted-foreground">{contact.email}</span>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </section>
-      <TagFormModal open={editOpen} title="Edit Tag" name={name} description={description} color={tag.color} onNameChange={setName} onDescriptionChange={setDescription} onColorChange={() => {}} onClose={() => setEditOpen(false)} onSubmit={() => { setTag({ ...tag, name: name.trim(), description: description.trim(), updated_at: new Date().toISOString() }); setEditOpen(false); notify("success", "Tag updated"); }} />
+      <TagFormModal
+        open={editOpen}
+        title="Edit Tag"
+        name={name}
+        description={description}
+        color={tag.color}
+        onNameChange={setName}
+        onDescriptionChange={setDescription}
+        onColorChange={() => {}}
+        onClose={() => setEditOpen(false)}
+        onSubmit={async () => {
+          try {
+            const updated = await tagService.update(tag.id, name.trim(), tag.color);
+            setTag({ ...tag, name: updated.name, description: description.trim(), updated_at: updated.updated_at });
+            setEditOpen(false);
+            notify("success", "Tag updated");
+          } catch (err) {
+            notify("error", err instanceof Error ? err.message : "Failed to update tag");
+          }
+        }}
+      />
     </div>
   );
 }

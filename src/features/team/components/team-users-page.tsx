@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Bell,
   Contact,
@@ -27,10 +27,10 @@ import { RoleSelector } from "@/features/team/components/role-selector";
 import { UserTable } from "@/features/team/components/user-table";
 import { usePermission } from "@/features/team/hooks/use-permission";
 import { RoleBadge } from "@/features/team/components/role-badge";
+import { teamService } from "@/features/team/services/team.service";
 import {
   buildPermissionPreview,
   INITIAL_ROLES,
-  MOCK_TEAM_MEMBERS,
   PERMISSION_BY_ROLE,
   PERMISSION_ROWS,
   type MockRoleDef,
@@ -41,7 +41,8 @@ import type { TeamMember, TeamRole, MemberStatus } from "@/types/team";
 export function TeamUsersPage() {
   const { can } = usePermission();
   const canManage = can("user.invite");
-  const [users, setUsers] = useState<TeamMember[]>(MOCK_TEAM_MEMBERS);
+  const [users, setUsers] = useState<TeamMember[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -61,6 +62,15 @@ export function TeamUsersPage() {
   const [roleDescInput, setRoleDescInput] = useState("");
   const [deleteRoleOpen, setDeleteRoleOpen] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    teamService
+      .listUsers()
+      .then(setUsers)
+      .catch(() => notify("error", "Failed to load team users"))
+      .finally(() => setUsersLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const selectedRole = roles.find((r) => r.id === selectedRoleId) ?? roles[0];
 

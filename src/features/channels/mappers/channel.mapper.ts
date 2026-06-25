@@ -79,6 +79,42 @@ function mapOnboardingToDto(onboarding?: ChannelOnboarding): DeviceOnboardingDTO
   };
 }
 
+export function mapApiChannelToChannel(dto: {
+  id: string;
+  team_id?: string;
+  name: string;
+  provider?: string;
+  status?: string;
+  connection_type?: string;
+  waba_id?: string;
+  phone_number_id?: string;
+  phone_number?: string;
+  is_coex?: boolean;
+  last_connected_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}): Channel {
+  return {
+    id: dto.id,
+    workspace_id: dto.team_id,
+    label: dto.name,
+    provider: normalizeProvider(dto.provider),
+    status: normalizeStatus(dto.status),
+    connection_type: normalizeConnectionType(dto.connection_type),
+    waba_id: dto.waba_id,
+    phone_number_id: dto.phone_number_id,
+    phone_number: dto.phone_number,
+    is_coex: Boolean(dto.is_coex),
+    last_connected_at: dto.last_connected_at,
+    created_at: dto.created_at,
+    updated_at: dto.updated_at,
+  };
+}
+
+export function mapApiChannelListToChannels(dtos: Parameters<typeof mapApiChannelToChannel>[0][]): Channel[] {
+  return dtos.map(mapApiChannelToChannel);
+}
+
 export function mapDeviceDtoToChannel(dto: DeviceDTO): Channel {
   return {
     id: dto.id,

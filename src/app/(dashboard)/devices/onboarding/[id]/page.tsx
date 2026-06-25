@@ -4,40 +4,40 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { OnboardingWizard } from "@/features/devices/components/onboarding-wizard";
-import { deviceService } from "@/features/devices/services/device.service";
+import { channelQueryService } from "@/features/channels/services/channel-query.service";
 
 export default function DeviceOnboardingPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const deviceId = params.id;
-  const [deviceName, setDeviceName] = useState("Device");
+  const channelId = params.id;
+  const [channelLabel, setChannelLabel] = useState("Channel");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    deviceService
-      .list()
-      .then((devices) => {
-        const device = devices.find((item) => item.id === deviceId);
-        if (!device) {
+    channelQueryService
+      .getChannels()
+      .then((channels) => {
+        const channel = channels.find((item) => item.id === channelId);
+        if (!channel) {
           router.replace("/devices");
           return;
         }
-        if (!device.is_coex) {
+        if (!channel.is_coex) {
           router.replace("/devices");
           return;
         }
-        if (device.onboarding?.status === "completed") {
+        if (channel.onboarding?.status === "completed") {
           router.replace("/inbox");
           return;
         }
-        setDeviceName(device.name);
+        setChannelLabel(channel.label);
       })
       .finally(() => setLoading(false));
-  }, [deviceId, router]);
+  }, [channelId, router]);
 
   if (loading) {
-    return <p className="text-sm text-muted-foreground">Memuat onboarding...</p>;
+    return <p className="text-sm text-muted-foreground">Loading onboarding...</p>;
   }
 
-  return <OnboardingWizard deviceId={deviceId} deviceName={deviceName} />;
+  return <OnboardingWizard deviceId={channelId} deviceName={channelLabel} />;
 }

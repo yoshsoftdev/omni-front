@@ -5,7 +5,8 @@ import { FileSpreadsheet, Upload, X } from "lucide-react";
 
 import { StepWizard } from "@/components/shared/step-wizard";
 import { Button } from "@/components/ui/button";
-import { IMPORT_FIELD_OPTIONS, SAMPLE_CSV_ROWS } from "@/features/contacts/mock-data";
+import { IMPORT_FIELD_OPTIONS } from "@/features/contacts/constants/import";
+import { contactService } from "@/features/contacts/services/contact.service";
 
 const WIZARD_STEPS = [
   { id: 1, label: "Upload File" },
@@ -28,11 +29,11 @@ function isValidEmail(email: string) {
 
 export function ImportWizard({ onNotify }: { onNotify: (type: "success" | "error", message: string) => void }) {
   const [step, setStep] = useState(1);
+  const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [mapping, setMapping] = useState<Record<string, string>>(DEFAULT_MAPPING);
   const [importing, setImporting] = useState(false);
-
-  const previewRows = SAMPLE_CSV_ROWS.slice(0, 10);
+  const [previewRows, setPreviewRows] = useState<Array<Record<string, string>>>([]);
 
   const validation = useMemo(() => {
     let valid = 0;
@@ -41,19 +42,50 @@ export function ImportWizard({ onNotify }: { onNotify: (type: "success" | "error
       if (row.phone && (!row.email || isValidEmail(row.email))) valid += 1;
       else invalid += 1;
     });
-    return { total: SAMPLE_CSV_ROWS.length, valid, invalid };
+    return { total: previewRows.length, valid, invalid };
   }, [previewRows]);
 
-  function handleFileSelect() {
-    setFileName("contacts_import.csv");
+  function parseCsvPreview(text: string) {
+    const lines = text.split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) {
+      setPreviewRows([]);
+      return;
+    }
+    const headers = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+    const rows = lines.slice(1, 11).map((line) => {
+      const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
+      return headers.reduce<Record<string, string>>((acc, header, index) => {
+        acc[header] = values[index] ?? "";
+        return acc;
+      }, {});
+    });
+    setPreviewRows(rows);
+  }
+
+  function handleFileSelect(selected: File) {
+    setFile(selected);
+    setFileName(selected.name);
+    if (selected.name.toLowerCase().endsWith(".csv")) {
+      selected.text().then(parseCsvPreview).catch(() => setPreviewRows([]));
+    } else {
+      setPreviewRows([]);
+    }
     onNotify("success", "File selected");
   }
 
   async function startImport() {
+    if (!file) return;
     setImporting(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    setImporting(false);
-    onNotify("success", `Import started: ${validation.valid} contacts will be imported`);
+    try {
+      const result = file.name.toLowerCase().endsWith(".xlsx")
+        ? await contactService.importExcel(file)
+        : await contactService.importCSV(file);
+      onNotify("success", `Import complete: ${result.created} created, ${result.updated} updated`);
+    } catch (err) {
+      onNotify("error", err instanceof Error ? err.message : "Import failed");
+    } finally {
+      setImporting(false);
+    }
   }
 
   return (
@@ -65,7 +97,11 @@ export function ImportWizard({ onNotify }: { onNotify: (type: "success" | "error
           <div
             className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed p-12 text-center"
             onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => { e.preventDefault(); handleFileSelect(); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const dropped = e.dataTransfer.files?.[0];
+              if (dropped) handleFileSelect(dropped);
+            }}
           >
             <Upload className="h-10 w-10 text-muted-foreground" />
             <p className="mt-3 font-medium">Drag and drop your file here</p>
@@ -74,10 +110,23 @@ export function ImportWizard({ onNotify }: { onNotify: (type: "success" | "error
               <div className="mt-3 inline-flex items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm">
                 <FileSpreadsheet className="h-4 w-4" />
                 {fileName}
-                <button type="button" onClick={() => setFileName(null)}><X className="h-3 w-3" /></button>
+                <button type="button" onClick={() => { setFile(null); setFileName(null); setPreviewRows([]); }}><X className="h-3 w-3" /></button>
               </div>
             ) : null}
-            <Button className="mt-4" variant="outline" onClick={handleFileSelect}>Select File</Button>
+            <label className="mt-4">
+              <Button className="mt-4" variant="outline" asChild>
+                <span>Select File</span>
+              </Button>
+              <input
+                type="file"
+                accept=".csv,.xlsx"
+                className="hidden"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0];
+                  if (selected) handleFileSelect(selected);
+                }}
+              />
+            </label>
           </div>
           <div className="mt-4 flex justify-end">
             <Button disabled={!fileName} onClick={() => setStep(2)}>Continue</Button>
@@ -117,28 +166,32 @@ export function ImportWizard({ onNotify }: { onNotify: (type: "success" | "error
         <section className="space-y-4">
           <div className="rounded-xl border bg-card p-6 shadow-sm">
             <h3 className="font-semibold">Preview</h3>
-            <p className="mt-1 text-sm text-muted-foreground">First 10 rows from your file.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {previewRows.length > 0 ? "First rows from your file." : "Upload a CSV file to preview rows."}
+            </p>
             <div className="mt-4 overflow-x-auto">
+              {previewRows.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No preview rows available.</p>
+              ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
-                    <th className="p-3 font-medium">Name</th>
-                    <th className="p-3 font-medium">Phone</th>
-                    <th className="p-3 font-medium">Email</th>
-                    <th className="p-3 font-medium">City</th>
+                    {Object.keys(previewRows[0] ?? {}).map((key) => (
+                      <th key={key} className="p-3 font-medium capitalize">{key}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {previewRows.map((row, i) => (
                     <tr key={i} className="border-b last:border-0">
-                      <td className="p-3">{row.name}</td>
-                      <td className="p-3">{row.phone || <span className="text-destructive">—</span>}</td>
-                      <td className="p-3">{row.email}</td>
-                      <td className="p-3">{row.city}</td>
+                      {Object.values(row).map((value, j) => (
+                        <td key={j} className="p-3">{value || <span className="text-destructive">—</span>}</td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
+              )}
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">

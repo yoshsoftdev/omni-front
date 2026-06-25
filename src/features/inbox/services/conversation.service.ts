@@ -47,6 +47,7 @@ export const conversationService = {
   },
 
   async markRead(id: string) {
-    return this.updateStatus(id, "closed");
+    const response = await apiClient.post<Conversation>(`/conversations/${id}/read`, {});
+    return response.data!;
   },
 };

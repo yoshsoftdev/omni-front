@@ -25,9 +25,9 @@ export function EmbeddedSignupSuccess({ result }: EmbeddedSignupSuccessProps) {
 
       <dl className="grid gap-3 sm:grid-cols-2">
         <SuccessItem icon={Phone} label="Connected Number" value={result.phone_number} />
-        <SuccessItem icon={Smartphone} label="WABA Name" value={result.waba_name} />
-        <SuccessItem icon={Building2} label="Business Name" value={result.business_name} />
-        <SuccessItem icon={MessageSquare} label="Imported Templates" value={String(result.templates_imported)} />
+        <SuccessItem icon={Smartphone} label="WABA ID" value={result.waba_id} />
+        <SuccessItem icon={Building2} label="Business" value={result.business_name ?? result.business_id ?? "—"} />
+        <SuccessItem icon={MessageSquare} label="Channel ID" value={result.channel_id} />
       </dl>
 
       <div className="border-t pt-4">

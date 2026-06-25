@@ -18,11 +18,26 @@ class ApiClient {
     return useAuthStore.getState().tokens?.refreshToken ?? null;
   }
 
-  private errorMessage(body: ApiResponse<unknown>): string {
+  private errorMessage(body: ApiResponse<unknown>, status: number): string {
     if (body.error?.message) {
       return body.error.message;
     }
-    return body.message || "Request failed";
+    if (body.message) {
+      return body.message;
+    }
+    return `Request failed (${status})`;
+  }
+
+  private async parseBody<T>(response: Response): Promise<ApiResponse<T>> {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.includes("application/json")) {
+      const text = (await response.text()).trim();
+      if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
+        throw new Error(`Server returned HTML instead of JSON (${response.status}). Check API URL and route.`);
+      }
+      throw new Error(text || "Unexpected server response");
+    }
+    return (await response.json()) as ApiResponse<T>;
   }
 
   async request<T>(path: string, options: RequestOptions = {}): Promise<ApiResponse<T>> {
@@ -40,7 +55,7 @@ class ApiClient {
       },
     });
 
-    const body = (await response.json()) as ApiResponse<T>;
+    const body = await this.parseBody<T>(response);
 
     if (response.status === 401 && !skipAuth) {
       const refreshed = await this.refreshTokens();
@@ -51,7 +66,7 @@ class ApiClient {
     }
 
     if (!response.ok || body.success === false) {
-      throw new Error(this.errorMessage(body));
+      throw new Error(this.errorMessage(body, response.status));
     }
 
     return body;
@@ -100,9 +115,9 @@ class ApiClient {
       body: form,
     });
 
-    const body = (await response.json()) as ApiResponse<T>;
+    const body = await this.parseBody<T>(response);
     if (!response.ok || body.success === false) {
-      throw new Error(this.errorMessage(body));
+      throw new Error(this.errorMessage(body, response.status));
     }
     return body;
   }
@@ -128,6 +143,11 @@ class ApiClient {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: this.refreshToken }),
       });
+
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        return null;
+      }
 
       const body = (await response.json()) as ApiResponse<{
         access_token: string;

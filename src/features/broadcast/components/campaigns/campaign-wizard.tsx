@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { CampaignCard } from "@/features/broadcast/components/campaigns/campaign-card";
 import { CampaignChannelCard } from "@/features/broadcast/components/campaigns/campaign-channel-card";
 import { WhatsAppMessagePreview } from "@/features/broadcast/components/shared/whatsapp-message-preview";
-import { mockSampleContactValues } from "@/features/broadcast/mock/mock-data";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
 import type { Template } from "@/features/broadcast/types/template";
 import { templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
@@ -146,7 +145,7 @@ export function CampaignWizard() {
     for (let i = 1; i <= fullTemplate.variable_count; i += 1) {
       const key = String(i);
       mapping[key] = i === 1 ? "name" : i === 2 ? "discount" : "expired_date";
-      samples[key] = mockSampleContactValues[mapping[key]] ?? `Sample ${i}`;
+      samples[key] = mapping[key] ? `{{${mapping[key]}}}` : `Sample ${i}`;
     }
     setVariableMapping(mapping);
     setSampleValues(samples);

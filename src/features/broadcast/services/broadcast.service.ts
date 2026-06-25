@@ -9,6 +9,8 @@ export type TemplateListParams = {
   language?: string;
   category?: string;
   status?: string;
+  channel_id?: string;
+  /** @deprecated Use channel_id */
   device_id?: string;
 };
 
@@ -30,6 +32,11 @@ export type CampaignReport = Campaign & {
   hourly_performance?: { hour: number; count: number }[];
 };
 
+type TemplateListResponse = {
+  items?: WhatsAppTemplate[];
+  templates?: WhatsAppTemplate[];
+};
+
 export const templateService = {
   async list(params?: TemplateListParams) {
     const query = new URLSearchParams();
@@ -37,14 +44,18 @@ export const templateService = {
     if (params?.language && params.language !== "all") query.set("language", params.language);
     if (params?.category && params.category !== "all") query.set("category", params.category);
     if (params?.status && params.status !== "all") query.set("status", params.status);
-    if (params?.device_id) query.set("device_id", params.device_id);
+    const channelId = params?.channel_id ?? params?.device_id;
+    if (channelId) query.set("channel_id", channelId);
     const suffix = query.toString() ? `?${query.toString()}` : "";
-    const response = await apiClient.get<{ templates: WhatsAppTemplate[] }>(`/templates${suffix}`);
-    return response.data?.templates ?? [];
+    const response = await apiClient.get<TemplateListResponse>(`/templates${suffix}`);
+    return response.data?.items ?? response.data?.templates ?? [];
   },
 
-  async sync(deviceId: string) {
-    const response = await apiClient.post<{ synced: number }>("/templates/sync", { device_id: deviceId });
+  async sync(channelId: string) {
+    const response = await apiClient.post<{ synced: number }>(
+      `/templates/sync?channel_id=${encodeURIComponent(channelId)}`,
+      {},
+    );
     return response.data!;
   },
 

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Users, MessageSquare } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { deviceService } from "@/features/devices/services/device.service";
+import { channelOnboardingService } from "@/features/channels/services/channel-onboarding.service";
 import type { OnboardingStatusResponse } from "@/types/device";
 
 interface OnboardingWizardProps {
@@ -23,7 +23,7 @@ export function OnboardingWizard({ deviceId, deviceName }: OnboardingWizardProps
 
   async function fetchStatus() {
     try {
-      const data = await deviceService.getOnboardingStatus(deviceId);
+      const data = await channelOnboardingService.getStatus(deviceId);
       setStatus(data);
       return data;
     } catch (err) {
@@ -37,7 +37,7 @@ export function OnboardingWizard({ deviceId, deviceName }: OnboardingWizardProps
   async function startSync() {
     setError(null);
     try {
-      const data = await deviceService.startOnboardingSync(deviceId);
+      const data = await channelOnboardingService.startSync(deviceId);
       setStatus(data);
       setSyncStarted(true);
     } catch (err) {

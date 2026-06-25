@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Building2, MessageSquare, Phone, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,12 +9,11 @@ import { EmbeddedSignupLaunchCard } from "@/features/channels/components/embedde
 import { EmbeddedSignupLayout } from "@/features/channels/components/embedded-signup/embedded-signup-layout";
 import { EmbeddedSignupProgress } from "@/features/channels/components/embedded-signup/embedded-signup-progress";
 import { EmbeddedSignupSuccess } from "@/features/channels/components/embedded-signup/embedded-signup-success";
-import { delay, simulateEmbeddedSignupCompletion } from "@/features/channels/services/embedded-signup.mock";
+import { useMetaEmbeddedSignup } from "@/features/channels/hooks/use-meta-embedded-signup";
 import {
   allRequirementsReady,
   useEmbeddedSignupStore,
 } from "@/features/channels/store/embedded-signup-store";
-import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
 
 const STEP_LABELS = {
@@ -29,71 +27,33 @@ const STEP_LABELS = {
 export function EmbeddedSignupWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const team = useAuthStore((state) => state.team);
-  const simulationRef = useRef(false);
+  const { error: sdkError } = useMetaEmbeddedSignup();
 
   const {
     step,
-    deviceId,
     returnTo,
     requirements,
     progressState,
     result,
     setStep,
-    setDeviceId,
+    setChannelId,
     setReturnTo,
     toggleRequirement,
-    setProgressState,
-    setResult,
   } = useEmbeddedSignupStore();
 
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const paramDeviceId = searchParams.get("deviceId");
+    const paramChannelId = searchParams.get("channelId");
     const paramReturnTo = searchParams.get("returnTo");
-    if (paramDeviceId) setDeviceId(paramDeviceId);
+    if (paramChannelId) setChannelId(paramChannelId);
     if (paramReturnTo) setReturnTo(paramReturnTo);
-  }, [searchParams, setDeviceId, setReturnTo]);
+  }, [searchParams, setChannelId, setReturnTo]);
 
   const requirementsReady = allRequirementsReady(requirements);
 
-  const runProgressSimulation = useCallback(async () => {
-    if (simulationRef.current) return;
-    simulationRef.current = true;
-    setError(null);
-
-    try {
-      setProgressState("initializing");
-      await delay(1000);
-      setProgressState("waiting_user_action");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Signup failed");
-      simulationRef.current = false;
-    }
-  }, [setProgressState]);
-
-  async function handleConfirmUserAction() {
-    setError(null);
-    try {
-      setProgressState("verifying_assets");
-      await delay(1500);
-      setProgressState("syncing");
-      await delay(1500);
-      const signupResult = await simulateEmbeddedSignupCompletion(deviceId, team?.name ?? "Your Business");
-      setResult(signupResult);
-      setProgressState("completed");
-      setStep("success");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Verification failed");
-    } finally {
-      simulationRef.current = false;
-    }
-  }
-
   function handleStartSetup() {
-    setStep("waiting");
-    void runProgressSimulation();
+    setError("Embedded Signup is not available yet. Waiting for Meta App Review.");
   }
 
   function goNext() {
@@ -105,6 +65,8 @@ export function EmbeddedSignupWizard() {
     if (step === "requirements") setStep("about");
     else if (step === "launch") setStep("requirements");
   }
+
+  const displayError = error ?? sdkError;
 
   return (
     <EmbeddedSignupLayout
@@ -126,9 +88,9 @@ export function EmbeddedSignupWizard() {
         ))}
       </div>
 
-      {error ? (
+      {displayError ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-          {error}
+          {displayError}
         </div>
       ) : null}
 
@@ -228,7 +190,13 @@ export function EmbeddedSignupWizard() {
 
       {step === "launch" ? (
         <div className="space-y-4">
-          <EmbeddedSignupLaunchCard onStart={handleStartSetup} />
+          <EmbeddedSignupLaunchCard
+            onStart={() => void handleStartSetup()}
+            disabled
+          />
+          <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+            Coming Soon — Waiting for Meta App Review
+          </p>
           <div className="flex justify-start">
             <Button variant="outline" onClick={goBack}>
               Back
@@ -238,18 +206,14 @@ export function EmbeddedSignupWizard() {
       ) : null}
 
       {step === "waiting" ? (
-        <EmbeddedSignupProgress
-          state={progressState}
-          onConfirmUserAction={handleConfirmUserAction}
-          error={error}
-        />
+        <EmbeddedSignupProgress state={progressState} error={displayError} />
       ) : null}
 
       {step === "success" && result ? (
         <div className="space-y-4">
           <EmbeddedSignupSuccess result={result} />
           <Button variant="outline" onClick={() => router.push(returnTo)}>
-            Return to {returnTo === "/onboarding" ? "Onboarding" : "Devices"}
+            Return to {returnTo === "/onboarding" ? "Onboarding" : "Dashboard"}
           </Button>
         </div>
       ) : null}

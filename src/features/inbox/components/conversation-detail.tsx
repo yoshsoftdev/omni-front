@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { AssignConversationModal } from "@/features/inbox/components/assign-conversation-modal";
 import { ConversationHeader } from "@/features/inbox/components/conversation-header";
 import { MessageComposer } from "@/features/inbox/components/message-composer";
 import { MessageThread } from "@/features/inbox/components/message-bubble";
-import { MOCK_AGENTS, MOCK_QUICK_REPLIES } from "@/features/inbox/mock-data";
-import type { InboxChatMessage, InboxConversation } from "@/features/inbox/types";
+import { teamService } from "@/features/team/services/team.service";
+import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features/inbox/types";
 
 interface ConversationDetailProps {
   conversation: InboxConversation | null;
@@ -27,6 +27,23 @@ export function ConversationDetail({
   onNotify,
 }: ConversationDetailProps) {
   const [assignOpen, setAssignOpen] = useState(false);
+  const [agents, setAgents] = useState<InboxAgent[]>([]);
+
+  useEffect(() => {
+    teamService
+      .listMembers()
+      .then((members) =>
+        setAgents(
+          members.map((member) => ({
+            id: member.user_id,
+            name: member.name,
+            email: member.email,
+            presence: member.status === "active" ? "online" : "offline",
+          })),
+        ),
+      )
+      .catch(() => setAgents([]));
+  }, []);
 
   const handleSend = useCallback(
     (content: string) => {
@@ -57,7 +74,7 @@ export function ConversationDetail({
   const handleAssign = useCallback(
     (agentId: string) => {
       if (!conversation) return;
-      const agent = MOCK_AGENTS.find((a) => a.id === agentId);
+      const agent = agents.find((a) => a.id === agentId);
       onConversationUpdate({
         ...conversation,
         assigned_to: agentId,
@@ -65,9 +82,9 @@ export function ConversationDetail({
         status: "assigned",
       });
       setAssignOpen(false);
-      onNotify(`Assigned to ${agent?.name}`);
+      onNotify(agent ? `Assigned to ${agent.name}` : "Conversation assigned");
     },
-    [conversation, onConversationUpdate, onNotify],
+    [agents, conversation, onConversationUpdate, onNotify],
   );
 
   const handleMoreAction = useCallback(
@@ -103,15 +120,11 @@ export function ConversationDetail({
         onMoreAction={handleMoreAction}
       />
       <MessageThread messages={messages} />
-      <MessageComposer
-        quickReplies={MOCK_QUICK_REPLIES}
-        onSend={handleSend}
-        onSaveNote={onSaveNote}
-      />
+      <MessageComposer quickReplies={[]} onSend={handleSend} onSaveNote={onSaveNote} />
 
       <AssignConversationModal
         open={assignOpen}
-        agents={MOCK_AGENTS}
+        agents={agents}
         selectedAgentId={conversation.assigned_to}
         onClose={() => setAssignOpen(false)}
         onAssign={handleAssign}

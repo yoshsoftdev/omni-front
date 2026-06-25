@@ -1,6 +1,6 @@
 "use client";
 
-import type { PerformanceDataPoint } from "@/features/broadcast/mock/mock-data";
+import type { PerformanceDataPoint } from "@/features/broadcast/types/campaign";
 
 const COLORS = {
   sent: "#0F9D8A",

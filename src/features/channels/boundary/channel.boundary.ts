@@ -51,6 +51,6 @@ export { mapDeviceDtoToChannel, mapChannelToDeviceDto, mapOnboardingStatusRespon
 export type { Channel, ChannelOnboarding, DeviceDTO };
 
 /*
- * channel.repository.api.ts is the sole consumer of deviceService.
+ * channel.repository.api.ts routes API responses through channel.boundary before returning Channel.
  * UI pages import Channel via channelQueryService — never DeviceDTO.
  */

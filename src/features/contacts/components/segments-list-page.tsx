@@ -1,32 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 
+import { EmptyState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { SegmentTable } from "@/features/contacts/components/segments/segment-table";
-import { MOCK_SEGMENTS } from "@/features/contacts/mock-data";
+import { segmentService } from "@/features/segments/services/segment.service";
 import { useToast } from "@/hooks/use-toast";
 import type { ContactSegment } from "@/types/segment";
 
 export function SegmentsListPage() {
   const { notify, Toast } = useToast();
-  const [segments, setSegments] = useState<ContactSegment[]>(MOCK_SEGMENTS);
+  const [segments, setSegments] = useState<ContactSegment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const sorted = useMemo(() => [...segments].sort((a, b) => a.name.localeCompare(b.name)), [segments]);
 
+  useEffect(() => {
+    segmentService
+      .list()
+      .then(setSegments)
+      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load segments"))
+      .finally(() => setLoading(false));
+  }, [notify]);
+
   function handleCreate() {
-    if (!name.trim()) return notify("error", "Segment name is required");
-    const now = new Date().toISOString();
-    setSegments((prev) => [{ id: `s-${Date.now()}`, name: name.trim(), description: description.trim(), color: "#8B5CF6", contact_count: 0, updated_at: now, created_at: now, rules: [] }, ...prev]);
-    setCreateOpen(false);
-    setName("");
-    setDescription("");
-    notify("success", "Segment created");
+    notify("error", "Create segment via API is not wired in this view yet.");
   }
 
   return (
@@ -45,7 +49,13 @@ export function SegmentsListPage() {
         <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Create Segment</Button>
       </div>
       <section className="rounded-xl border bg-card shadow-sm">
-        <SegmentTable segments={sorted} onDelete={(id) => { if (confirm("Delete segment?")) { setSegments((p) => p.filter((s) => s.id !== id)); notify("success", "Segment deleted"); } }} onMore={() => notify("success", "More actions")} />
+        {loading ? (
+          <EmptyState message="Loading segments..." className="m-4" />
+        ) : sorted.length === 0 ? (
+          <EmptyState message="No segments found." className="m-4" />
+        ) : (
+          <SegmentTable segments={sorted} onDelete={() => notify("error", "Delete segment via API is not wired yet.")} onMore={() => notify("success", "More actions")} />
+        )}
       </section>
       {createOpen ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">

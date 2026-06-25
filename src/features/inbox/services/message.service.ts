@@ -1,12 +1,17 @@
 import { apiClient } from "@/services/api/client";
 import type { Message } from "@/types/message";
 
+type PageResponse<T> = {
+  items?: T[];
+  messages?: T[];
+};
+
 export const messageService = {
   async list(conversationId: string) {
-    const response = await apiClient.get<{ messages: Message[] }>(
-      `/conversations/${conversationId}/messages`,
+    const response = await apiClient.get<PageResponse<Message>>(
+      `/conversations/${conversationId}/messages?page_size=100`,
     );
-    return response.data?.messages ?? [];
+    return response.data?.items ?? response.data?.messages ?? [];
   },
 
   async send(conversationId: string, content: string) {

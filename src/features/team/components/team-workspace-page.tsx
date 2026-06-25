@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -26,11 +26,27 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MOCK_TEAM_MEMBERS, MOCK_WORKSPACE, MOCK_WORKSPACE_ACTIVITY } from "@/features/team/mock-data";
+import { EmptyState } from "@/components/shared/empty-state";
+import { teamService } from "@/features/team/services/team.service";
+import type { TeamMember } from "@/types/team";
 
 export function TeamWorkspacePage() {
   const router = useRouter();
-  const [workspace, setWorkspace] = useState(MOCK_WORKSPACE);
+  const [workspace, setWorkspace] = useState({
+    id: "",
+    name: "",
+    slug: "",
+    timezone: "—",
+    country: "—",
+    ownerName: "—",
+    ownerId: "",
+    createdAt: "—",
+    status: "Active",
+    plan: "—",
+    renewalDate: "—",
+  });
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -40,6 +56,31 @@ export function TeamWorkspacePage() {
   const [draftCountry, setDraftCountry] = useState(workspace.country);
   const [transferOwnerId, setTransferOwnerId] = useState(workspace.ownerId);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    Promise.all([teamService.getTeam(), teamService.listMembers()])
+      .then(([team, memberList]) => {
+        const owner = memberList.find((m) => m.role === "owner");
+        setWorkspace({
+          id: team.id,
+          name: team.name,
+          slug: team.slug,
+          timezone: "—",
+          country: "—",
+          ownerName: owner?.name ?? "—",
+          ownerId: owner?.user_id ?? "",
+          createdAt: "—",
+          status: "Active",
+          plan: "—",
+          renewalDate: "—",
+        });
+        setMembers(memberList);
+        if (owner?.user_id) setTransferOwnerId(owner.user_id);
+      })
+      .catch(() => notify("error", "Failed to load workspace"))
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function notify(type: "success" | "error", message: string) {
     setToast({ type, message });
@@ -276,26 +317,7 @@ export function TeamWorkspacePage() {
                 </button>
               </div>
               <div className="mt-4 space-y-3">
-                {MOCK_WORKSPACE_ACTIVITY.map((item) => (
-                  <div key={item.id} className="flex items-start gap-3 rounded-lg border bg-background p-3">
-                    {item.type === "invite" ? (
-                      <Users className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    ) : item.type === "role" ? (
-                      <UserCog className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    ) : item.type === "wa" ? (
-                      <MessageCircle className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <WandSparkles className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                    )}
-                    <div className="min-w-0">
-                      <div className="text-sm">{item.text}</div>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        <CalendarDays className="mr-1 inline h-3 w-3" />
-                        {item.time}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                <EmptyState message="No workspace activity yet." />
               </div>
             </div>
           </section>
@@ -341,7 +363,7 @@ export function TeamWorkspacePage() {
               value={transferOwnerId}
               onChange={(e) => setTransferOwnerId(e.target.value)}
             >
-              {MOCK_TEAM_MEMBERS.filter((m) => m.status !== "invited").map((member) => (
+              {members.filter((m) => m.status !== "invited").map((member) => (
                 <option key={member.user_id} value={member.user_id}>
                   {member.name} ({member.email})
                 </option>
@@ -353,7 +375,7 @@ export function TeamWorkspacePage() {
               </Button>
               <Button
                 onClick={() => {
-                  const selected = MOCK_TEAM_MEMBERS.find((m) => m.user_id === transferOwnerId);
+                  const selected = members.find((m) => m.user_id === transferOwnerId);
                   if (!selected) return notify("error", "Selected member not found");
                   setWorkspace((prev) => ({ ...prev, ownerId: selected.user_id, ownerName: selected.name }));
                   setTransferOpen(false);

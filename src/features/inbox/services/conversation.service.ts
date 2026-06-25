@@ -1,9 +1,11 @@
 import { apiClient } from "@/services/api/client";
+import { normalizeConversation } from "@/features/inbox/mappers/conversation.mapper";
 import type { Conversation, ConversationStatus } from "@/types/conversation";
 
 type PageResponse<T> = {
-  items: T[];
-  pagination: {
+  items?: T[];
+  conversations?: T[];
+  pagination?: {
     page: number;
     page_size: number;
     total: number;
@@ -26,12 +28,13 @@ export const conversationService = {
     if (params?.page_size) query.set("page_size", String(params.page_size));
     const suffix = query.toString() ? `?${query.toString()}` : "";
     const response = await apiClient.get<PageResponse<Conversation>>(`/conversations${suffix}`);
-    return response.data?.items ?? [];
+    const rows = response.data?.items ?? response.data?.conversations ?? [];
+    return rows.map((row) => normalizeConversation(row));
   },
 
   async get(id: string) {
     const response = await apiClient.get<Conversation>(`/conversations/${id}`);
-    return response.data!;
+    return normalizeConversation(response.data!);
   },
 
   async assign(id: string, userId: string | null) {

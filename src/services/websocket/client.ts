@@ -1,4 +1,4 @@
-import { resolveWsBaseUrl } from "@/services/websocket/resolve-ws-url";
+import { resolveWsCandidates } from "@/services/websocket/resolve-ws-url";
 
 type MessageHandler = (data: MessageEvent) => void;
 
@@ -8,10 +8,24 @@ export class WebSocketClient {
   private handlers = new Set<MessageHandler>();
   private shouldReconnect = true;
   private token: string | null = null;
+  private currentUrlIndex = 0;
 
   connect(token: string) {
+    if (this.token === token && this.socket) {
+      if (
+        this.socket.readyState === WebSocket.OPEN ||
+        this.socket.readyState === WebSocket.CONNECTING
+      ) {
+        return;
+      }
+    }
     this.token = token;
     this.shouldReconnect = true;
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+    this.currentUrlIndex = 0;
     this.open();
   }
 
@@ -23,6 +37,7 @@ export class WebSocketClient {
     }
     this.socket?.close();
     this.socket = null;
+    this.currentUrlIndex = 0;
   }
 
   onMessage(handler: MessageHandler) {
@@ -39,10 +54,14 @@ export class WebSocketClient {
   private open() {
     if (!this.token) return;
 
-    const url = `${resolveWsBaseUrl()}?token=${encodeURIComponent(this.token)}`;
+    const candidates = resolveWsCandidates();
+    if (candidates.length === 0) return;
+    const baseUrl = candidates[this.currentUrlIndex % candidates.length];
+    const url = `${baseUrl}?token=${encodeURIComponent(this.token)}`;
     this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {
+      this.currentUrlIndex = 0;
       if (this.reconnectTimer) {
         clearTimeout(this.reconnectTimer);
         this.reconnectTimer = null;
@@ -56,6 +75,7 @@ export class WebSocketClient {
     this.socket.onclose = () => {
       this.socket = null;
       if (this.shouldReconnect) {
+        this.currentUrlIndex += 1;
         this.scheduleReconnect();
       }
     };

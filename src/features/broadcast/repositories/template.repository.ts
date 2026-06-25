@@ -3,8 +3,13 @@ import type { Template } from "@/features/broadcast/types/template";
 
 export type CreateTemplatePayload = Omit<Template, "id" | "created_at" | "updated_at" | "last_sync_at">;
 
+export type TemplateListQuery = {
+  channelId?: string;
+  status?: string;
+};
+
 export interface TemplateRepository {
-  list(): Promise<Template[]>;
+  list(query?: TemplateListQuery): Promise<Template[]>;
   getById(id: string): Promise<Template | undefined>;
   getByName(name: string): Promise<Template | undefined>;
   create(input: CreateTemplatePayload): Promise<Template>;

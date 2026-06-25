@@ -1,5 +1,26 @@
 import { apiClient } from "@/services/api/client";
-import type { Contact, ContactImportResult, CreateContactInput } from "@/types/contact";
+import { normalizeContact } from "@/features/contacts/mappers/contact.mapper";
+import type { ConsentStatus, Contact, ContactImportResult, CreateContactInput } from "@/types/contact";
+
+function toMarketingStatus(consent?: ConsentStatus): string | undefined {
+  if (!consent) return undefined;
+  if (consent === "opt_in") return "subscribed";
+  if (consent === "opt_out") return "unsubscribed";
+  return "unknown";
+}
+
+function buildContactPayload(input: Partial<CreateContactInput>) {
+  const payload: Record<string, string | undefined> = {};
+  if (input.name !== undefined) payload.name = input.name;
+  if (input.phone !== undefined) payload.phone = input.phone;
+  if (input.email !== undefined) payload.email = input.email;
+  if (input.notes !== undefined) payload.notes = input.notes;
+  if (input.consent_status !== undefined) {
+    payload.marketing_status = toMarketingStatus(input.consent_status);
+    payload.consent_status = input.consent_status;
+  }
+  return payload;
+}
 
 type PageResponse<T> = {
   items?: T[];
@@ -14,17 +35,26 @@ export const contactService = {
     if (params?.tag_id) query.set("tag_id", params.tag_id);
     const suffix = query.toString() ? `?${query.toString()}` : "";
     const response = await apiClient.get<PageResponse<Contact>>(`/contacts${suffix}`);
-    return response.data?.items ?? response.data?.contacts ?? [];
+    const rows = response.data?.items ?? response.data?.contacts ?? [];
+    return rows.map((row) => normalizeContact(row));
+  },
+
+  async getById(id: string) {
+    const response = await apiClient.get<Contact>(`/contacts/${id}`);
+    return normalizeContact(response.data!);
   },
 
   async create(input: CreateContactInput) {
-    const response = await apiClient.post<Contact>("/contacts", input);
-    return response.data!;
+    const response = await apiClient.post<Contact>("/contacts", {
+      ...input,
+      marketing_status: toMarketingStatus(input.consent_status),
+    });
+    return normalizeContact(response.data!);
   },
 
-  async update(id: string, input: CreateContactInput) {
-    const response = await apiClient.patch<Contact>(`/contacts/${id}`, input);
-    return response.data!;
+  async update(id: string, input: Partial<CreateContactInput>) {
+    const response = await apiClient.patch<Contact>(`/contacts/${id}`, buildContactPayload(input));
+    return normalizeContact(response.data!);
   },
 
   async remove(id: string) {

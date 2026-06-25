@@ -65,7 +65,21 @@ export function TagsListPage() {
         ) : sorted.length === 0 ? (
           <EmptyState message="No tags found." className="m-4" />
         ) : (
-          <TagTable tags={sorted} onDelete={async (id) => { if (confirm("Delete tag?")) { await tagService.remove(id); setTags((p) => p.filter((t) => t.id !== id)); notify("success", "Tag deleted"); } }} onMore={() => notify("success", "More actions")} />
+          <TagTable
+            tags={sorted}
+            onDelete={async (id) => {
+              if (!id) return notify("error", "Tag id is missing");
+              if (!confirm("Delete tag?")) return;
+              try {
+                await tagService.remove(id);
+                setTags((p) => p.filter((t) => t.id !== id));
+                notify("success", "Tag deleted");
+              } catch (err) {
+                notify("error", err instanceof Error ? err.message : "Failed to delete tag");
+              }
+            }}
+            onMore={() => notify("success", "More actions")}
+          />
         )}
       </section>
       <TagFormModal open={createOpen} title="Create Tag" name={name} description={description} color={color} onNameChange={setName} onDescriptionChange={setDescription} onColorChange={setColor} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} submitLabel="Create" />

@@ -1,59 +1,62 @@
 import { apiClient } from "@/services/api/client";
-import type { Segment, SegmentRule } from "@/features/segments/types/segment";
+import {
+  normalizeSegment,
+  normalizeSegmentGetResponse,
+} from "@/features/segments/mappers/segment.mapper";
+import type { Segment } from "@/features/segments/types/segment";
 
-type ApiSegment = {
-  id: string;
+type PageResponse<T> = {
+  items?: T[];
+  segments?: T[];
+};
+
+type CreateSegmentInput = {
   name: string;
   description?: string;
   color?: string;
-  contact_count?: number;
-  created_at?: string;
-  updated_at?: string;
-  rules?: Array<{
-    id?: string;
-    field: string;
-    operator: string;
-    value: string;
-  }>;
+  is_dynamic?: boolean;
 };
-
-type PageResponse<T> = {
-  items: T[];
-};
-
-function mapApiSegment(dto: ApiSegment): Segment {
-  const rules: SegmentRule[] = (dto.rules ?? []).map((rule, index) => ({
-    id: rule.id ?? `rule_${index}`,
-    field: rule.field as SegmentRule["field"],
-    operator: rule.operator as SegmentRule["operator"],
-    value: rule.value,
-  }));
-
-  return {
-    id: dto.id,
-    name: dto.name,
-    description: dto.description ?? "",
-    color: dto.color ?? "#6366f1",
-    contact_count: dto.contact_count ?? 0,
-    created_at: dto.created_at ?? new Date(0).toISOString(),
-    updated_at: dto.updated_at ?? dto.created_at ?? new Date(0).toISOString(),
-    rules,
-  };
-}
 
 export const segmentService = {
   async list(): Promise<Segment[]> {
-    const response = await apiClient.get<PageResponse<ApiSegment>>("/segments?page_size=100");
-    return (response.data?.items ?? []).map(mapApiSegment);
+    const response = await apiClient.get<PageResponse<Segment>>("/segments");
+    const rows = response.data?.items ?? response.data?.segments ?? [];
+    return rows.map((row) => normalizeSegment(row));
   },
 
   async getById(id: string): Promise<Segment | undefined> {
     try {
-      const response = await apiClient.get<ApiSegment & { rules?: ApiSegment["rules"] }>(`/segments/${id}`);
-      return mapApiSegment(response.data!);
+      const response = await apiClient.get(`/segments/${id}`);
+      return normalizeSegmentGetResponse(response.data as Parameters<typeof normalizeSegmentGetResponse>[0]);
     } catch {
       return undefined;
     }
+  },
+
+  async create(input: CreateSegmentInput): Promise<Segment> {
+    const response = await apiClient.post("/segments", {
+      name: input.name,
+      description: input.description ?? "",
+      color: input.color ?? "#6366f1",
+      is_dynamic: input.is_dynamic ?? true,
+      // Backend requires at least one rule when creating segments.
+      rules: [
+        {
+          field: "source",
+          operator: "equals",
+          value: "whatsapp",
+          sort_order: 0,
+        },
+      ],
+    });
+    return normalizeSegmentGetResponse(response.data as Parameters<typeof normalizeSegmentGetResponse>[0]);
+  },
+
+  async remove(id: string): Promise<void> {
+    if (!id) {
+      throw new Error("Segment id is required");
+    }
+    await apiClient.delete(`/segments/${id}`);
   },
 
   async search(query: string): Promise<Segment[]> {

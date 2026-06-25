@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Edit3, Eye, MoreHorizontal } from "lucide-react";
 
 import { ConsentBadge } from "@/components/shared/consent-badge";
@@ -24,20 +25,21 @@ export function ContactTable({
   onRowClick,
   onView,
   onEdit,
-  onMore,
+  onDelete,
 }: {
   contacts: Contact[];
   onRowClick: (contact: Contact) => void;
   onView?: (contact: Contact) => void;
   onEdit?: (contact: Contact) => void;
-  onMore?: (contact: Contact) => void;
+  onDelete?: (contact: Contact) => void;
 }) {
+  const router = useRouter();
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[900px] text-sm">
         <thead>
           <tr className="border-b text-left text-muted-foreground">
-            <th className="w-10 p-4"><input type="checkbox" /></th>
             <th className="p-4 font-medium">Name</th>
             <th className="p-4 font-medium">Phone</th>
             <th className="p-4 font-medium">Email</th>
@@ -49,15 +51,12 @@ export function ContactTable({
           </tr>
         </thead>
         <tbody>
-          {contacts.map((contact) => (
+          {contacts.map((contact, index) => (
             <tr
-              key={contact.id}
+              key={contact.id || `contact-${index}`}
               className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
               onClick={() => onRowClick(contact)}
             >
-              <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                <input type="checkbox" />
-              </td>
               <td className="p-4">
                 <div className="flex items-center gap-3">
                   <ContactAvatar name={contact.name} />
@@ -77,15 +76,34 @@ export function ContactTable({
               <td className="p-4 text-muted-foreground">{formatActivity(contact.last_activity_at)}</td>
               <td className="p-4" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => (onView ?? onRowClick)(contact)}>
+                  <Button variant="ghost" size="sm" onClick={() => (onView ?? onRowClick)(contact)} title="View">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit?.(contact)}>
+                  <Button variant="ghost" size="sm" onClick={() => onEdit?.(contact)} title="Edit">
                     <Edit3 className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onMore?.(contact)}>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  <div className="relative">
+                    <select
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                      defaultValue=""
+                      onChange={(e) => {
+                        const action = e.target.value;
+                        e.target.value = "";
+                        if (action === "inbox") {
+                          router.push(`/inbox?contact=${contact.id}`);
+                        } else if (action === "delete") {
+                          onDelete?.(contact);
+                        }
+                      }}
+                    >
+                      <option value="" disabled>More</option>
+                      <option value="inbox">Open in Inbox</option>
+                      <option value="delete">Delete Contact</option>
+                    </select>
+                    <Button variant="ghost" size="sm" title="More actions">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </td>
             </tr>

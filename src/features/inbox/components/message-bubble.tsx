@@ -1,12 +1,15 @@
 "use client";
 
 import { Check, CheckCheck, FileText, Image as ImageIcon, Video } from "lucide-react";
+import { useEffect, useRef } from "react";
 
 import type { InboxChatMessage } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
 
 function formatTime(iso: string) {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "--:--";
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
 function MediaPreview({ message }: { message: InboxChatMessage }) {
@@ -92,7 +95,15 @@ interface MessageThreadProps {
 }
 
 export function MessageThread({ messages }: MessageThreadProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
   let lastLabel = "";
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({
+      behavior: messages.length > 1 ? "smooth" : "auto",
+      block: "end",
+    });
+  }, [messages]);
 
   return (
     <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-4">
@@ -117,6 +128,7 @@ export function MessageThread({ messages }: MessageThreadProps) {
           );
         })
       )}
+      <div ref={bottomRef} aria-hidden className="h-px shrink-0" />
     </div>
   );
 }

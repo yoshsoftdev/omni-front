@@ -33,8 +33,8 @@ export function TagTable({
           </tr>
         </thead>
         <tbody>
-          {tags.map((tag) => (
-            <tr key={tag.id} className="border-b last:border-0 hover:bg-muted/40">
+          {tags.map((tag, index) => (
+            <tr key={tag.id || `tag-${index}`} className="border-b last:border-0 hover:bg-muted/40">
               <td className="p-4">
                 <Link href={`/contacts/tags/${tag.id}`} className="inline-flex items-center gap-2 font-medium hover:underline">
                   <ColorDot color={tag.color} className="h-2.5 w-2.5" />
@@ -52,7 +52,12 @@ export function TagTable({
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/contacts/tags/${tag.id}`}><Edit3 className="h-4 w-4" /></Link>
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onDelete(tag.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!tag.id}
+                    onClick={() => tag.id && onDelete(tag.id)}
+                  >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => onMore?.(tag)}>

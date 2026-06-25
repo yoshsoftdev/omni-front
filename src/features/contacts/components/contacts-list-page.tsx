@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Upload, X } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 
 import { EmptyState } from "@/components/shared/empty-state";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactDetailDrawer } from "@/features/contacts/components/contact-detail-drawer";
 import { ContactFilterBar } from "@/features/contacts/components/contact-filter-bar";
+import { ContactFormModal } from "@/features/contacts/components/contact-form-modal";
 import { ContactStatsRow } from "@/features/contacts/components/contact-stats-row";
 import { ContactTable } from "@/features/contacts/components/contact-table";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
@@ -17,6 +18,8 @@ import { contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
 import { useToast } from "@/hooks/use-toast";
 import type { Contact, ConsentStatus, CreateContactInput, ContactStats, ContactTag } from "@/types/contact";
+
+const emptyForm: CreateContactInput = { name: "", phone: "", email: "", consent_status: "unknown" };
 
 export function ContactsListPage() {
   const { notify, Toast } = useToast();
@@ -32,17 +35,32 @@ export function ContactsListPage() {
   const [pageSize, setPageSize] = useState(5);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [editContact, setEditContact] = useState<Contact | null>(null);
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
-  const [form, setForm] = useState<CreateContactInput>({ name: "", phone: "", email: "", consent_status: "unknown" });
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<CreateContactInput>(emptyForm);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    consent_status: "unknown" as ConsentStatus,
+  });
+
+  async function loadContacts() {
+    setLoading(true);
+    try {
+      const [contactItems, tagItems] = await Promise.all([contactService.list(), tagService.list()]);
+      setContacts(contactItems);
+      setTags(tagItems);
+    } catch (err) {
+      notify("error", err instanceof Error ? err.message : "Failed to load contacts");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    Promise.all([contactService.list(), tagService.list()])
-      .then(([contactItems, tagItems]) => {
-        setContacts(contactItems);
-        setTags(tagItems);
-      })
-      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load contacts"))
-      .finally(() => setLoading(false));
+    void loadContacts();
   }, [notify]);
 
   const stats = useMemo<ContactStats>(() => ({
@@ -72,6 +90,7 @@ export function ContactsListPage() {
 
   async function handleAddContact() {
     if (!form.name.trim() || !form.phone.trim()) return notify("error", "Name and phone are required");
+    setSaving(true);
     try {
       const created = await contactService.create({
         name: form.name.trim(),
@@ -82,10 +101,57 @@ export function ContactsListPage() {
       });
       setContacts((prev) => [created, ...prev]);
       setAddOpen(false);
-      setForm({ name: "", phone: "", email: "", consent_status: "unknown" });
+      setForm(emptyForm);
       notify("success", "Contact added");
     } catch (err) {
       notify("error", err instanceof Error ? err.message : "Failed to add contact");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function openEdit(contact: Contact) {
+    setEditContact(contact);
+    setEditForm({
+      name: contact.name,
+      phone: contact.phone,
+      email: contact.email ?? "",
+      consent_status: contact.consent_status,
+    });
+  }
+
+  async function handleEditContact() {
+    if (!editContact) return;
+    if (!editForm.name.trim() || !editForm.phone.trim()) return notify("error", "Name and phone are required");
+
+    setSaving(true);
+    try {
+      const updated = await contactService.update(editContact.id, {
+        name: editForm.name.trim(),
+        phone: editForm.phone.trim(),
+        email: editForm.email.trim() || undefined,
+        consent_status: editForm.consent_status,
+      });
+      setContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      if (selectedContact?.id === updated.id) setSelectedContact(updated);
+      setEditContact(null);
+      notify("success", "Contact updated");
+    } catch (err) {
+      notify("error", err instanceof Error ? err.message : "Failed to update contact");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteContact(contact: Contact) {
+    if (!confirm(`Delete contact "${contact.name}"?`)) return;
+    try {
+      await contactService.remove(contact.id);
+      setContacts((prev) => prev.filter((c) => c.id !== contact.id));
+      if (selectedContact?.id === contact.id) setSelectedContact(null);
+      notify("success", "Contact deleted");
+    } catch (err) {
+      notify("error", err instanceof Error ? err.message : "Failed to delete contact");
     }
   }
 
@@ -126,8 +192,8 @@ export function ContactsListPage() {
           <ContactTable
             contacts={paged}
             onRowClick={setSelectedContact}
-            onEdit={setSelectedContact}
-            onMore={() => notify("success", "More actions")}
+            onEdit={openEdit}
+            onDelete={handleDeleteContact}
           />
         )}
         <PaginationFooter
@@ -148,34 +214,46 @@ export function ContactsListPage() {
           contact={selectedContact}
           tags={tags}
           onClose={() => setSelectedContact(null)}
-          onUpdate={(updated) => { setContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c))); setSelectedContact(updated); }}
+          onUpdate={(updated) => {
+            setContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+            setSelectedContact(updated);
+          }}
           onNotify={notify}
         />
       ) : null}
 
       {addOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Add Contact</h3>
-              <button type="button" onClick={() => setAddOpen(false)}><X className="h-4 w-4" /></button>
-            </div>
-            <div className="space-y-3">
-              <Input placeholder="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <Input placeholder="Phone Number" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-              <Input placeholder="Email" value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              <select className="h-10 w-full rounded-md border px-3 text-sm" value={form.consent_status} onChange={(e) => setForm({ ...form, consent_status: e.target.value as ConsentStatus })}>
-                <option value="opt_in">Marketing Opt-In</option>
-                <option value="opt_out">Marketing Opt-Out</option>
-                <option value="unknown">Unknown</option>
-              </select>
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-              <Button onClick={handleAddContact}>Add Contact</Button>
-            </div>
-          </div>
-        </div>
+        <ContactFormModal
+          title="Add Contact"
+          submitLabel="Add Contact"
+          values={{
+            name: form.name,
+            phone: form.phone,
+            email: form.email ?? "",
+            consent_status: form.consent_status ?? "unknown",
+          }}
+          onChange={(values) => setForm({
+            name: values.name,
+            phone: values.phone,
+            email: values.email,
+            consent_status: values.consent_status,
+          })}
+          onClose={() => setAddOpen(false)}
+          onSubmit={() => void handleAddContact()}
+          saving={saving}
+        />
+      ) : null}
+
+      {editContact ? (
+        <ContactFormModal
+          title="Edit Contact"
+          submitLabel="Save Changes"
+          values={editForm}
+          onChange={setEditForm}
+          onClose={() => setEditContact(null)}
+          onSubmit={() => void handleEditContact()}
+          saving={saving}
+        />
       ) : null}
 
       {moreFiltersOpen ? (
@@ -183,7 +261,7 @@ export function ContactsListPage() {
           <div className="w-full max-w-md rounded-lg border bg-card p-5">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold">More Filters</h3>
-              <button type="button" onClick={() => setMoreFiltersOpen(false)}><X className="h-4 w-4" /></button>
+              <button type="button" onClick={() => setMoreFiltersOpen(false)}>×</button>
             </div>
             <div className="space-y-3">
               <select className="h-10 w-full rounded-md border px-3 text-sm" value={consentFilter} onChange={(e) => setConsentFilter(e.target.value)}>

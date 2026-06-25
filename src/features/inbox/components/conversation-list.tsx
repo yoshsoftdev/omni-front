@@ -129,9 +129,9 @@ export function ConversationList({
         {pageItems.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No conversations found.</p>
         ) : (
-          pageItems.map((conversation) => (
+          pageItems.map((conversation, index) => (
             <ConversationCard
-              key={conversation.id}
+              key={conversation.id || `conversation-${index}`}
               conversation={conversation}
               selected={selectedId === conversation.id}
               onSelect={() => onSelect(conversation.id)}

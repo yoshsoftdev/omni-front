@@ -12,22 +12,23 @@ import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features
 interface ConversationDetailProps {
   conversation: InboxConversation | null;
   messages: InboxChatMessage[];
-  onMessagesChange: (messages: InboxChatMessage[]) => void;
+  onSendMessage: (content: string) => Promise<void>;
   onConversationUpdate: (conversation: InboxConversation) => void;
   onSaveNote: (content: string) => void;
-  onNotify: (message: string) => void;
+  onNotify: (message: string, type?: "success" | "error") => void;
 }
 
 export function ConversationDetail({
   conversation,
   messages,
-  onMessagesChange,
+  onSendMessage,
   onConversationUpdate,
   onSaveNote,
   onNotify,
 }: ConversationDetailProps) {
   const [assignOpen, setAssignOpen] = useState(false);
   const [agents, setAgents] = useState<InboxAgent[]>([]);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     teamService
@@ -46,29 +47,19 @@ export function ConversationDetail({
   }, []);
 
   const handleSend = useCallback(
-    (content: string) => {
-      if (!conversation) return;
-      const newMessage: InboxChatMessage = {
-        id: `msg-${Date.now()}`,
-        conversation_id: conversation.id,
-        direction: "outbound",
-        type: "text",
-        content,
-        sent_at: new Date().toISOString(),
-        delivered: true,
-        read: false,
-        sender_name: "You",
-      };
-      onMessagesChange([...messages, newMessage]);
-      onConversationUpdate({
-        ...conversation,
-        last_message_preview: content,
-        last_message_at: newMessage.sent_at,
-        unread_count: 0,
-      });
-      onNotify("Message sent");
+    async (content: string) => {
+      if (!conversation || sending) return;
+      setSending(true);
+      try {
+        await onSendMessage(content);
+        onNotify("Message sent");
+      } catch (err) {
+        onNotify(err instanceof Error ? err.message : "Failed to send message", "error");
+      } finally {
+        setSending(false);
+      }
     },
-    [conversation, messages, onConversationUpdate, onMessagesChange, onNotify],
+    [conversation, onNotify, onSendMessage, sending],
   );
 
   const handleAssign = useCallback(
@@ -120,7 +111,7 @@ export function ConversationDetail({
         onMoreAction={handleMoreAction}
       />
       <MessageThread messages={messages} />
-      <MessageComposer quickReplies={[]} onSend={handleSend} onSaveNote={onSaveNote} />
+      <MessageComposer quickReplies={[]} sending={sending} onSend={handleSend} onSaveNote={onSaveNote} />
 
       <AssignConversationModal
         open={assignOpen}

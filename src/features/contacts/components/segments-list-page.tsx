@@ -29,8 +29,21 @@ export function SegmentsListPage() {
       .finally(() => setLoading(false));
   }, [notify]);
 
-  function handleCreate() {
-    notify("error", "Create segment via API is not wired in this view yet.");
+  async function handleCreate() {
+    if (!name.trim()) return notify("error", "Segment name is required");
+    try {
+      const created = await segmentService.create({
+        name: name.trim(),
+        description: description.trim(),
+      });
+      setSegments((prev) => [created, ...prev]);
+      setCreateOpen(false);
+      setName("");
+      setDescription("");
+      notify("success", "Segment created");
+    } catch (err) {
+      notify("error", err instanceof Error ? err.message : "Failed to create segment");
+    }
   }
 
   return (
@@ -54,7 +67,21 @@ export function SegmentsListPage() {
         ) : sorted.length === 0 ? (
           <EmptyState message="No segments found." className="m-4" />
         ) : (
-          <SegmentTable segments={sorted} onDelete={() => notify("error", "Delete segment via API is not wired yet.")} onMore={() => notify("success", "More actions")} />
+          <SegmentTable
+            segments={sorted}
+            onDelete={async (id) => {
+              if (!id) return notify("error", "Segment id is missing");
+              if (!confirm("Delete segment?")) return;
+              try {
+                await segmentService.remove(id);
+                setSegments((prev) => prev.filter((segment) => segment.id !== id));
+                notify("success", "Segment deleted");
+              } catch (err) {
+                notify("error", err instanceof Error ? err.message : "Failed to delete segment");
+              }
+            }}
+            onMore={() => notify("success", "More actions")}
+          />
         )}
       </section>
       {createOpen ? (

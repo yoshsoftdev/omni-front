@@ -17,6 +17,7 @@ function ChannelIcon({ channel, className }: { channel: InboxChannel; className?
 function formatTimestamp(iso?: string) {
   if (!iso) return "";
   const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
   const now = new Date();
   const isToday = date.toDateString() === now.toDateString();
   const yesterday = new Date(now);
@@ -61,7 +62,7 @@ export function ConversationCard({ conversation, selected, onSelect }: Conversat
           </span>
         </div>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
-          {conversation.last_message_preview ?? "No messages yet"}
+          {conversation.last_message_preview?.trim() || "No messages yet"}
         </p>
       </div>
 

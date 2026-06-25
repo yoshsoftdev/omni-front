@@ -1,15 +1,15 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 export function useToast() {
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  function notify(type: "success" | "error", message: string) {
+  const notify = useCallback((type: "success" | "error", message: string) => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 2400);
-  }
+  }, []);
 
   function Toast() {
     if (!toast) return null;

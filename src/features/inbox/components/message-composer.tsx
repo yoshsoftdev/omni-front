@@ -13,19 +13,20 @@ type ComposerTab = "reply" | "note";
 
 interface MessageComposerProps {
   quickReplies: QuickReplyItem[];
-  onSend: (content: string) => void;
+  sending?: boolean;
+  onSend: (content: string) => void | Promise<void>;
   onSaveNote: (content: string) => void;
 }
 
-export function MessageComposer({ quickReplies, onSend, onSaveNote }: MessageComposerProps) {
+export function MessageComposer({ quickReplies, sending = false, onSend, onSaveNote }: MessageComposerProps) {
   const [activeTab, setActiveTab] = useState<ComposerTab>("reply");
   const [content, setContent] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
 
-  function handleSend() {
+  async function handleSend() {
     const text = content.trim();
-    if (!text) return;
-    onSend(text);
+    if (!text || sending) return;
+    await onSend(text);
     setContent("");
   }
 
@@ -67,6 +68,12 @@ export function MessageComposer({ quickReplies, onSend, onSaveNote }: MessageCom
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                void handleSend();
+              }
+            }}
             placeholder="Type your message..."
             className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm"
             rows={3}
@@ -118,8 +125,8 @@ export function MessageComposer({ quickReplies, onSend, onSaveNote }: MessageCom
                 />
               </div>
             </div>
-            <Button size="sm" onClick={handleSend} disabled={!content.trim()}>
-              Send
+            <Button size="sm" onClick={() => void handleSend()} disabled={!content.trim() || sending}>
+              {sending ? "Sending..." : "Send"}
             </Button>
           </div>
         </div>

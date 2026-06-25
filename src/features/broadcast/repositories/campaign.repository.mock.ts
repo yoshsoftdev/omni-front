@@ -32,9 +32,29 @@ class MockCampaignRepository implements CampaignQueryRepository {
   async create(input: CreateCampaignPayload): Promise<Campaign> {
     const now = new Date().toISOString();
     const campaign: Campaign = {
-      ...input,
       id: `cmp_${Date.now()}`,
-      created_at: input.created_at ?? now,
+      name: input.name,
+      status: "draft",
+      device_id: input.device_id,
+      template_id: input.template_id,
+      template_name: "Template",
+      template_category: "marketing",
+      template_language: "id",
+      segment_id: input.segment_ids?.[0] ?? "",
+      segment_name: "Audience",
+      segment_contact_count: 0,
+      total_contacts: 0,
+      variable_mapping: input.variable_mapping ?? {},
+      sample_values: {},
+      send_mode: input.scheduled_at ? "later" : "now",
+      scheduled_at: input.scheduled_at,
+      sent_count: 0,
+      delivered_count: 0,
+      read_count: 0,
+      failed_count: 0,
+      reply_count: 0,
+      clicked_count: 0,
+      created_at: now,
       updated_at: now,
     };
     this.campaigns = [campaign, ...this.campaigns];

@@ -28,6 +28,7 @@ export interface InboxContact {
   name: string;
   phone: string;
   email?: string;
+  is_saved_contact?: boolean;
   subscription_status: SubscriptionStatus;
   source: string;
   added_on: string;

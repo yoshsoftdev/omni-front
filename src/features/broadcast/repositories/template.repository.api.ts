@@ -1,6 +1,7 @@
 import { parseTemplateDtoList } from "@/features/broadcast/boundary/template.boundary";
 import type {
   CreateTemplatePayload,
+  TemplateListQuery,
   TemplateRepository,
 } from "@/features/broadcast/repositories/template.repository";
 import type { Template } from "@/features/broadcast/types/template";
@@ -13,8 +14,11 @@ type PageResponse<T> = {
 };
 
 class ApiTemplateRepository implements TemplateRepository {
-  async list(): Promise<Template[]> {
-    const dtos = await templateService.list();
+  async list(query?: TemplateListQuery): Promise<Template[]> {
+    const dtos = await templateService.list({
+      channel_id: query?.channelId,
+      status: query?.status,
+    });
     return parseTemplateDtoList(dtos);
   }
 

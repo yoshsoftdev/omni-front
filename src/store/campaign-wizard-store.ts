@@ -16,6 +16,7 @@ export type CampaignWizardDraft = {
   variableMapping: Record<string, string>;
   sampleValues: Record<string, string>;
   selectedSegmentIds: string[];
+  selectedTagIds: string[];
   sendMode: "now" | "later";
   scheduleDate: string;
   scheduleTime: string;
@@ -32,6 +33,7 @@ interface CampaignWizardState extends CampaignWizardDraft {
   setVariableMapping: (value: Record<string, string>) => void;
   setSampleValues: (value: Record<string, string>) => void;
   setSelectedSegmentIds: (value: string[]) => void;
+  setSelectedTagIds: (value: string[]) => void;
   setSendMode: (value: "now" | "later") => void;
   setScheduleDate: (value: string) => void;
   setScheduleTime: (value: string) => void;
@@ -51,6 +53,7 @@ const initialState: CampaignWizardDraft & { step: WizardStep } = {
   variableMapping: {},
   sampleValues: {},
   selectedSegmentIds: [],
+  selectedTagIds: [],
   sendMode: "now",
   scheduleDate: "",
   scheduleTime: "",
@@ -83,6 +86,7 @@ export const useCampaignWizardStore = create<CampaignWizardState>((set) => ({
   setVariableMapping: (variableMapping) => set({ variableMapping }),
   setSampleValues: (sampleValues) => set({ sampleValues }),
   setSelectedSegmentIds: (selectedSegmentIds) => set({ selectedSegmentIds }),
+  setSelectedTagIds: (selectedTagIds) => set({ selectedTagIds }),
   setSendMode: (sendMode) => set({ sendMode }),
   setScheduleDate: (scheduleDate) => set({ scheduleDate }),
   setScheduleTime: (scheduleTime) => set({ scheduleTime }),

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
@@ -13,15 +14,21 @@ import { CampaignCard } from "@/features/broadcast/components/campaigns/campaign
 import { CampaignChannelCard } from "@/features/broadcast/components/campaigns/campaign-channel-card";
 import { WhatsAppMessagePreview } from "@/features/broadcast/components/shared/whatsapp-message-preview";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
-import type { Template } from "@/features/broadcast/types/template";
 import { templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
-import { filterTemplatesForChannel } from "@/features/channels/utils/channel-consumer";
 import { SegmentPicker } from "@/features/segments/components/segment-picker";
 import { segmentService } from "@/features/segments/services/segment.service";
 import type { Segment } from "@/features/segments/types/segment";
-import { segmentAudienceSummary } from "@/features/segments/utils/segment-audience";
+import {
+  campaignAudienceSummary,
+  campaignEstimatedRecipients,
+  countSegmentRecipients,
+  countTagRecipients,
+} from "@/features/broadcast/utils/campaign-audience";
+import { tagService } from "@/features/contacts/services/tag.service";
+import type { ContactTag } from "@/types/contact";
+import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import { useCampaignWizardStore, type WizardStep } from "@/store/campaign-wizard-store";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -35,6 +42,9 @@ const STEPS: { step: WizardStep; label: string }[] = [
   { step: 6, label: "Schedule" },
   { step: 7, label: "Review" },
 ];
+
+const formControlClass =
+  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const FIELD_OPTIONS = [
   { value: "name", label: "Contact Name" },
@@ -77,6 +87,7 @@ export function CampaignWizard() {
   const router = useRouter();
   const { notify, Toast } = useToast();
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     step,
@@ -89,6 +100,7 @@ export function CampaignWizard() {
     variableMapping,
     sampleValues,
     selectedSegmentIds,
+    selectedTagIds,
     sendMode,
     scheduleDate,
     scheduleTime,
@@ -101,6 +113,7 @@ export function CampaignWizard() {
     setVariableMapping,
     setSampleValues,
     setSelectedSegmentIds,
+    setSelectedTagIds,
     setSendMode,
     setScheduleDate,
     setScheduleTime,
@@ -109,12 +122,29 @@ export function CampaignWizard() {
   } = useCampaignWizardStore();
 
   const [segments, setSegments] = useState<Segment[]>([]);
+  const [tags, setTags] = useState<ContactTag[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [templates, setTemplates] = useState<Template[]>([]);
   const [channelsLoaded, setChannelsLoaded] = useState(false);
+
+  const {
+    data: templates = [],
+    isLoading: templatesLoading,
+    isError: templatesError,
+    error: templatesLoadError,
+  } = useQuery({
+    queryKey: ["broadcast-templates", "campaign-wizard", channelId],
+    queryFn: () =>
+      templateQueryService.getTemplates({
+        channelId,
+        status: "APPROVED",
+      }),
+    enabled: Boolean(channelId),
+    retry: false,
+  });
 
   useEffect(() => {
     segmentService.list().then(setSegments);
+    tagService.list().then(setTags).catch(() => setTags([]));
   }, []);
 
   useEffect(() => {
@@ -125,14 +155,18 @@ export function CampaignWizard() {
   }, []);
 
   useEffect(() => {
-    if (!channelId) {
-      setTemplates([]);
+    if (!templatesError) return;
+    const message =
+      templatesLoadError instanceof Error
+        ? templatesLoadError.message
+        : "Failed to load templates";
+    if (message.toLowerCase().includes("unauthorized")) {
+      notify("error", "Session expired. Please sign in again.");
+      router.replace("/login");
       return;
     }
-    templateQueryService.getTemplates().then((all) => {
-      setTemplates(filterTemplatesForChannel(all, channelId));
-    });
-  }, [channelId]);
+    notify("error", message);
+  }, [templatesError, templatesLoadError, notify, router]);
 
   const selectedTemplate = templates.find((t) => t.id === templateId);
   const fullTemplate = selectedTemplate;
@@ -159,11 +193,22 @@ export function CampaignWizard() {
     return body;
   }, [fullTemplate, sampleValues]);
 
-  const estimatedRecipients = useMemo(() => {
-    return segments
-      .filter((s) => selectedSegmentIds.includes(s.id))
-      .reduce((sum, s) => sum + s.contact_count, 0);
-  }, [segments, selectedSegmentIds]);
+  const segmentRecipientCount = useMemo(
+    () => countSegmentRecipients(segments, selectedSegmentIds),
+    [segments, selectedSegmentIds],
+  );
+  const tagRecipientCount = useMemo(
+    () => countTagRecipients(tags, selectedTagIds),
+    [tags, selectedTagIds],
+  );
+  const estimatedRecipients = useMemo(
+    () => campaignEstimatedRecipients(segments, selectedSegmentIds, tags, selectedTagIds),
+    [segments, selectedSegmentIds, tags, selectedTagIds],
+  );
+  const audienceSummary = useMemo(
+    () => campaignAudienceSummary(segments, selectedSegmentIds, tags, selectedTagIds),
+    [segments, selectedSegmentIds, tags, selectedTagIds],
+  );
 
   function validateCurrentStep(): string | null {
     if (step === 1 && !campaignName.trim()) return "Campaign name is required";
@@ -176,19 +221,23 @@ export function CampaignWizard() {
     }
     if (step === 3) {
       if (!channelId) return "Select a channel before choosing a template";
+      if (templatesLoading) return "Loading templates...";
+      if (templatesError) return "Could not load templates. Try again or sign in again.";
       if (!templateId) return "Select a template";
       if (templates.length === 0) {
         return "No templates available for the selected channel. Sync templates first.";
       }
     }
-    if (step === 5 && selectedSegmentIds.length === 0) return "Select at least one segment";
+    if (step === 5 && selectedSegmentIds.length === 0 && selectedTagIds.length === 0) {
+      return "Select at least one segment or tag";
+    }
     if (step === 6 && sendMode === "later" && (!scheduleDate || !scheduleTime)) {
       return "Date and time are required for scheduled campaigns";
     }
     return null;
   }
 
-  function handleNext() {
+  async function handleNext() {
     setError(null);
     const err = validateCurrentStep();
     if (err) {
@@ -196,9 +245,33 @@ export function CampaignWizard() {
       return;
     }
     if (step === 7) {
-      notify("success", "Campaign created successfully");
-      reset();
-      router.push("/broadcast/campaigns");
+      if (!channelId || !templateId) {
+        setError("Channel and template are required");
+        return;
+      }
+      try {
+        setIsSubmitting(true);
+        const scheduledAt =
+          sendMode === "later" && scheduleDate && scheduleTime
+            ? new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
+            : undefined;
+        await campaignService.create({
+          name: campaignName.trim(),
+          device_id: channelId,
+          template_id: templateId,
+          variable_mapping: { body: variableMapping },
+          segment_ids: selectedSegmentIds,
+          tag_ids: selectedTagIds,
+          scheduled_at: scheduledAt,
+        });
+        notify("success", "Campaign created successfully");
+        reset();
+        router.push("/broadcast/campaigns");
+      } catch (createErr) {
+        setError(createErr instanceof Error ? createErr.message : "Failed to create campaign");
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
     setStep((step + 1) as WizardStep);
@@ -259,7 +332,7 @@ export function CampaignWizard() {
                   value={description}
                   maxLength={200}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="min-h-[90px] w-full rounded-md border px-3 py-2 text-sm"
+                  className={cn(formControlClass, "min-h-[90px] resize-y")}
                   placeholder="Optional description"
                 />
               </div>
@@ -299,6 +372,15 @@ export function CampaignWizard() {
               <h2 className="text-sm font-semibold">Select Template</h2>
               {!channelId ? (
                 <p className="text-sm text-muted-foreground">Select a channel first to view available templates.</p>
+              ) : templatesLoading ? (
+                <p className="text-sm text-muted-foreground">Loading templates...</p>
+              ) : templatesError ? (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center text-sm text-destructive">
+                  <p>Could not load templates. Your session may have expired.</p>
+                  <Button variant="outline" size="sm" className="mt-3" asChild>
+                    <Link href="/login">Sign in again</Link>
+                  </Button>
+                </div>
               ) : templates.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                   <p>No templates synced for {channelName || "this channel"}.</p>
@@ -342,7 +424,7 @@ export function CampaignWizard() {
                           <td className="px-3 py-3 font-medium">{`{{${key}}}`}</td>
                           <td className="px-3 py-3">
                             <select
-                              className="h-9 w-full rounded-md border px-2 text-sm"
+                              className={cn(formControlClass, "h-9")}
                               value={variableMapping[key] ?? "name"}
                               onChange={(e) =>
                                 setVariableMapping({ ...variableMapping, [key]: e.target.value })
@@ -374,13 +456,50 @@ export function CampaignWizard() {
             <div className="space-y-4 rounded-lg border bg-card p-5">
               <h2 className="text-sm font-semibold">Select Audience</h2>
               <p className="text-xs text-muted-foreground">
-                Campaign audience uses segments only. Individual contacts cannot be selected.
+                You can combine segments and tags. Duplicate contacts are automatically deduplicated on send.
               </p>
-              <SegmentPicker
-                segments={segments}
-                selectedIds={selectedSegmentIds}
-                onChange={setSelectedSegmentIds}
-              />
+              <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
+                <p className="font-medium">Estimated recipients: ~{estimatedRecipients.toLocaleString()}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Segments: {segmentRecipientCount.toLocaleString()} contacts
+                  {selectedTagIds.length > 0 ? ` · Tags: ${tagRecipientCount.toLocaleString()} contacts` : ""}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Segments</p>
+                <SegmentPicker
+                  segments={segments}
+                  selectedIds={selectedSegmentIds}
+                  onChange={setSelectedSegmentIds}
+                />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</p>
+                {tags.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No tags available.</p>
+                ) : (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {tags.map((tag) => (
+                      <label key={tag.id} className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={selectedTagIds.includes(tag.id)}
+                          onChange={(event) => {
+                            if (event.target.checked) {
+                              setSelectedTagIds([...selectedTagIds, tag.id]);
+                            } else {
+                              setSelectedTagIds(selectedTagIds.filter((id) => id !== tag.id));
+                            }
+                          }}
+                        />
+                        <span className="inline-flex h-2.5 w-2.5 rounded-full bg-primary/70" />
+                        <span className="font-medium">{tag.name}</span>
+                        <span className="ml-auto text-xs text-muted-foreground">{tag.contact_count}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           ) : null}
 
@@ -409,7 +528,7 @@ export function CampaignWizard() {
                   <div className="space-y-2">
                     <Label>Timezone</Label>
                     <select
-                      className="h-10 w-full rounded-md border px-3 text-sm"
+                      className={cn(formControlClass, "h-10")}
                       value={timezone}
                       onChange={(e) => setTimezone(e.target.value)}
                     >
@@ -431,7 +550,7 @@ export function CampaignWizard() {
                 <SummaryItem label="Channel" value={channelName || "—"} />
                 <SummaryItem label="Phone Number" value={phoneNumber || "—"} />
                 <SummaryItem label="Template" value={selectedTemplate?.name ?? "—"} />
-                <SummaryItem label="Audience" value={segmentAudienceSummary(segments, selectedSegmentIds)} />
+                <SummaryItem label="Audience" value={audienceSummary} />
                 <SummaryItem label="Estimated Recipients" value={estimatedRecipients.toLocaleString()} />
                 <SummaryItem
                   label="Schedule"
@@ -445,7 +564,10 @@ export function CampaignWizard() {
             <Button variant="outline" disabled={step === 1} onClick={() => setStep((step - 1) as WizardStep)}>
               Back
             </Button>
-            <Button onClick={handleNext} disabled={step === 2 && channelsLoaded && channels.length === 0}>
+            <Button
+              onClick={() => void handleNext()}
+              disabled={(step === 2 && channelsLoaded && channels.length === 0) || isSubmitting}
+            >
               {step === 7 ? "Create Campaign" : "Next"} <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
@@ -466,8 +588,11 @@ export function CampaignWizard() {
           {step >= 5 ? (
             <div className="mt-4 rounded-lg border bg-card p-4 text-sm">
               <p className="font-semibold">Audience Preview</p>
-              <p className="mt-1 text-muted-foreground">{segmentAudienceSummary(segments, selectedSegmentIds)}</p>
-              <p className="mt-2 text-xs text-muted-foreground">~{estimatedRecipients.toLocaleString()} recipients</p>
+              <p className="mt-1 text-muted-foreground">{audienceSummary}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Segments: {segmentRecipientCount.toLocaleString()} · Tags: {tagRecipientCount.toLocaleString()}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">~{estimatedRecipients.toLocaleString()} recipients total</p>
             </div>
           ) : null}
         </div>

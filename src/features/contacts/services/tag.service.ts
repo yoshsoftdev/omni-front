@@ -1,47 +1,53 @@
 import { apiClient } from "@/services/api/client";
+import { normalizeTag } from "@/features/contacts/mappers/tag.mapper";
 import type { ContactTag } from "@/types/contact";
-import type { Tag } from "@/types/tag";
 
 type PageResponse<T> = {
   items?: T[];
   tags?: T[];
 };
 
-function mapTagDto(tag: Tag): ContactTag {
-  return {
-    id: tag.id,
-    name: tag.name,
-    description: "",
-    color: tag.color,
-    contact_count: 0,
-    created_at: tag.created_at,
-    updated_at: tag.updated_at,
-    created_by: "—",
-  };
-}
-
 export const tagService = {
   async getById(id: string) {
-    const response = await apiClient.get<Tag>(`/tags/${id}`);
-    return mapTagDto(response.data!);
+    const response = await apiClient.get<ContactTag>(`/tags/${id}`);
+    return normalizeTag(response.data!);
   },
 
   async list() {
-    const response = await apiClient.get<PageResponse<Tag>>("/tags?page_size=100");
-    return (response.data?.items ?? response.data?.tags ?? []).map(mapTagDto);
+    const response = await apiClient.get<PageResponse<ContactTag>>("/tags?page_size=100");
+    const rows = response.data?.items ?? response.data?.tags ?? [];
+    return rows.map((row) => normalizeTag(row));
   },
 
-  async create(name: string, color?: string) {
-    const response = await apiClient.post<Tag>("/tags", { name, color });
-    return mapTagDto(response.data!);
+  async create(name: string, color?: string, description?: string) {
+    const response = await apiClient.post<ContactTag>("/tags", {
+      name,
+      color,
+      ...(description ? { description } : {}),
+    });
+    return normalizeTag(response.data!);
   },
 
-  async update(id: string, name: string, color?: string) {
-    const response = await apiClient.patch<Tag>(`/tags/${id}`, { name, color });
-    return mapTagDto(response.data!);
+  async update(id: string, name: string, color?: string, description?: string) {
+    const response = await apiClient.patch<ContactTag>(`/tags/${id}`, {
+      name,
+      color,
+      ...(description !== undefined ? { description } : {}),
+    });
+    return normalizeTag(response.data!);
   },
 
   async remove(id: string) {
+    if (!id) {
+      throw new Error("Tag id is required");
+    }
     await apiClient.delete(`/tags/${id}`);
+  },
+
+  async assignToContact(tagId: string, contactId: string) {
+    if (!tagId || !contactId) {
+      throw new Error("Tag id and contact id are required");
+    }
+    await apiClient.post(`/tags/${tagId}/contacts/${contactId}`);
   },
 };

@@ -1,14 +1,16 @@
 "use client";
 
-import { Plus, Send } from "lucide-react";
+import { Plus, Send, UserPlus } from "lucide-react";
 import { useState } from "react";
 
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
+import { ContactFormModal } from "@/features/contacts/components/contact-form-modal";
 import { ContactTimeline } from "@/features/inbox/components/contact-timeline";
 import type { InboxActivityEvent, InboxContact, InboxWorkspaceNote } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
+import type { ConsentStatus } from "@/types/contact";
 
 type SidebarTab = "details" | "activity" | "notes";
 
@@ -35,6 +37,7 @@ interface ContactSidebarProps {
   onSendMessage: () => void;
   onAddTag: () => void;
   onToggleSubscription: () => void;
+  onSaveContact?: (input: { name: string; phone: string; email?: string; consent_status?: ConsentStatus }) => Promise<void>;
 }
 
 export function ContactSidebar({
@@ -44,8 +47,17 @@ export function ContactSidebar({
   onSendMessage,
   onAddTag,
   onToggleSubscription,
+  onSaveContact,
 }: ContactSidebarProps) {
   const [activeTab, setActiveTab] = useState<SidebarTab>("details");
+  const [addContactOpen, setAddContactOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    consent_status: "unknown" as ConsentStatus,
+  });
 
   if (!contact) {
     return (
@@ -54,6 +66,8 @@ export function ContactSidebar({
       </div>
     );
   }
+
+  const isUnsaved = contact.is_saved_contact === false;
 
   const tabs: { id: SidebarTab; label: string }[] = [
     { id: "details", label: "Details" },
@@ -67,6 +81,22 @@ export function ContactSidebar({
     { key: "supervisor" as const, label: "Supervisor Notes" },
   ];
 
+  async function handleSaveContact() {
+    if (!contact || !onSaveContact || !form.name.trim()) return;
+    setSaving(true);
+    try {
+      await onSaveContact({
+        name: form.name.trim(),
+        phone: form.phone.trim() || contact.phone,
+        email: form.email.trim() || undefined,
+        consent_status: form.consent_status,
+      });
+      setAddContactOpen(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="flex h-full w-[420px] shrink-0 flex-col border-l bg-card">
       <div className="border-b px-5 py-5 text-center">
@@ -75,8 +105,32 @@ export function ContactSidebar({
         <p className="text-sm text-muted-foreground">{contact.phone}</p>
         {contact.email ? <p className="text-xs text-muted-foreground">{contact.email}</p> : null}
         <div className="mt-2 flex justify-center">
-          <SubscriptionBadge status={contact.subscription_status} />
+          {isUnsaved ? (
+            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-medium text-amber-700">
+              Not in contacts
+            </span>
+          ) : (
+            <SubscriptionBadge status={contact.subscription_status} />
+          )}
         </div>
+        {isUnsaved ? (
+          <Button
+            size="sm"
+            className="mt-3 gap-1.5"
+            onClick={() => {
+              setForm({
+                name: "",
+                phone: contact.phone,
+                email: contact.email ?? "",
+                consent_status: "unknown",
+              });
+              setAddContactOpen(true);
+            }}
+          >
+            <UserPlus className="h-3.5 w-3.5" />
+            Add Contact
+          </Button>
+        ) : null}
       </div>
 
       <div className="flex border-b">
@@ -189,18 +243,22 @@ export function ContactSidebar({
                 <Send className="h-3.5 w-3.5" />
                 Send Message
               </Button>
-              <Button size="sm" variant="outline" className="w-full gap-1.5" onClick={onAddTag}>
-                <Plus className="h-3.5 w-3.5" />
-                Add Tag
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full text-destructive hover:text-destructive"
-                onClick={onToggleSubscription}
-              >
-                Change Subscription Status
-              </Button>
+              {!isUnsaved ? (
+                <>
+                  <Button size="sm" variant="outline" className="w-full gap-1.5" onClick={onAddTag}>
+                    <Plus className="h-3.5 w-3.5" />
+                    Add Tag
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-destructive hover:text-destructive"
+                    onClick={onToggleSubscription}
+                  >
+                    Change Subscription Status
+                  </Button>
+                </>
+              ) : null}
             </section>
           </div>
         ) : null}
@@ -236,6 +294,19 @@ export function ContactSidebar({
           </div>
         ) : null}
       </div>
+
+      {addContactOpen ? (
+        <ContactFormModal
+          title="Add Contact"
+          submitLabel="Save Contact"
+          values={form}
+          onChange={setForm}
+          onClose={() => setAddContactOpen(false)}
+          onSubmit={() => void handleSaveContact()}
+          phoneReadOnly
+          saving={saving}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,18 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { contactService } from "@/features/contacts/services/contact.service";
+import { resolveContactDisplayName, resolveConversationContactLabel } from "@/features/contacts/utils/contact-identity";
 import { ContactSidebar } from "@/features/inbox/components/contact-sidebar";
 import { ConversationDetail } from "@/features/inbox/components/conversation-detail";
 import { ConversationList } from "@/features/inbox/components/conversation-list";
-import {
-  mapConversationToInbox,
-  mapConversationToInboxContact,
-  mapMessageToInbox,
-} from "@/features/inbox/mappers/inbox.mapper";
+import { useInboxRealtime } from "@/features/inbox/hooks/use-inbox-realtime";
+import { mapContactToInboxContact, mapConversationToInbox, mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
+import { normalizeConversation } from "@/features/inbox/mappers/conversation.mapper";
+import { normalizeMessage } from "@/features/inbox/mappers/message.mapper";
+import { inboxUnreadCountQueryKey } from "@/features/inbox/query-keys";
 import { conversationService } from "@/features/inbox/services/conversation.service";
 import { messageService } from "@/features/inbox/services/message.service";
+import { enrichInboxData, mergeRealtimeConversation } from "@/features/inbox/utils/enrich-inbox";
+import { applyMessageDateLabels } from "@/features/inbox/utils/message-date";
 import type {
   InboxActivityEvent,
   InboxChatMessage,
@@ -22,8 +28,27 @@ import type {
   InboxWorkspaceNote,
 } from "@/features/inbox/types";
 import { useToast } from "@/hooks/use-toast";
+import type { ConsentStatus } from "@/types/contact";
 
 const PAGE_SIZE = 7;
+
+function toMillis(value?: string): number {
+  if (!value) return 0;
+  const t = new Date(value).getTime();
+  return Number.isNaN(t) ? 0 : t;
+}
+
+function sortMessagesAsc(messages: InboxChatMessage[]) {
+  return [...messages].sort((a, b) => toMillis(a.sent_at) - toMillis(b.sent_at));
+}
+
+function sortByLatest(conversations: InboxConversation[]) {
+  return [...conversations].sort((a, b) => {
+    const bTime = toMillis(b.last_message_at);
+    const aTime = toMillis(a.last_message_at);
+    return bTime - aTime;
+  });
+}
 
 function filterByTab(conversations: InboxConversation[], tab: InboxTab) {
   switch (tab) {
@@ -51,6 +76,9 @@ function computeTabCounts(conversations: InboxConversation[]) {
 }
 
 export function InboxPage() {
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const contactParam = searchParams.get("contact");
   const { notify, Toast } = useToast();
   const [conversations, setConversations] = useState<InboxConversation[]>([]);
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>({});
@@ -67,19 +95,36 @@ export function InboxPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  const loadConversations = useCallback(async () => {
+  const markConversationAsRead = useCallback(
+    async (conversationId: string) => {
+      try {
+        await conversationService.markRead(conversationId);
+        await queryClient.invalidateQueries({ queryKey: inboxUnreadCountQueryKey });
+      } catch {
+        // Keep UI responsive even if mark-read request fails.
+      }
+    },
+    [queryClient],
+  );
+
+  const loadConversations = useCallback(async (preferredContactId?: string | null) => {
     setLoading(true);
     setError(null);
     try {
-      const items = await conversationService.list({ page_size: 100 });
-      const mapped = items.map(mapConversationToInbox);
-      setConversations(mapped);
-      const contactMap: Record<string, InboxContact> = {};
-      for (const item of items) {
-        contactMap[item.contact_id] = mapConversationToInboxContact(item);
-      }
-      setContacts(contactMap);
-      setSelectedId((current) => current ?? mapped[0]?.id ?? null);
+      const [conversationItems, contactItems] = await Promise.all([
+        conversationService.list({ page_size: 100 }),
+        contactService.list(),
+      ]);
+      const enriched = enrichInboxData(conversationItems, contactItems);
+      setConversations(sortByLatest(enriched.conversations));
+      setContacts(enriched.contacts);
+
+      const sortedConversations = sortByLatest(enriched.conversations);
+      const preferredConversation = preferredContactId
+        ? sortedConversations.find((item) => item.contact_id === preferredContactId)
+        : null;
+
+      setSelectedId((current) => preferredConversation?.id ?? current ?? sortedConversations[0]?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load conversations");
       setConversations([]);
@@ -89,8 +134,8 @@ export function InboxPage() {
   }, []);
 
   useEffect(() => {
-    void loadConversations();
-  }, [loadConversations]);
+    void loadConversations(contactParam);
+  }, [loadConversations, contactParam]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -99,10 +144,27 @@ export function InboxPage() {
       .list(selectedId)
       .then((messages) => {
         if (cancelled) return;
+        const mappedMessages = applyMessageDateLabels(sortMessagesAsc(messages.map(mapMessageToInbox)));
+        const latestMessage = mappedMessages[mappedMessages.length - 1];
         setMessagesByConversation((prev) => ({
           ...prev,
-          [selectedId]: messages.map(mapMessageToInbox),
+          [selectedId]: mappedMessages,
         }));
+        if (latestMessage) {
+          setConversations((prev) =>
+            sortByLatest(
+              prev.map((conversation) =>
+                conversation.id === selectedId
+                  ? {
+                      ...conversation,
+                      last_message_preview: latestMessage.content,
+                      last_message_at: latestMessage.sent_at,
+                    }
+                  : conversation,
+              ),
+            ),
+          );
+        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -138,19 +200,19 @@ export function InboxPage() {
 
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
   const selectedMessages = selectedId ? (messagesByConversation[selectedId] ?? []) : [];
-  const selectedContact = selectedConversation
-    ? (contacts[selectedConversation.contact_id] ?? mapConversationToInboxContact({
-        id: selectedConversation.id,
-        contact_id: selectedConversation.contact_id,
-        contact_name: selectedConversation.contact_name,
-        contact_phone: selectedConversation.contact_phone,
-        device_id: "",
-        status: "open",
-        unread_count: selectedConversation.unread_count,
-      }))
-    : null;
+  const selectedContact = selectedConversation ? contacts[selectedConversation.contact_id] ?? null : null;
   const selectedActivities = selectedContact ? (activities[selectedContact.id] ?? []) : [];
   const selectedNotes = selectedContact ? (workspaceNotes[selectedContact.id] ?? []) : [];
+
+  useEffect(() => {
+    if (!selectedConversation || selectedConversation.unread_count <= 0) return;
+    void markConversationAsRead(selectedConversation.id);
+    setConversations((prev) =>
+      prev.map((conversation) =>
+        conversation.id === selectedConversation.id ? { ...conversation, unread_count: 0 } : conversation,
+      ),
+    );
+  }, [selectedConversation, markConversationAsRead]);
 
   const agents = useMemo(() => {
     const map = new Map<string, string>();
@@ -163,22 +225,57 @@ export function InboxPage() {
   }, [conversations]);
 
   const handleSelect = useCallback((id: string) => {
+    const selectedConversation = conversations.find((conversation) => conversation.id === id);
     setSelectedId(id);
     setConversations((prev) =>
       prev.map((c) => (c.id === id ? { ...c, unread_count: 0 } : c)),
     );
-  }, []);
+
+    if ((selectedConversation?.unread_count ?? 0) > 0) {
+      void markConversationAsRead(id);
+    }
+  }, [conversations, markConversationAsRead]);
 
   const handleConversationUpdate = useCallback((updated: InboxConversation) => {
-    setConversations((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    setConversations((prev) =>
+      sortByLatest(prev.map((c) => (c.id === updated.id ? updated : c))),
+    );
   }, []);
 
-  const handleMessagesChange = useCallback(
-    async (messages: InboxChatMessage[]) => {
-      if (!selectedId) return;
-      setMessagesByConversation((prev) => ({ ...prev, [selectedId]: messages }));
+  const handleSendMessage = useCallback(
+    async (content: string) => {
+      if (!selectedId || !selectedConversation) return;
+
+      const sent = await messageService.send(selectedId, content);
+      const mappedMessage = mapMessageToInbox(sent);
+
+      setMessagesByConversation((prev) => {
+        const existing = prev[selectedId] ?? [];
+        if (existing.some((message) => message.id === mappedMessage.id)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [selectedId]: applyMessageDateLabels(sortMessagesAsc([...existing, mappedMessage])),
+        };
+      });
+
+      setConversations((prev) =>
+        sortByLatest(
+          prev.map((conversation) =>
+            conversation.id === selectedId
+              ? {
+                  ...conversation,
+                  last_message_preview: content,
+                  last_message_at: mappedMessage.sent_at,
+                  unread_count: 0,
+                }
+              : conversation,
+          ),
+        ),
+      );
     },
-    [selectedId],
+    [selectedConversation, selectedId],
   );
 
   const handleSaveNote = useCallback(
@@ -200,31 +297,151 @@ export function InboxPage() {
     [selectedContact, notify],
   );
 
-  const handleToggleSubscription = useCallback(() => {
+  const handleToggleSubscription = useCallback(async () => {
     if (!selectedContact) return;
-    const next = selectedContact.subscription_status === "subscribed" ? "unsubscribed" : "subscribed";
-    setContacts((prev) => ({
-      ...prev,
-      [selectedContact.id]: { ...selectedContact, subscription_status: next },
-    }));
-    notify("success", `Subscription status changed to ${next}`);
+    const nextConsent: ConsentStatus =
+      selectedContact.subscription_status === "subscribed" ? "opt_out" : "opt_in";
+    try {
+      const updated = await contactService.update(selectedContact.id, { consent_status: nextConsent });
+      const inboxContact = mapContactToInboxContact(updated, true);
+      setContacts((prev) => ({ ...prev, [updated.id]: inboxContact }));
+      notify("success", `Subscription status changed to ${inboxContact.subscription_status}`);
+    } catch (err) {
+      notify("error", err instanceof Error ? err.message : "Failed to update subscription");
+    }
   }, [selectedContact, notify]);
 
+  const handleSaveContact = useCallback(
+    async (input: { name: string; phone: string; email?: string; consent_status?: ConsentStatus }) => {
+      if (!selectedContact) return;
+      try {
+        const updated = await contactService.update(selectedContact.id, input);
+        const displayName = resolveContactDisplayName(updated);
+        const inboxContact = mapContactToInboxContact(updated, true);
+
+        setContacts((prev) => ({ ...prev, [updated.id]: inboxContact }));
+        setConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.contact_id === updated.id
+              ? { ...conversation, contact_name: displayName, contact_phone: updated.phone }
+              : conversation,
+          ),
+        );
+        notify("success", "Contact saved");
+      } catch (err) {
+        notify("error", err instanceof Error ? err.message : "Failed to save contact");
+        throw err;
+      }
+    },
+    [selectedContact, notify],
+  );
+
   const handleAddTag = useCallback(() => {
-    if (!selectedContact) return;
-    const newTag = { id: `tag-${Date.now()}`, name: "New Tag", color: "#6366F1" };
-    setContacts((prev) => ({
-      ...prev,
-      [selectedContact.id]: { ...selectedContact, tags: [...selectedContact.tags, newTag] },
-    }));
-    if (selectedConversation) {
-      handleConversationUpdate({
-        ...selectedConversation,
-        tags: [...selectedConversation.tags, newTag],
+    notify("success", "Tag management is available from the Contacts page");
+  }, [notify]);
+
+  useInboxRealtime({
+    onMessageCreated: (rawMessage) => {
+      const message = normalizeMessage(rawMessage);
+      const mappedMessage = mapMessageToInbox(message);
+
+      setMessagesByConversation((prev) => {
+        const existing = prev[message.conversation_id] ?? [];
+        if (existing.some((item) => item.id === mappedMessage.id)) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [message.conversation_id]: applyMessageDateLabels(
+            sortMessagesAsc([...existing, mappedMessage]),
+          ),
+        };
       });
-    }
-    notify("success", "Tag added");
-  }, [selectedContact, selectedConversation, handleConversationUpdate, notify]);
+
+      setConversations((prev) => {
+        const exists = prev.some((conversation) => conversation.id === message.conversation_id);
+        if (!exists) {
+          void loadConversations();
+          return prev;
+        }
+        return sortByLatest(
+          prev.map((conversation) =>
+            conversation.id === message.conversation_id
+              ? {
+                  ...conversation,
+                  last_message_preview: message.content,
+                  last_message_at: message.sent_at,
+                  unread_count:
+                    selectedId === conversation.id
+                      ? 0
+                      : conversation.unread_count + (message.direction === "inbound" ? 1 : 0),
+                }
+              : conversation,
+          ),
+        );
+      });
+
+      if (selectedId === message.conversation_id && message.direction === "inbound") {
+        void markConversationAsRead(message.conversation_id);
+      }
+    },
+    onConversationUpdated: (rawConversation) => {
+      const normalized = normalizeConversation(rawConversation);
+
+      setConversations((prev) => {
+        const existing = prev.find((conversation) => conversation.id === normalized.id);
+        const merged = mergeRealtimeConversation(normalized, existing);
+
+        if (existing) {
+          return sortByLatest(
+            prev.map((conversation) => (conversation.id === merged.id ? merged : conversation)),
+          );
+        }
+        return sortByLatest([merged, ...prev]);
+      });
+
+      setContacts((contactPrev) => {
+        const current = contactPrev[normalized.contact_id];
+        const { name, phone } = resolveConversationContactLabel(normalized.contact_id, {
+          name: normalized.contact_name,
+          phone: normalized.contact_phone,
+          fallbackName: current?.name,
+          fallbackPhone: current?.phone,
+        });
+
+        if (!current) {
+          return {
+            ...contactPrev,
+            [normalized.contact_id]: {
+              id: normalized.contact_id,
+              name,
+              phone,
+              is_saved_contact: false,
+              subscription_status: "subscribed",
+              source: "whatsapp",
+              added_on: normalized.created_at ?? new Date(0).toISOString(),
+              last_activity: normalized.last_message_at ?? normalized.updated_at ?? new Date().toISOString(),
+              language: "id",
+              tags: [],
+              conversations_count: 1,
+              campaigns_received: 0,
+              campaigns_clicked: 0,
+            },
+          };
+        }
+
+        return {
+          ...contactPrev,
+          [normalized.contact_id]: {
+            ...current,
+            name,
+            phone: phone || current.phone,
+            last_activity: normalized.last_message_at ?? current.last_activity,
+          },
+        };
+      });
+    },
+  });
 
   return (
     <div className="flex h-full flex-col">
@@ -277,16 +494,16 @@ export function InboxPage() {
           }}
           onSelect={handleSelect}
           onPageChange={setPage}
-          onRefresh={() => void loadConversations()}
+          onRefresh={() => void loadConversations(contactParam)}
         />
 
         <ConversationDetail
           conversation={selectedConversation}
           messages={selectedMessages}
-          onMessagesChange={handleMessagesChange}
+          onSendMessage={handleSendMessage}
           onConversationUpdate={handleConversationUpdate}
           onSaveNote={handleSaveNote}
-          onNotify={(msg) => notify("success", msg)}
+          onNotify={(message, type = "success") => notify(type, message)}
         />
 
         <ContactSidebar
@@ -295,7 +512,8 @@ export function InboxPage() {
           notes={selectedNotes}
           onSendMessage={() => notify("success", "Focus moved to message composer")}
           onAddTag={handleAddTag}
-          onToggleSubscription={handleToggleSubscription}
+          onToggleSubscription={() => void handleToggleSubscription()}
+          onSaveContact={handleSaveContact}
         />
         </>
         )}

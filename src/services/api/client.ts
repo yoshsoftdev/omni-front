@@ -44,14 +44,21 @@ class ApiClient {
     const { skipAuth, headers, ...init } = options;
     const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 
+    let authToken: string | null = null;
+    if (!skipAuth) {
+      authToken = this.accessToken;
+      if (!authToken && this.refreshToken) {
+        const refreshed = await this.refreshTokens();
+        authToken = refreshed?.accessToken ?? this.accessToken;
+      }
+    }
+
     const response = await fetch(url, {
       ...init,
       headers: {
         "Content-Type": "application/json",
         ...(headers ?? {}),
-        ...(!skipAuth && this.accessToken
-          ? { Authorization: `Bearer ${this.accessToken}` }
-          : {}),
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
       },
     });
 

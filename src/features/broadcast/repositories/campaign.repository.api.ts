@@ -28,8 +28,10 @@ class ApiCampaignRepository implements CampaignQueryRepository {
       name: input.name,
       channel_id: input.device_id,
       template_id: input.template_id,
-      segment_id: input.segment_id || undefined,
-      variable_mapping: { body: input.variable_mapping },
+      segment_ids: input.segment_ids ?? [],
+      tag_ids: input.tag_ids ?? [],
+      contact_ids: input.contact_ids ?? [],
+      variable_mapping: { body: input.variable_mapping ?? {} },
       scheduled_at: input.scheduled_at,
     });
     return parseCampaignDto(response.data!);

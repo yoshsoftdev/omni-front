@@ -33,8 +33,8 @@ export function SegmentTable({
           </tr>
         </thead>
         <tbody>
-          {segments.map((segment) => (
-            <tr key={segment.id} className="border-b last:border-0 hover:bg-muted/40">
+          {segments.map((segment, index) => (
+            <tr key={segment.id || `segment-${index}`} className="border-b last:border-0 hover:bg-muted/40">
               <td className="p-4">
                 <Link href={`/contacts/segments/${segment.id}`} className="inline-flex items-center gap-2 font-medium hover:underline">
                   <ColorDot color={segment.color} className="h-2.5 w-2.5" />
@@ -52,7 +52,12 @@ export function SegmentTable({
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/contacts/segments/${segment.id}`}><Edit3 className="h-4 w-4" /></Link>
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onDelete(segment.id)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={!segment.id}
+                    onClick={() => segment.id && onDelete(segment.id)}
+                  >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => onMore?.(segment)}>

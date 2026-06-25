@@ -10,7 +10,10 @@ import { RightDrawer, RightDrawerBody, RightDrawerHeader, RightDrawerTabs } from
 import { sourceLabel } from "@/components/shared/source-icon";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
+import { ContactFormModal } from "@/features/contacts/components/contact-form-modal";
 import { ContactTimeline } from "@/features/contacts/components/contact-timeline";
+import { contactService } from "@/features/contacts/services/contact.service";
+import { tagService } from "@/features/contacts/services/tag.service";
 import type { Contact, ContactTag, ConsentStatus } from "@/types/contact";
 
 function formatDate(date?: string) {
@@ -40,43 +43,105 @@ export function ContactDetailDrawer({
   const [tab, setTab] = useState("details");
   const [consentOpen, setConsentOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [notes, setNotes] = useState(contact.notes ?? "");
+  const [editForm, setEditForm] = useState({
+    name: contact.name,
+    phone: contact.phone,
+    email: contact.email ?? "",
+    consent_status: contact.consent_status,
+  });
 
-  function changeConsent(status: ConsentStatus) {
-    onUpdate({ ...contact, consent_status: status, updated_at: new Date().toISOString() });
-    setConsentOpen(false);
-    onNotify("success", "Consent status updated");
+  async function changeConsent(status: ConsentStatus) {
+    setSaving(true);
+    try {
+      const updated = await contactService.update(contact.id, { consent_status: status });
+      onUpdate(updated);
+      setConsentOpen(false);
+      onNotify("success", "Consent status updated");
+    } catch (err) {
+      onNotify("error", err instanceof Error ? err.message : "Failed to update consent");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function addTag(tagId: string) {
+  async function addTag(tagId: string) {
     const tag = tags.find((t) => t.id === tagId);
     if (!tag || contact.tags.some((t) => t.id === tagId)) return;
-    onUpdate({
-      ...contact,
-      tags: [...contact.tags, { id: tag.id, name: tag.name, color: tag.color }],
-      updated_at: new Date().toISOString(),
-    });
-    setTagOpen(false);
-    onNotify("success", `Tag "${tag.name}" added`);
+
+    setSaving(true);
+    try {
+      await tagService.assignToContact(tag.id, contact.id);
+      const updated = await contactService.getById(contact.id);
+      onUpdate(updated);
+      setTagOpen(false);
+      onNotify("success", `Tag "${tag.name}" added`);
+    } catch (err) {
+      onNotify("error", err instanceof Error ? err.message : "Failed to add tag");
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function saveNotes() {
-    onUpdate({ ...contact, notes, updated_at: new Date().toISOString() });
-    onNotify("success", "Notes saved");
+  async function saveNotes() {
+    setSaving(true);
+    try {
+      const updated = await contactService.update(contact.id, { notes });
+      onUpdate(updated);
+      onNotify("success", "Notes saved");
+    } catch (err) {
+      onNotify("error", err instanceof Error ? err.message : "Failed to save notes");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveEdit() {
+    if (!editForm.name.trim() || !editForm.phone.trim()) {
+      onNotify("error", "Name and phone are required");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await contactService.update(contact.id, {
+        name: editForm.name.trim(),
+        phone: editForm.phone.trim(),
+        email: editForm.email.trim() || undefined,
+        consent_status: editForm.consent_status,
+      });
+      onUpdate(updated);
+      setEditOpen(false);
+      onNotify("success", "Contact updated");
+    } catch (err) {
+      onNotify("error", err instanceof Error ? err.message : "Failed to update contact");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const footer = (
     <div className="space-y-2">
-      <Button className="w-full" onClick={() => { router.push("/inbox"); onNotify("success", "Opening inbox..."); }}>
+      <Button
+        className="w-full"
+        onClick={() => {
+          router.push(`/inbox?contact=${contact.id}`);
+          onNotify("success", "Opening inbox...");
+        }}
+      >
         <MessageSquare className="mr-2 h-4 w-4" />
         Send Message
       </Button>
       <div className="grid grid-cols-2 gap-2">
-        <Button variant="outline" onClick={() => setTagOpen(true)}>
+        <Button variant="outline" onClick={() => setTagOpen(true)} disabled={saving}>
           <Tag className="mr-2 h-4 w-4" />
           Add Tag
         </Button>
-        <Button variant="outline" onClick={() => setConsentOpen(true)}>Change Consent</Button>
+        <Button variant="outline" onClick={() => setConsentOpen(true)} disabled={saving}>
+          Change Consent
+        </Button>
       </div>
     </div>
   );
@@ -95,7 +160,22 @@ export function ContactDetailDrawer({
               <p className="text-sm text-muted-foreground">{contact.phone}</p>
               <p className="text-xs text-muted-foreground">{contact.email}</p>
             </div>
-            <Button variant="ghost" size="sm" className="ml-auto"><Edit3 className="h-4 w-4" /></Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="ml-auto"
+              onClick={() => {
+                setEditForm({
+                  name: contact.name,
+                  phone: contact.phone,
+                  email: contact.email ?? "",
+                  consent_status: contact.consent_status,
+                });
+                setEditOpen(true);
+              }}
+            >
+              <Edit3 className="h-4 w-4" />
+            </Button>
           </div>
           <RightDrawerTabs
             tabs={[
@@ -168,7 +248,9 @@ export function ContactDetailDrawer({
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add notes about this contact..."
               />
-              <Button className="w-full" onClick={saveNotes}>Save Notes</Button>
+              <Button className="w-full" onClick={saveNotes} disabled={saving}>
+                {saving ? "Saving..." : "Save Notes"}
+              </Button>
             </div>
           ) : null}
         </RightDrawerBody>
@@ -180,7 +262,13 @@ export function ContactDetailDrawer({
             <h4 className="font-semibold">Change Consent Status</h4>
             <div className="mt-3 space-y-2">
               {(["opt_in", "opt_out", "unknown"] as ConsentStatus[]).map((s) => (
-                <button key={s} type="button" className="flex w-full items-center justify-between rounded-lg border p-3 text-sm hover:bg-accent" onClick={() => changeConsent(s)}>
+                <button
+                  key={s}
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-lg border p-3 text-sm hover:bg-accent disabled:opacity-50"
+                  onClick={() => void changeConsent(s)}
+                  disabled={saving}
+                >
                   <span>{consentLabel(s)}</span>
                   <ConsentBadge status={s} />
                 </button>
@@ -196,16 +284,38 @@ export function ContactDetailDrawer({
           <div className="w-full max-w-sm rounded-lg border bg-card p-5">
             <h4 className="font-semibold">Add Tag</h4>
             <div className="mt-3 max-h-60 space-y-2 overflow-y-auto">
-              {tags.filter((t) => !contact.tags.some((ct) => ct.id === t.id)).map((t) => (
-                <button key={t.id} type="button" className="flex w-full items-center gap-2 rounded-lg border p-3 text-sm hover:bg-accent" onClick={() => addTag(t.id)}>
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: t.color }} />
-                  {t.name}
-                </button>
-              ))}
+              {tags.filter((t) => !contact.tags.some((ct) => ct.id === t.id)).length === 0 ? (
+                <p className="text-sm text-muted-foreground">No tags available to add.</p>
+              ) : (
+                tags.filter((t) => !contact.tags.some((ct) => ct.id === t.id)).map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-lg border p-3 text-sm hover:bg-accent disabled:opacity-50"
+                    onClick={() => void addTag(t.id)}
+                    disabled={saving}
+                  >
+                    <span className="h-3 w-3 rounded-full" style={{ backgroundColor: t.color }} />
+                    {t.name}
+                  </button>
+                ))
+              )}
             </div>
             <Button variant="outline" className="mt-3 w-full" onClick={() => setTagOpen(false)}>Cancel</Button>
           </div>
         </div>
+      ) : null}
+
+      {editOpen ? (
+        <ContactFormModal
+          title="Edit Contact"
+          submitLabel="Save Changes"
+          values={editForm}
+          onChange={setEditForm}
+          onClose={() => setEditOpen(false)}
+          onSubmit={() => void saveEdit()}
+          saving={saving}
+        />
       ) : null}
     </>
   );

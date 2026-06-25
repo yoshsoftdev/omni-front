@@ -13,7 +13,16 @@ export type CampaignDashboardStats = {
   channelBreakdown: ChannelBreakdown[];
 };
 
-export type CreateCampaignPayload = Omit<Campaign, "id">;
+export type CreateCampaignPayload = {
+  name: string;
+  device_id: string;
+  template_id: string;
+  variable_mapping?: Record<string, string>;
+  scheduled_at?: string;
+  segment_ids?: string[];
+  tag_ids?: string[];
+  contact_ids?: string[];
+};
 
 export interface CampaignRepository {
   list(): Promise<Campaign[]>;

@@ -68,8 +68,8 @@ export function mapContactToInboxContact(contact: Contact, isSaved = true): Inbo
     notes: contact.notes,
     tags: contact.tags,
     conversations_count: contact.conversations_count,
-    campaigns_received: contact.campaigns_received,
-    campaigns_clicked: contact.campaigns_clicked,
+    campaigns_received: contact.campaigns_received ?? 0,
+    campaigns_clicked: contact.campaigns_clicked ?? 0,
   };
 }
 

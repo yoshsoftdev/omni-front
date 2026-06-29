@@ -14,7 +14,7 @@ import { CampaignCard } from "@/features/broadcast/components/campaigns/campaign
 import { CampaignChannelCard } from "@/features/broadcast/components/campaigns/campaign-channel-card";
 import { WhatsAppMessagePreview } from "@/features/broadcast/components/shared/whatsapp-message-preview";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
-import { templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
+import { countTemplateVariables, templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
 import { SegmentPicker } from "@/features/segments/components/segment-picker";
@@ -99,6 +99,10 @@ export function CampaignWizard() {
     templateId,
     variableMapping,
     sampleValues,
+    headerMediaUrl,
+    headerVariableMapping,
+    includeHeader,
+    includeFooter,
     selectedSegmentIds,
     selectedTagIds,
     sendMode,
@@ -112,6 +116,10 @@ export function CampaignWizard() {
     setTemplateId,
     setVariableMapping,
     setSampleValues,
+    setHeaderMediaUrl,
+    setHeaderVariableMapping,
+    setIncludeHeader,
+    setIncludeFooter,
     setSelectedSegmentIds,
     setSelectedTagIds,
     setSendMode,
@@ -171,6 +179,11 @@ export function CampaignWizard() {
   const selectedTemplate = templates.find((t) => t.id === templateId);
   const fullTemplate = selectedTemplate;
   const variableCount = fullTemplate?.variable_count ?? 0;
+  const headerType = fullTemplate?.header?.type ?? "none";
+  const headerTextVariableCount = countTemplateVariables(fullTemplate?.header?.title);
+  const hasMediaHeader = headerType === "image" || headerType === "video" || headerType === "document";
+  const hasTemplateHeader = headerType !== "none";
+  const hasTemplateFooter = Boolean(fullTemplate?.footer?.trim());
 
   useEffect(() => {
     if (!fullTemplate) return;
@@ -181,9 +194,29 @@ export function CampaignWizard() {
       mapping[key] = i === 1 ? "name" : i === 2 ? "discount" : "expired_date";
       samples[key] = mapping[key] ? `{{${mapping[key]}}}` : `Sample ${i}`;
     }
+    const headerMapping: Record<string, string> = {};
+    for (let i = 1; i <= headerTextVariableCount; i += 1) {
+      const key = String(i);
+      headerMapping[key] = "name";
+    }
     setVariableMapping(mapping);
     setSampleValues(samples);
-  }, [templateId, fullTemplate?.variable_count, setVariableMapping, setSampleValues]);
+    setHeaderVariableMapping(headerMapping);
+    setIncludeHeader(hasTemplateHeader);
+    setIncludeFooter(hasTemplateFooter);
+  }, [
+    templateId,
+    fullTemplate?.variable_count,
+    fullTemplate?.header?.title,
+    headerTextVariableCount,
+    hasTemplateHeader,
+    hasTemplateFooter,
+    setVariableMapping,
+    setSampleValues,
+    setHeaderVariableMapping,
+    setIncludeHeader,
+    setIncludeFooter,
+  ]);
 
   const previewBody = useMemo(() => {
     let body = fullTemplate?.body ?? "";
@@ -228,6 +261,15 @@ export function CampaignWizard() {
         return "No templates available for the selected channel. Sync templates first.";
       }
     }
+    if (step === 4) {
+      if (!fullTemplate) return "Select a template first";
+      if (hasMediaHeader && includeHeader && !headerMediaUrl.trim()) {
+        return "Header media URL is required for image/video/document templates";
+      }
+      if (hasMediaHeader && includeHeader && !/^https?:\/\//i.test(headerMediaUrl.trim())) {
+        return "Header media URL must start with http:// or https://";
+      }
+    }
     if (step === 5 && selectedSegmentIds.length === 0 && selectedTagIds.length === 0) {
       return "Select at least one segment or tag";
     }
@@ -255,11 +297,23 @@ export function CampaignWizard() {
           sendMode === "later" && scheduleDate && scheduleTime
             ? new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString()
             : undefined;
+        const variableMappingPayload: NonNullable<Parameters<typeof campaignService.create>[0]["variable_mapping"]> = {
+          body: variableMapping,
+        };
+        if (hasTemplateHeader && includeHeader) {
+          variableMappingPayload.header = {
+            ...(headerMediaUrl.trim() ? { media_link: headerMediaUrl.trim() } : {}),
+            ...(headerTextVariableCount > 0 ? { text: headerVariableMapping } : {}),
+          };
+        }
         await campaignService.create({
           name: campaignName.trim(),
+          description: description.trim() || undefined,
           device_id: channelId,
           template_id: templateId,
-          variable_mapping: { body: variableMapping },
+          variable_mapping: variableMappingPayload,
+          sample_values: sampleValues,
+          timezone: sendMode === "later" ? timezone : undefined,
           segment_ids: selectedSegmentIds,
           tag_ids: selectedTagIds,
           scheduled_at: scheduledAt,
@@ -402,52 +456,167 @@ export function CampaignWizard() {
           ) : null}
 
           {step === 4 && fullTemplate ? (
-            <div className="space-y-4 rounded-lg border bg-card p-5">
-              <h2 className="text-sm font-semibold">Map Variables</h2>
-              <p className="text-xs text-muted-foreground">
-                Map template variables to contact fields and provide sample values.
-              </p>
-              <div className="overflow-hidden rounded-md border">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50">
-                    <tr>
-                      <th className="px-3 py-2 text-left text-xs">Variable</th>
-                      <th className="px-3 py-2 text-left text-xs">Map To</th>
-                      <th className="px-3 py-2 text-left text-xs">Sample Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: variableCount }, (_, i) => i + 1).map((n) => {
-                      const key = String(n);
-                      return (
-                        <tr key={key} className="border-t">
-                          <td className="px-3 py-3 font-medium">{`{{${key}}}`}</td>
-                          <td className="px-3 py-3">
-                            <select
-                              className={cn(formControlClass, "h-9")}
-                              value={variableMapping[key] ?? "name"}
-                              onChange={(e) =>
-                                setVariableMapping({ ...variableMapping, [key]: e.target.value })
-                              }
-                            >
-                              {FIELD_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>
-                                  {opt.label}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-3 py-3">
-                            <Input
-                              value={sampleValues[key] ?? ""}
-                              onChange={(e) => setSampleValues({ ...sampleValues, [key]: e.target.value })}
-                            />
-                          </td>
+            <div className="space-y-4">
+              {(hasTemplateHeader || hasTemplateFooter) ? (
+                <div className="space-y-4 rounded-lg border bg-card p-5">
+                  <div>
+                    <h2 className="text-sm font-semibold">Template Components</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Configure header media and choose which parts appear in the preview.
+                    </p>
+                  </div>
+
+                  {hasTemplateHeader ? (
+                    <div className="space-y-3 rounded-md border p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium capitalize">Header ({headerType})</p>
+                          {fullTemplate.header.title ? (
+                            <p className="text-xs text-muted-foreground">{fullTemplate.header.title}</p>
+                          ) : null}
+                        </div>
+                        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={includeHeader}
+                            onChange={(event) => setIncludeHeader(event.target.checked)}
+                          />
+                          Show in preview
+                        </label>
+                      </div>
+
+                      {includeHeader && hasMediaHeader ? (
+                        <div className="space-y-2">
+                          <Label htmlFor="header-media-url">
+                            {headerType === "image" ? "Image" : headerType === "video" ? "Video" : "Document"} URL
+                          </Label>
+                          <Input
+                            id="header-media-url"
+                            value={headerMediaUrl}
+                            onChange={(event) => setHeaderMediaUrl(event.target.value)}
+                            placeholder="https://example.com/banner.jpg"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Public HTTPS URL required by Meta when sending templates with media headers.
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {includeHeader && headerTextVariableCount > 0 ? (
+                        <div className="overflow-hidden rounded-md border">
+                          <table className="w-full text-sm">
+                            <thead className="bg-muted/50">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-xs">Header Variable</th>
+                                <th className="px-3 py-2 text-left text-xs">Map To</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {Array.from({ length: headerTextVariableCount }, (_, i) => i + 1).map((n) => {
+                                const key = String(n);
+                                return (
+                                  <tr key={`header-${key}`} className="border-t">
+                                    <td className="px-3 py-3 font-medium">{`{{${key}}}`}</td>
+                                    <td className="px-3 py-3">
+                                      <select
+                                        className={cn(formControlClass, "h-9")}
+                                        value={headerVariableMapping[key] ?? "name"}
+                                        onChange={(event) =>
+                                          setHeaderVariableMapping({
+                                            ...headerVariableMapping,
+                                            [key]: event.target.value,
+                                          })
+                                        }
+                                      >
+                                        {FIELD_OPTIONS.map((opt) => (
+                                          <option key={opt.value} value={opt.value}>
+                                            {opt.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {hasTemplateFooter ? (
+                    <div className="space-y-3 rounded-md border p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium">Footer</p>
+                          <p className="text-xs text-muted-foreground">{fullTemplate.footer}</p>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            checked={includeFooter}
+                            onChange={(event) => setIncludeFooter(event.target.checked)}
+                          />
+                          Show in preview
+                        </label>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="space-y-4 rounded-lg border bg-card p-5">
+                <h2 className="text-sm font-semibold">Map Body Variables</h2>
+                <p className="text-xs text-muted-foreground">
+                  Map template body variables to contact fields and provide sample values.
+                </p>
+                {variableCount === 0 ? (
+                  <p className="text-sm text-muted-foreground">This template has no body variables.</p>
+                ) : (
+                  <div className="overflow-hidden rounded-md border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs">Variable</th>
+                          <th className="px-3 py-2 text-left text-xs">Map To</th>
+                          <th className="px-3 py-2 text-left text-xs">Sample Value</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody>
+                        {Array.from({ length: variableCount }, (_, i) => i + 1).map((n) => {
+                          const key = String(n);
+                          return (
+                            <tr key={key} className="border-t">
+                              <td className="px-3 py-3 font-medium">{`{{${key}}}`}</td>
+                              <td className="px-3 py-3">
+                                <select
+                                  className={cn(formControlClass, "h-9")}
+                                  value={variableMapping[key] ?? "name"}
+                                  onChange={(e) =>
+                                    setVariableMapping({ ...variableMapping, [key]: e.target.value })
+                                  }
+                                >
+                                  {FIELD_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-3 py-3">
+                                <Input
+                                  value={sampleValues[key] ?? ""}
+                                  onChange={(e) => setSampleValues({ ...sampleValues, [key]: e.target.value })}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           ) : null}
@@ -579,9 +748,11 @@ export function CampaignWizard() {
               heading="Template Preview"
               deviceName={channelName || "Omni-Chan Official"}
               languageLabel={selectedTemplate?.language_label ?? "Indonesia (ID)"}
-              headerType={templatePreviewHeaderType(fullTemplate.header.type)}
+              headerType={
+                includeHeader ? templatePreviewHeaderType(fullTemplate.header?.type ?? "none") : undefined
+              }
               body={previewBody}
-              footer={fullTemplate.footer}
+              footer={includeFooter ? fullTemplate.footer : undefined}
               buttons={fullTemplate.buttons}
             />
           ) : null}

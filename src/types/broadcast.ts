@@ -58,6 +58,21 @@ export interface TemplateDTO {
 /** @deprecated Use TemplateDTO */
 export type WhatsAppTemplate = TemplateDTO;
 
+export type CampaignAudienceDTO = {
+  type?: "segment" | "tag" | "manual" | "mixed" | "";
+  name: string;
+  recipient_count?: number;
+  snapshot?: boolean;
+  snapshot_at?: string;
+  extra_audiences?: number;
+};
+
+export type CampaignAudienceSourceDTO = {
+  type: string;
+  id: string;
+  name: string;
+};
+
 /** Backend API wire format for campaigns. */
 export interface CampaignDTO {
   id: string;
@@ -70,8 +85,14 @@ export interface CampaignDTO {
   template_name?: string;
   template_category?: string;
   template_language?: string;
-  variable_mapping: {
+  variable_mapping?: {
     body?: Record<string, string>;
+    header?: {
+      text?: Record<string, string>;
+      media_link?: string;
+      media_id?: string;
+    };
+    buttons?: Record<string, { url?: Record<string, string>; copy_code?: string }>;
   };
   scheduled_at?: string;
   started_at?: string;
@@ -81,6 +102,8 @@ export interface CampaignDTO {
   delivered_count: number;
   read_count: number;
   failed_count: number;
+  audience?: CampaignAudienceDTO;
+  audiences?: CampaignAudienceSourceDTO[];
   created_at: string;
   updated_at: string;
 }
@@ -91,7 +114,16 @@ export interface CreateCampaignInput {
   template_id: string;
   variable_mapping?: {
     body?: Record<string, string>;
+    header?: {
+      text?: Record<string, string>;
+      media_link?: string;
+      media_id?: string;
+    };
+    buttons?: Record<string, { url?: Record<string, string>; copy_code?: string }>;
   };
+  sample_values?: Record<string, string>;
+  description?: string;
+  timezone?: string;
   contact_ids?: string[];
   tag_ids?: string[];
   segment_ids?: string[];

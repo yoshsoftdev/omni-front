@@ -112,7 +112,7 @@ export function CampaignWizard() {
 
   const { data: contacts = [], isLoading: contactsLoading } = useQuery({
     queryKey: ["contacts"],
-    queryFn: () => contactService.list(),
+    queryFn: async () => (await contactService.list()).items,
   });
 
   const { data: templates = [], isLoading: templatesLoading, refetch: refetchTemplates } = useQuery({

@@ -2,8 +2,8 @@ import type { ConsentStatus } from "@/types/contact";
 import { cn } from "@/lib/utils";
 
 const LABELS: Record<ConsentStatus, string> = {
-  opt_in: "Allowed",
-  opt_out: "Blocked",
+  opt_in: "Subscribed",
+  opt_out: "Unsubscribed",
   unknown: "Unknown",
 };
 
@@ -22,7 +22,7 @@ export function ConsentBadge({ status, className }: { status: ConsentStatus; cla
 }
 
 export function consentLabel(status: ConsentStatus) {
-  if (status === "opt_in") return "Marketing Opt-In";
-  if (status === "opt_out") return "Marketing Opt-Out";
+  if (status === "opt_in") return "Subscribed";
+  if (status === "opt_out") return "Unsubscribed";
   return "Unknown";
 }

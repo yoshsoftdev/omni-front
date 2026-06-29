@@ -6,6 +6,24 @@ export type CampaignStatus =
   | "cancelled"
   | "failed";
 
+export type CampaignAudienceType = "segment" | "tag" | "manual" | "mixed" | "";
+
+export type CampaignAudienceSource = {
+  type: string;
+  id: string;
+  name: string;
+};
+
+export type CampaignAudience = {
+  type: CampaignAudienceType;
+  name: string;
+  recipient_count: number;
+  snapshot: boolean;
+  snapshot_at?: string;
+  extra_audiences?: number;
+  sources?: CampaignAudienceSource[];
+};
+
 /** Frontend domain model for campaigns. */
 export interface Campaign {
   id: string;
@@ -26,6 +44,8 @@ export interface Campaign {
   segment_name: string;
   segment_contact_count: number;
   total_contacts: number;
+  audience?: CampaignAudience;
+  audiences?: CampaignAudienceSource[];
 
   scheduled_at?: string;
   started_at?: string;

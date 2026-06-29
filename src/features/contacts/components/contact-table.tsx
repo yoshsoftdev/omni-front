@@ -20,6 +20,10 @@ function formatActivity(date?: string) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+function formatCreated(date: string) {
+  return new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
 export function ContactTable({
   contacts,
   onRowClick,
@@ -37,16 +41,19 @@ export function ContactTable({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[900px] text-sm">
+      <table className="w-full min-w-[1200px] text-sm">
         <thead>
           <tr className="border-b text-left text-muted-foreground">
             <th className="p-4 font-medium">Name</th>
-            <th className="p-4 font-medium">Phone</th>
+            <th className="p-4 font-medium">WhatsApp</th>
             <th className="p-4 font-medium">Email</th>
-            <th className="p-4 font-medium">Source</th>
+            <th className="p-4 font-medium">Subscription</th>
             <th className="p-4 font-medium">Tags</th>
-            <th className="p-4 font-medium">Consent Status</th>
-            <th className="p-4 font-medium">Last Activity</th>
+            <th className="p-4 font-medium">Company</th>
+            <th className="p-4 font-medium">City</th>
+            <th className="p-4 font-medium">Source</th>
+            <th className="p-4 font-medium">Last Interaction</th>
+            <th className="p-4 font-medium">Created At</th>
             <th className="p-4 font-medium">Actions</th>
           </tr>
         </thead>
@@ -65,15 +72,18 @@ export function ContactTable({
               </td>
               <td className="p-4 text-muted-foreground">{contact.phone}</td>
               <td className="p-4 text-muted-foreground">{contact.email ?? "—"}</td>
+              <td className="p-4"><ConsentBadge status={contact.consent_status} /></td>
+              <td className="p-4"><TagBadgeList tags={contact.tags} /></td>
+              <td className="p-4 text-muted-foreground">{contact.company ?? "—"}</td>
+              <td className="p-4 text-muted-foreground">{contact.city ?? "—"}</td>
               <td className="p-4">
                 <span className="inline-flex items-center gap-1.5 text-muted-foreground">
                   <SourceIcon source={contact.source} />
                   {sourceLabel(contact.source)}
                 </span>
               </td>
-              <td className="p-4"><TagBadgeList tags={contact.tags} /></td>
-              <td className="p-4"><ConsentBadge status={contact.consent_status} /></td>
               <td className="p-4 text-muted-foreground">{formatActivity(contact.last_activity_at)}</td>
+              <td className="p-4 text-muted-foreground">{formatCreated(contact.created_at)}</td>
               <td className="p-4" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center gap-1">
                   <Button variant="ghost" size="sm" onClick={() => (onView ?? onRowClick)(contact)} title="View">

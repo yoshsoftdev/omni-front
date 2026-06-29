@@ -5,7 +5,9 @@ import { FormEvent, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RoleSelector } from "@/features/team/components/role-selector";
 import { teamService } from "@/features/team/services/team.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 import type { TeamRole } from "@/types/team";
 
 interface InviteMemberFormProps {
@@ -24,19 +26,19 @@ export function InviteMemberForm({ onInvited }: InviteMemberFormProps) {
     setLoading(true);
 
     try {
-      await teamService.addMember(email, role);
+      await teamService.addMember(email.trim(), role);
       setEmail("");
       setRole("agent");
       onInvited();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add member");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-lg border bg-card p-4">
+    <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4 rounded-lg border bg-card p-4">
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Add member</h2>
         <p className="text-sm text-muted-foreground">
@@ -57,15 +59,7 @@ export function InviteMemberForm({ onInvited }: InviteMemberFormProps) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="member-role">Role</Label>
-          <select
-            id="member-role"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={role}
-            onChange={(e) => setRole(e.target.value as TeamRole)}
-          >
-            <option value="admin">Admin</option>
-            <option value="agent">Agent</option>
-          </select>
+          <RoleSelector value={role} onChange={setRole} />
         </div>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}

@@ -6,7 +6,8 @@ import { Copy, Pencil, X } from "lucide-react";
 import { ColorDot } from "@/components/shared/color-dot";
 import { RightDrawer, RightDrawerBody, RightDrawerHeader } from "@/components/shared/right-drawer";
 import { Button } from "@/components/ui/button";
-import { StatusBadge, formatSchedule } from "@/features/broadcast/components/campaigns/campaign-table";
+import { StatusBadge } from "@/features/broadcast/components/campaigns/campaign-table";
+import { formatSchedule } from "@/features/broadcast/utils/campaign-list-format";
 import type { Campaign } from "@/features/broadcast/types/campaign";
 
 interface ScheduleDrawerProps {

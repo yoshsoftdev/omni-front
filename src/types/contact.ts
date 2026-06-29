@@ -1,5 +1,7 @@
-export type ContactSource = "whatsapp" | "import" | "manual" | "api";
+export type ContactSource = "whatsapp" | "import" | "manual" | "api" | "meta_inbound";
 export type ConsentStatus = "opt_in" | "opt_out" | "unknown";
+export type MarketingStatus = "subscribed" | "unsubscribed" | "unknown";
+export type ContactFieldType = "text" | "number" | "date" | "boolean" | "select";
 
 export interface ContactTagRef {
   id: string;
@@ -7,10 +9,29 @@ export interface ContactTagRef {
   color: string;
 }
 
-export interface ContactCampaign {
+export interface ContactFieldDefinition {
+  id: string;
+  field_key: string;
+  label: string;
+  field_type: ContactFieldType;
+  options?: string[];
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ContactCustomField {
+  id: string;
+  field_key: string;
+  label: string;
+  field_type: ContactFieldType;
+  options?: string[];
+  value: string | number | boolean | null;
+}
+
+export interface ContactLastCampaign {
   id: string;
   name: string;
-  status: "delivered" | "read" | "clicked" | "failed";
   sent_at: string;
 }
 
@@ -29,18 +50,24 @@ export interface Contact {
   source: ContactSource;
   tags: ContactTagRef[];
   consent_status: ConsentStatus;
+  marketing_status: MarketingStatus;
   last_activity_at?: string;
+  country?: string;
+  province?: string;
+  city?: string;
+  company?: string;
+  job_title?: string;
+  notes?: string;
   language?: string;
   customer_type?: string;
-  city?: string;
-  notes?: string;
+  custom_fields: ContactCustomField[];
   created_at: string;
   updated_at: string;
   conversations_count: number;
-  campaigns_received: number;
-  campaigns_clicked: number;
+  last_campaign?: ContactLastCampaign;
+  campaigns_received?: number;
+  campaigns_clicked?: number;
   last_conversation_at?: string;
-  recent_campaigns?: ContactCampaign[];
   activities?: ContactActivity[];
 }
 
@@ -62,14 +89,19 @@ export interface ContactImportResult {
   errors?: string[];
 }
 
-export interface CreateContactInput {
+export interface ContactFormInput {
   name: string;
   phone: string;
   email?: string;
   notes?: string;
-  source?: ContactSource;
+  country?: string;
+  province?: string;
+  city?: string;
+  company?: string;
+  job_title?: string;
   consent_status?: ConsentStatus;
   tag_ids?: string[];
+  custom_fields?: Record<string, string | number | boolean | null>;
 }
 
 export interface ContactStats {
@@ -77,4 +109,19 @@ export interface ContactStats {
   opt_in: number;
   opt_out: number;
   unknown: number;
+}
+
+export interface ContactListParams {
+  search?: string;
+  tag_id?: string;
+  consent_status?: ConsentStatus;
+  page?: number;
+  page_size?: number;
+}
+
+export interface ContactListResult {
+  items: Contact[];
+  total: number;
+  page: number;
+  page_size: number;
 }

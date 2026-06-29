@@ -59,7 +59,7 @@ export function CreateBroadcastForm({ onCreated }: CreateBroadcastFormProps) {
       ([deviceList, contactList, tagList]) => {
         const connected = deviceList.filter((d) => d.status === "connected");
         setDevices(connected);
-        setContacts(contactList);
+        setContacts(contactList.items);
         setTags(tagList);
         if (connected.length > 0) setDeviceId(connected[0].id);
       },

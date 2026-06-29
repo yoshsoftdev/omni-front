@@ -15,6 +15,10 @@ export type CampaignWizardDraft = {
   templateId: string;
   variableMapping: Record<string, string>;
   sampleValues: Record<string, string>;
+  headerMediaUrl: string;
+  headerVariableMapping: Record<string, string>;
+  includeHeader: boolean;
+  includeFooter: boolean;
   selectedSegmentIds: string[];
   selectedTagIds: string[];
   sendMode: "now" | "later";
@@ -32,6 +36,10 @@ interface CampaignWizardState extends CampaignWizardDraft {
   setTemplateId: (value: string) => void;
   setVariableMapping: (value: Record<string, string>) => void;
   setSampleValues: (value: Record<string, string>) => void;
+  setHeaderMediaUrl: (value: string) => void;
+  setHeaderVariableMapping: (value: Record<string, string>) => void;
+  setIncludeHeader: (value: boolean) => void;
+  setIncludeFooter: (value: boolean) => void;
   setSelectedSegmentIds: (value: string[]) => void;
   setSelectedTagIds: (value: string[]) => void;
   setSendMode: (value: "now" | "later") => void;
@@ -52,6 +60,10 @@ const initialState: CampaignWizardDraft & { step: WizardStep } = {
   templateId: "",
   variableMapping: {},
   sampleValues: {},
+  headerMediaUrl: "",
+  headerVariableMapping: {},
+  includeHeader: true,
+  includeFooter: true,
   selectedSegmentIds: [],
   selectedTagIds: [],
   sendMode: "now",
@@ -78,13 +90,35 @@ export const useCampaignWizardStore = create<CampaignWizardState>((set) => ({
               templateId: "",
               variableMapping: {},
               sampleValues: {},
+              headerMediaUrl: "",
+              headerVariableMapping: {},
+              includeHeader: true,
+              includeFooter: true,
             }
           : {}),
       };
     }),
-  setTemplateId: (templateId) => set({ templateId }),
+  setTemplateId: (templateId) =>
+    set((state) => {
+      if (state.templateId === templateId) {
+        return state;
+      }
+      return {
+        templateId,
+        variableMapping: {},
+        sampleValues: {},
+        headerMediaUrl: "",
+        headerVariableMapping: {},
+        includeHeader: true,
+        includeFooter: true,
+      };
+    }),
   setVariableMapping: (variableMapping) => set({ variableMapping }),
   setSampleValues: (sampleValues) => set({ sampleValues }),
+  setHeaderMediaUrl: (headerMediaUrl) => set({ headerMediaUrl }),
+  setHeaderVariableMapping: (headerVariableMapping) => set({ headerVariableMapping }),
+  setIncludeHeader: (includeHeader) => set({ includeHeader }),
+  setIncludeFooter: (includeFooter) => set({ includeFooter }),
   setSelectedSegmentIds: (selectedSegmentIds) => set({ selectedSegmentIds }),
   setSelectedTagIds: (selectedTagIds) => set({ selectedTagIds }),
   setSendMode: (sendMode) => set({ sendMode }),

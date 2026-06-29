@@ -17,7 +17,8 @@ import {
 import { ColorDot } from "@/components/shared/color-dot";
 import { PageTabs } from "@/components/shared/page-tabs";
 import { Button } from "@/components/ui/button";
-import { StatusBadge, formatSchedule } from "@/features/broadcast/components/campaigns/campaign-table";
+import { StatusBadge } from "@/features/broadcast/components/campaigns/campaign-table";
+import { formatSchedule } from "@/features/broadcast/utils/campaign-list-format";
 import { ScheduleCalendar, ScheduleMiniCalendar } from "@/features/broadcast/components/schedules/schedule-calendar";
 import { ScheduleDrawer } from "@/features/broadcast/components/schedules/schedule-drawer";
 import { campaignQueryService } from "@/features/broadcast/services/campaign-query.service";

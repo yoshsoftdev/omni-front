@@ -1,7 +1,13 @@
 import { apiClient } from "@/services/api/client";
 import { useAuthStore } from "@/store/auth-store";
-import type { PermissionMatrixRow, RoleDetail, RoleInfo, WorkspaceDetail } from "@/types/rbac";
-import type { Team, TeamMember, TeamRole } from "@/types/team";
+import {
+  normalizeInviteResult,
+  normalizeRole,
+  normalizeTeamMember,
+} from "@/features/team/mappers/team.mapper";
+import { normalizePermissionInfo, normalizePermissionMatrixRow } from "@/features/team/mappers/rbac.mapper";
+import type { PermissionInfo, PermissionMatrixRow, RoleDetail, RoleInfo, WorkspaceDetail } from "@/types/rbac";
+import type { Team, TeamInvitation, TeamMember, TeamRole } from "@/types/team";
 
 export const teamService = {
   async getTeam() {
@@ -29,8 +35,9 @@ export const teamService = {
   },
 
   async listMembers() {
-    const response = await apiClient.get<{ members: TeamMember[] }>("/teams/members");
-    return response.data?.members ?? [];
+    const response = await apiClient.get<{ members?: TeamMember[] }>("/teams/members");
+    const rows = response.data?.members ?? [];
+    return rows.map((row) => normalizeTeamMember(row as TeamMember & Record<string, unknown>));
   },
 
   async listUsers(params?: { search?: string; role?: string }) {
@@ -38,50 +45,71 @@ export const teamService = {
     if (params?.search) query.set("search", params.search);
     if (params?.role) query.set("role", params.role);
     const suffix = query.toString() ? `?${query.toString()}` : "";
-    const response = await apiClient.get<{ users: TeamMember[] }>(`/teams/users${suffix}`);
-    return response.data?.users ?? [];
+    const response = await apiClient.get<{ users?: TeamMember[] }>(`/teams/users${suffix}`);
+    const rows = response.data?.users ?? [];
+    return rows.map((row) => normalizeTeamMember(row as TeamMember & Record<string, unknown>));
   },
 
-  async inviteUser(input: { name: string; email: string; role: TeamRole }) {
-    await apiClient.post("/teams/users/invite", input);
+  async inviteUser(input: { name: string; email: string; role: TeamRole }): Promise<TeamInvitation> {
+    const response = await apiClient.post<Record<string, unknown>>("/teams/users/invite", input);
+    return normalizeInviteResult(response.data ?? {});
   },
 
   async updateUserRole(memberId: string, role: TeamRole) {
     const response = await apiClient.patch<TeamMember>(`/teams/users/${memberId}/role`, { role });
-    return response.data!;
+    return normalizeTeamMember(response.data! as TeamMember & Record<string, unknown>);
   },
 
   async deactivateUser(memberId: string) {
     const response = await apiClient.post<TeamMember>(`/teams/users/${memberId}/deactivate`);
-    return response.data!;
+    return normalizeTeamMember(response.data! as TeamMember & Record<string, unknown>);
   },
 
   async removeUser(memberId: string) {
     await apiClient.delete(`/teams/users/${memberId}`);
   },
 
-  async listRoles() {
-    const response = await apiClient.get<{ roles: Array<RoleInfo & Record<string, unknown>> }>("/teams/roles");
-    const roles = response.data?.roles ?? [];
-    return roles.map((role, index) => ({
-      id: String(role.id ?? role.ID ?? `role-${index}`),
-      name: String(role.name ?? role.Name ?? ""),
-      description: String(role.description ?? role.Description ?? ""),
-      is_system: Boolean(role.is_system ?? role.IsSystem ?? false),
-    }));
+  async listRoles(): Promise<RoleInfo[]> {
+    const response = await apiClient.get<{ roles?: Array<RoleInfo & Record<string, unknown>> }>("/teams/roles");
+    const rows = response.data?.roles ?? [];
+    return rows.map((row) => normalizeRole(row));
   },
 
   async getRole(roleId: string) {
-    const roles = await this.listRoles();
-    const role = roles.find((item) => item.id === roleId);
-    if (!role) {
-      throw new Error("Role not found");
-    }
-    return { role, permissions: [] } satisfies RoleDetail;
+    const response = await apiClient.get<RoleDetail>(`/teams/roles/${roleId}`);
+    const detail = response.data!;
+    return {
+      role: normalizeRole(detail.role as RoleInfo & Record<string, unknown>),
+      permissions: (detail.permissions ?? []).map((row) =>
+        normalizePermissionInfo(row as PermissionInfo & Record<string, unknown>),
+      ),
+    } satisfies RoleDetail;
   },
 
   async getPermissionMatrix() {
-    return [] as PermissionMatrixRow[];
+    const response = await apiClient.get<{ matrix?: Array<PermissionMatrixRow & Record<string, unknown>> }>(
+      "/teams/permissions",
+    );
+    const rows = response.data?.matrix ?? [];
+    return rows.map((row) => normalizePermissionMatrixRow(row));
+  },
+
+  async createRole(input: { name: string; description: string }) {
+    const response = await apiClient.post<RoleInfo & Record<string, unknown>>("/teams/roles", input);
+    return normalizeRole(response.data!);
+  },
+
+  async updateRole(roleId: string, input: { name?: string; description: string }) {
+    const response = await apiClient.patch<RoleInfo & Record<string, unknown>>(`/teams/roles/${roleId}`, input);
+    return normalizeRole(response.data!);
+  },
+
+  async deleteRole(roleId: string) {
+    await apiClient.delete(`/teams/roles/${roleId}`);
+  },
+
+  async updateRolePermissions(roleId: string, permissions: string[]) {
+    await apiClient.put(`/teams/roles/${roleId}/permissions`, { permissions });
   },
 
   async getWorkspace() {
@@ -99,7 +127,7 @@ export const teamService = {
 
   async addMember(email: string, role: TeamRole) {
     const response = await apiClient.post<TeamMember>("/teams/members", { email, role });
-    return response.data!;
+    return normalizeTeamMember(response.data! as TeamMember & Record<string, unknown>);
   },
 
   async updateMemberRole(memberId: string, role: TeamRole) {

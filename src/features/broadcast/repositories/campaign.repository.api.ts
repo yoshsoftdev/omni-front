@@ -1,4 +1,5 @@
 import { parseCampaignDto, parseCampaignDtoList } from "@/features/broadcast/boundary/campaign.boundary";
+import { normalizeCampaignDto } from "@/features/broadcast/mappers/campaign.mapper";
 import type {
   CampaignDashboardStats,
   CampaignQueryRepository,
@@ -7,7 +8,6 @@ import type {
 import type { Campaign, CampaignReportDetail } from "@/features/broadcast/types/campaign";
 import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import { apiClient } from "@/services/api/client";
-import type { CampaignDTO } from "@/types/broadcast";
 
 class ApiCampaignRepository implements CampaignQueryRepository {
   async list(): Promise<Campaign[]> {
@@ -16,33 +16,35 @@ class ApiCampaignRepository implements CampaignQueryRepository {
 
   async getById(id: string): Promise<Campaign | undefined> {
     try {
-      const response = await apiClient.get<CampaignDTO>(`/campaigns/${id}`);
-      return parseCampaignDto(response.data!);
+      const response = await apiClient.get<unknown>(`/campaigns/${id}`);
+      return parseCampaignDto(normalizeCampaignDto(response.data));
     } catch {
       return undefined;
     }
   }
 
   async create(input: CreateCampaignPayload): Promise<Campaign> {
-    const response = await apiClient.post<CampaignDTO>("/campaigns", {
+    const response = await apiClient.post<unknown>("/campaigns", {
       name: input.name,
       channel_id: input.device_id,
       template_id: input.template_id,
       segment_ids: input.segment_ids ?? [],
       tag_ids: input.tag_ids ?? [],
       contact_ids: input.contact_ids ?? [],
-      variable_mapping: { body: input.variable_mapping ?? {} },
+      variable_mapping: input.variable_mapping
+        ? { body: input.variable_mapping }
+        : { body: {} },
       scheduled_at: input.scheduled_at,
     });
-    return parseCampaignDto(response.data!);
+    return parseCampaignDto(normalizeCampaignDto(response.data));
   }
 
   async update(id: string, patch: Partial<Campaign>): Promise<Campaign> {
-    const response = await apiClient.patch<CampaignDTO>(`/campaigns/${id}`, {
+    const response = await apiClient.patch<unknown>(`/campaigns/${id}`, {
       name: patch.name,
       scheduled_at: patch.scheduled_at,
     });
-    return parseCampaignDto(response.data!);
+    return parseCampaignDto(normalizeCampaignDto(response.data));
   }
 
   async cancel(id: string): Promise<Campaign> {

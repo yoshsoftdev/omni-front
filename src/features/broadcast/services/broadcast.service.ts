@@ -1,6 +1,7 @@
 import { apiClient } from "@/services/api/client";
 import type { CreateTemplatePayload } from "@/features/broadcast/utils/build-meta-template";
 import { parseCampaignDto, parseCampaignDtoList } from "@/features/broadcast/boundary/campaign.boundary";
+import { normalizeCampaignDto } from "@/features/broadcast/mappers/campaign.mapper";
 import type { Campaign } from "@/features/broadcast/types/campaign";
 import type { CampaignDTO, CreateCampaignInput, WhatsAppTemplate } from "@/types/broadcast";
 
@@ -67,8 +68,11 @@ export const templateService = {
 
 export const campaignService = {
   async list(): Promise<Campaign[]> {
-    const response = await apiClient.get<{ campaigns: CampaignDTO[] }>("/campaigns");
-    return parseCampaignDtoList(response.data?.campaigns ?? []);
+    const response = await apiClient.get<{ campaigns?: CampaignDTO[]; items?: CampaignDTO[] }>(
+      "/campaigns",
+    );
+    const rows = response.data?.items ?? response.data?.campaigns ?? [];
+    return parseCampaignDtoList(rows.map((row) => normalizeCampaignDto(row)));
   },
 
   async overview() {
@@ -77,8 +81,8 @@ export const campaignService = {
   },
 
   async create(input: CreateCampaignInput): Promise<Campaign> {
-    const response = await apiClient.post<CampaignDTO>("/campaigns", input);
-    return parseCampaignDto(response.data!);
+    const response = await apiClient.post<unknown>("/campaigns", input);
+    return parseCampaignDto(normalizeCampaignDto(response.data));
   },
 
   async send(id: string, contactIds?: string[]): Promise<Campaign> {

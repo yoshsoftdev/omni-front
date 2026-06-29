@@ -1,20 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-import type { PermissionMatrixRow } from "@/types/rbac";
 import { cn } from "@/lib/utils";
+import type { PermissionMatrixRow } from "@/types/rbac";
 
 const ROLE_COLUMNS = ["owner", "admin", "supervisor", "agent"];
 
 export function PermissionMatrix({
   rows,
   editable = false,
+  onToggle,
 }: {
   rows: PermissionMatrixRow[];
   editable?: boolean;
+  onToggle?: (rowIndex: number, role: string) => void | Promise<void>;
 }) {
   const [localRows, setLocalRows] = useState(rows);
+
+  useEffect(() => {
+    setLocalRows(rows);
+  }, [rows]);
 
   const data = editable ? localRows : rows;
 
@@ -26,6 +32,10 @@ export function PermissionMatrix({
 
   function toggle(rowIndex: number, role: string) {
     if (!editable) return;
+    if (onToggle) {
+      void onToggle(rowIndex, role);
+      return;
+    }
     setLocalRows((prev) =>
       prev.map((row, idx) =>
         idx === rowIndex
@@ -84,11 +94,6 @@ export function PermissionMatrix({
           ))}
         </tbody>
       </table>
-      {editable ? (
-        <p className="border-t p-3 text-xs text-muted-foreground">
-          Toggle changes are mock-only and are not saved to the server yet.
-        </p>
-      ) : null}
     </div>
   );
 }

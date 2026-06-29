@@ -111,11 +111,11 @@ export function InboxPage() {
     setLoading(true);
     setError(null);
     try {
-      const [conversationItems, contactItems] = await Promise.all([
+      const [conversationItems, contactResult] = await Promise.all([
         conversationService.list({ page_size: 100 }),
-        contactService.list(),
+        contactService.list({ page_size: 100 }),
       ]);
-      const enriched = enrichInboxData(conversationItems, contactItems);
+      const enriched = enrichInboxData(conversationItems, contactResult.items);
       setConversations(sortByLatest(enriched.conversations));
       setContacts(enriched.contacts);
 

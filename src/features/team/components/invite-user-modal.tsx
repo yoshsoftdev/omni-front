@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RoleSelector } from "@/features/team/components/role-selector";
+import { formatApiErrorMessage } from "@/services/api/errors";
 import type { TeamRole } from "@/types/team";
 
 interface InviteUserModalProps {
@@ -36,7 +37,7 @@ export function InviteUserModal({ open, onClose, onInvited, onSubmit }: InviteUs
       onInvited();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create member");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

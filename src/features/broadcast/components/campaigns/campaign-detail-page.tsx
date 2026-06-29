@@ -26,6 +26,10 @@ function formatDateTime(iso?: string) {
   });
 }
 
+function formatCount(value?: number) {
+  return (value ?? 0).toLocaleString();
+}
+
 export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
   const [campaign, setCampaign] = useState<Campaign | undefined>(undefined);
   const [template, setTemplate] = useState<Template | undefined>(undefined);
@@ -122,8 +126,11 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
           <section className="rounded-lg border bg-card p-5">
             <h2 className="text-sm font-semibold">Audience Summary</h2>
             <dl className="mt-4 space-y-3 text-sm">
-              <InfoRow label="Segment Name" value={campaign.segment_name} />
-              <InfoRow label="Estimated Recipients" value={campaign.segment_contact_count.toLocaleString()} />
+              <InfoRow label="Segment Name" value={campaign.segment_name || "—"} />
+              <InfoRow
+                label="Estimated Recipients"
+                value={formatCount(campaign.segment_contact_count ?? campaign.total_contacts)}
+              />
             </dl>
           </section>
         </div>
@@ -147,11 +154,11 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
           <section className="rounded-lg border bg-card p-5">
             <h2 className="text-sm font-semibold">Delivery Summary</h2>
             <div className="mt-4 grid gap-3">
-              <MetricCard label="Sent" value={campaign.sent_count} total={campaign.sent_count} />
-              <MetricCard label="Delivered" value={campaign.delivered_count} total={campaign.sent_count} />
-              <MetricCard label="Read" value={campaign.read_count} total={campaign.sent_count} />
-              <MetricCard label="Failed" value={campaign.failed_count} total={campaign.sent_count} />
-              <MetricCard label="Replies" value={campaign.reply_count} total={campaign.sent_count} />
+              <MetricCard label="Sent" value={campaign.sent_count ?? 0} total={campaign.sent_count ?? 0} />
+              <MetricCard label="Delivered" value={campaign.delivered_count ?? 0} total={campaign.sent_count ?? 0} />
+              <MetricCard label="Read" value={campaign.read_count ?? 0} total={campaign.sent_count ?? 0} />
+              <MetricCard label="Failed" value={campaign.failed_count ?? 0} total={campaign.sent_count ?? 0} />
+              <MetricCard label="Replies" value={campaign.reply_count ?? 0} total={campaign.sent_count ?? 0} />
             </div>
           </section>
         </div>

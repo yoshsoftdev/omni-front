@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -8,54 +8,24 @@ import { Input } from "@/components/ui/input";
 import { PermissionMatrix } from "@/features/team/components/permission-matrix";
 import { RoleBadge } from "@/features/team/components/role-badge";
 import { TeamNav } from "@/features/team/components/team-nav";
+import { roleCodesFromMatrix } from "@/features/team/constants/permissions";
+import { teamService } from "@/features/team/services/team.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 import type { PermissionMatrixRow, RoleInfo } from "@/types/rbac";
 import type { TeamRole } from "@/types/team";
 
 const ROLE_ORDER: TeamRole[] = ["owner", "admin", "supervisor", "agent"];
 
-const BASE_ROLES: RoleInfo[] = [
-  { id: "owner", name: "owner", description: "Full access to all features.", is_system: true },
-  { id: "admin", name: "admin", description: "Manage operations and members.", is_system: true },
-  { id: "supervisor", name: "supervisor", description: "Monitor team performance.", is_system: true },
-  { id: "agent", name: "agent", description: "Handle assigned conversations.", is_system: true },
-];
-
-const BASE_MATRIX: PermissionMatrixRow[] = [
-  {
-    permission: { id: "p1", code: "inbox.view", name: "Inbox & Conversations", description: "View and reply inbox" },
-    roles: { owner: true, admin: true, supervisor: true, agent: true },
-  },
-  {
-    permission: { id: "p2", code: "contacts.manage", name: "Contacts", description: "View and manage contacts" },
-    roles: { owner: true, admin: true, supervisor: true, agent: false },
-  },
-  {
-    permission: { id: "p3", code: "templates.manage", name: "Templates", description: "Create and manage templates" },
-    roles: { owner: true, admin: true, supervisor: false, agent: false },
-  },
-  {
-    permission: { id: "p4", code: "campaign.manage", name: "Broadcast Campaigns", description: "Manage campaigns" },
-    roles: { owner: true, admin: true, supervisor: false, agent: false },
-  },
-  {
-    permission: { id: "p5", code: "reports.view", name: "Reports", description: "View performance reports" },
-    roles: { owner: true, admin: true, supervisor: true, agent: false },
-  },
-  {
-    permission: { id: "p6", code: "billing.manage", name: "Billing", description: "Manage billing and subscription" },
-    roles: { owner: true, admin: false, supervisor: false, agent: false },
-  },
-];
-
 export function TeamRolesPage() {
-  const [roles, setRoles] = useState<RoleInfo[]>(BASE_ROLES);
-  const [matrix, setMatrix] = useState<PermissionMatrixRow[]>(BASE_MATRIX);
-  const [selectedRole, setSelectedRole] = useState<string>("owner");
+  const [roles, setRoles] = useState<RoleInfo[]>([]);
+  const [matrix, setMatrix] = useState<PermissionMatrixRow[]>([]);
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [descriptionInput, setDescriptionInput] = useState("");
+  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const activeRole = roles.find((r) => r.id === selectedRole) ?? null;
@@ -75,6 +45,24 @@ export function TeamRolesPage() {
     setTimeout(() => setToast(null), 2200);
   }
 
+  const loadData = useCallback(async () => {
+    try {
+      const [apiRoles, apiMatrix] = await Promise.all([
+        teamService.listRoles(),
+        teamService.getPermissionMatrix(),
+      ]);
+      setRoles(apiRoles);
+      setMatrix(apiMatrix);
+      setSelectedRole((current) => current || apiRoles[0]?.id || "");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
   function openCreate() {
     setNameInput("");
     setDescriptionInput("");
@@ -88,7 +76,7 @@ export function TeamRolesPage() {
     setEditOpen(true);
   }
 
-  function createRole() {
+  async function createRole() {
     const normalizedName = nameInput.trim().toLowerCase();
     if (!normalizedName || !descriptionInput.trim()) {
       return notify("error", "Name and description are required");
@@ -96,66 +84,88 @@ export function TeamRolesPage() {
     if (roles.some((r) => r.name === normalizedName)) {
       return notify("error", "Role already exists");
     }
-    const id = `custom-${Date.now()}`;
-    const newRole: RoleInfo = { id, name: normalizedName, description: descriptionInput.trim(), is_system: false };
-    setRoles((prev) => [...prev, newRole]);
-    setMatrix((prev) =>
-      prev.map((row) => ({
-        ...row,
-        roles: { ...row.roles, [normalizedName]: false },
-      })),
-    );
-    setSelectedRole(id);
-    setCreateOpen(false);
-    notify("success", "Role created");
+    setSaving(true);
+    try {
+      const created = await teamService.createRole({
+        name: normalizedName,
+        description: descriptionInput.trim(),
+      });
+      await loadData();
+      setSelectedRole(created.id);
+      setCreateOpen(false);
+      notify("success", "Role created");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function updateRole() {
+  async function updateRole() {
     if (!activeRole) return;
     const normalizedName = nameInput.trim().toLowerCase();
     if (!normalizedName || !descriptionInput.trim()) {
       return notify("error", "Name and description are required");
     }
-    if (
-      roles.some((r) => r.id !== activeRole.id && r.name === normalizedName)
-    ) {
+    if (roles.some((r) => r.id !== activeRole.id && r.name === normalizedName)) {
       return notify("error", "Role name already used");
     }
-    const oldName = activeRole.name;
-    setRoles((prev) =>
-      prev.map((role) =>
-        role.id === activeRole.id ? { ...role, name: normalizedName, description: descriptionInput.trim() } : role,
-      ),
-    );
-    if (oldName !== normalizedName) {
-      setMatrix((prev) =>
-        prev.map((row) => {
-          const oldValue = row.roles[oldName] ?? false;
-          const { [oldName]: _removed, ...rest } = row.roles;
-          return { ...row, roles: { ...rest, [normalizedName]: oldValue } };
-        }),
-      );
+    setSaving(true);
+    try {
+      await teamService.updateRole(activeRole.id, {
+        name: activeRole.is_system ? activeRole.name : normalizedName,
+        description: descriptionInput.trim(),
+      });
+      await loadData();
+      setEditOpen(false);
+      notify("success", "Role updated");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
     }
-    setEditOpen(false);
-    notify("success", "Role updated");
   }
 
-  function deleteRole() {
+  async function deleteRole() {
     if (!activeRole) return;
     if (activeRole.is_system) {
       return notify("error", "System role cannot be deleted");
     }
-    const roleName = activeRole.name;
-    setRoles((prev) => prev.filter((r) => r.id !== activeRole.id));
-    setMatrix((prev) =>
-      prev.map((row) => {
-        const { [roleName]: _removed, ...rest } = row.roles;
-        return { ...row, roles: rest };
-      }),
+    setSaving(true);
+    try {
+      await teamService.deleteRole(activeRole.id);
+      const apiRoles = await teamService.listRoles();
+      setRoles(apiRoles);
+      setMatrix(await teamService.getPermissionMatrix());
+      setSelectedRole(apiRoles.find((role) => role.name === "owner")?.id ?? "");
+      setDeleteOpen(false);
+      notify("success", "Role deleted");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleMatrixToggle(rowIndex: number, roleName: string) {
+    if (roleName === "owner") return;
+    const role = roles.find((item) => item.name === roleName);
+    if (!role) return;
+    const nextMatrix = matrix.map((row, idx) =>
+      idx === rowIndex
+        ? { ...row, roles: { ...row.roles, [roleName]: !row.roles[roleName] } }
+        : row,
     );
-    setSelectedRole("owner");
-    setDeleteOpen(false);
-    notify("success", "Role deleted");
+    setSaving(true);
+    try {
+      await teamService.updateRolePermissions(role.id, roleCodesFromMatrix(nextMatrix, roleName));
+      setMatrix(nextMatrix);
+      notify("success", "Permission updated");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   const orderedRoles = [...roles].sort((a, b) => {
@@ -192,7 +202,7 @@ export function TeamRolesPage() {
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <div className="space-y-3 rounded-lg border bg-card p-3">
-          <Button className="w-full" onClick={openCreate}>
+          <Button className="w-full" onClick={openCreate} disabled={saving}>
             <Plus className="mr-2 h-4 w-4" />
             Create Role
           </Button>
@@ -223,7 +233,7 @@ export function TeamRolesPage() {
                   <p className="text-sm text-muted-foreground">{activeRole.description}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={openEdit}>
+                  <Button variant="outline" size="sm" onClick={openEdit} disabled={saving}>
                     <Pencil className="mr-2 h-3.5 w-3.5" />
                     Edit
                   </Button>
@@ -232,6 +242,7 @@ export function TeamRolesPage() {
                     size="sm"
                     className="border-red-200 text-red-600"
                     onClick={() => setDeleteOpen(true)}
+                    disabled={saving}
                   >
                     <Trash2 className="mr-2 h-3.5 w-3.5" />
                     Delete
@@ -244,7 +255,7 @@ export function TeamRolesPage() {
               No role selected.
             </div>
           )}
-          <PermissionMatrix rows={visibleMatrix} />
+          <PermissionMatrix rows={visibleMatrix} editable onToggle={handleMatrixToggle} />
         </div>
       </div>
 
@@ -265,7 +276,9 @@ export function TeamRolesPage() {
               <Button variant="outline" onClick={() => setCreateOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={createRole}>Create</Button>
+              <Button onClick={() => void createRole()} disabled={saving}>
+                Create
+              </Button>
             </div>
           </div>
         </div>
@@ -288,7 +301,9 @@ export function TeamRolesPage() {
               <Button variant="outline" onClick={() => setEditOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={updateRole}>Save</Button>
+              <Button onClick={() => void updateRole()} disabled={saving}>
+                Save
+              </Button>
             </div>
           </div>
         </div>
@@ -305,7 +320,7 @@ export function TeamRolesPage() {
               <Button variant="outline" onClick={() => setDeleteOpen(false)}>
                 Cancel
               </Button>
-              <Button className="bg-red-600 hover:bg-red-700" onClick={deleteRole}>
+              <Button className="bg-red-600 hover:bg-red-700" onClick={() => void deleteRole()} disabled={saving}>
                 Delete
               </Button>
             </div>

@@ -1,43 +1,42 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Edit3, MessageSquare, Plus, Tag } from "lucide-react";
 
 import { ConsentBadge, consentLabel } from "@/components/shared/consent-badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { RightDrawer, RightDrawerBody, RightDrawerHeader, RightDrawerTabs } from "@/components/shared/right-drawer";
-import { sourceLabel } from "@/components/shared/source-icon";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
-import { ContactFormModal } from "@/features/contacts/components/contact-form-modal";
+import { ContactCustomFieldsReadOnly } from "@/features/contacts/components/contact-custom-fields-form";
+import {
+  ContactFormModal,
+  contactToFormValues,
+  type ContactFormValues,
+} from "@/features/contacts/components/contact-form-modal";
+import { ContactMetadataPanel } from "@/features/contacts/components/contact-metadata-panel";
 import { ContactTimeline } from "@/features/contacts/components/contact-timeline";
-import { contactService } from "@/features/contacts/services/contact.service";
+import { contactFieldService, contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
-import type { Contact, ContactTag, ConsentStatus } from "@/types/contact";
-
-function formatDate(date?: string) {
-  if (!date) return "—";
-  return new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
-}
-
-function formatDateTime(date?: string) {
-  if (!date) return "—";
-  return new Date(date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-}
+import type { Contact, ContactFieldDefinition, ContactTag, ConsentStatus } from "@/types/contact";
 
 export function ContactDetailDrawer({
   contact,
   tags,
+  fieldDefinitions,
   onClose,
   onUpdate,
   onNotify,
+  onRefresh,
 }: {
   contact: Contact;
   tags: ContactTag[];
+  fieldDefinitions: ContactFieldDefinition[];
   onClose: () => void;
   onUpdate: (contact: Contact) => void;
   onNotify: (type: "success" | "error", message: string) => void;
+  onRefresh?: () => Promise<void>;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState("details");
@@ -46,12 +45,22 @@ export function ContactDetailDrawer({
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notes, setNotes] = useState(contact.notes ?? "");
-  const [editForm, setEditForm] = useState({
-    name: contact.name,
-    phone: contact.phone,
-    email: contact.email ?? "",
-    consent_status: contact.consent_status,
-  });
+  const [editForm, setEditForm] = useState<ContactFormValues>(contactToFormValues(contact));
+  const [detail, setDetail] = useState(contact);
+
+  useEffect(() => {
+    setDetail(contact);
+    setNotes(contact.notes ?? "");
+    setEditForm(contactToFormValues(contact));
+    void contactService.getById(contact.id)
+      .then((full) => {
+        setDetail(full);
+        setNotes(full.notes ?? "");
+        setEditForm(contactToFormValues(full));
+        onUpdate(full);
+      })
+      .catch(() => undefined);
+  }, [contact.id]);
 
   async function changeConsent(status: ConsentStatus) {
     setSaving(true);
@@ -59,9 +68,9 @@ export function ContactDetailDrawer({
       const updated = await contactService.update(contact.id, { consent_status: status });
       onUpdate(updated);
       setConsentOpen(false);
-      onNotify("success", "Consent status updated");
+      onNotify("success", "Subscription updated");
     } catch (err) {
-      onNotify("error", err instanceof Error ? err.message : "Failed to update consent");
+      onNotify("error", err instanceof Error ? err.message : "Failed to update marketing status");
     } finally {
       setSaving(false);
     }
@@ -78,6 +87,7 @@ export function ContactDetailDrawer({
       onUpdate(updated);
       setTagOpen(false);
       onNotify("success", `Tag "${tag.name}" added`);
+      await onRefresh?.();
     } catch (err) {
       onNotify("error", err instanceof Error ? err.message : "Failed to add tag");
     } finally {
@@ -110,17 +120,28 @@ export function ContactDetailDrawer({
         name: editForm.name.trim(),
         phone: editForm.phone.trim(),
         email: editForm.email.trim() || undefined,
+        notes: editForm.notes.trim() || undefined,
+        country: editForm.country.trim() || undefined,
+        province: editForm.province.trim() || undefined,
+        city: editForm.city.trim() || undefined,
+        company: editForm.company.trim() || undefined,
+        job_title: editForm.job_title.trim() || undefined,
         consent_status: editForm.consent_status,
+        tag_ids: editForm.tag_ids,
+        custom_fields: contactFieldService.buildCustomFieldPayload(fieldDefinitions, editForm.custom_fields),
       });
       onUpdate(updated);
       setEditOpen(false);
       onNotify("success", "Contact updated");
+      await onRefresh?.();
     } catch (err) {
       onNotify("error", err instanceof Error ? err.message : "Failed to update contact");
     } finally {
       setSaving(false);
     }
   }
+
+  const mergedCustomFields = contactFieldService.mergeDefinitionsWithValues(fieldDefinitions, detail);
 
   const footer = (
     <div className="space-y-2">
@@ -140,7 +161,7 @@ export function ContactDetailDrawer({
           Add Tag
         </Button>
         <Button variant="outline" onClick={() => setConsentOpen(true)} disabled={saving}>
-          Change Consent
+          Change Subscription
         </Button>
       </div>
     </div>
@@ -151,26 +172,21 @@ export function ContactDetailDrawer({
       <RightDrawer open onClose={onClose} footer={footer}>
         <RightDrawerHeader onClose={onClose}>
           <div className="flex items-center gap-3">
-            <ContactAvatar name={contact.name} size="lg" />
+            <ContactAvatar name={detail.name} size="lg" />
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{contact.name}</h3>
-                <ConsentBadge status={contact.consent_status} />
+                <h3 className="font-semibold">{detail.name}</h3>
+                <ConsentBadge status={detail.consent_status} />
               </div>
-              <p className="text-sm text-muted-foreground">{contact.phone}</p>
-              <p className="text-xs text-muted-foreground">{contact.email}</p>
+              <p className="text-sm text-muted-foreground">{detail.phone}</p>
+              <p className="text-xs text-muted-foreground">{detail.email ?? "No email"}</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               className="ml-auto"
               onClick={() => {
-                setEditForm({
-                  name: contact.name,
-                  phone: contact.phone,
-                  email: contact.email ?? "",
-                  consent_status: contact.consent_status,
-                });
+                setEditForm(contactToFormValues(detail));
                 setEditOpen(true);
               }}
             >
@@ -192,54 +208,64 @@ export function ContactDetailDrawer({
           {tab === "details" ? (
             <div className="space-y-5">
               <section>
-                <h4 className="text-sm font-semibold">Basic Information</h4>
+                <h4 className="text-sm font-semibold">Profile</h4>
                 <div className="mt-3 space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Source</span><span>{sourceLabel(contact.source)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Added On</span><span>{formatDate(contact.created_at)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Last Activity</span><span>{formatDateTime(contact.last_activity_at)}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Language</span><span>{contact.language ?? "—"}</span></div>
+                  <div className="flex justify-between gap-4" data-segment-field="company">
+                    <span className="text-muted-foreground">Company</span>
+                    <span>{detail.company ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between gap-4" data-segment-field="job_title">
+                    <span className="text-muted-foreground">Job Title</span>
+                    <span>{detail.job_title ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between gap-4" data-segment-field="country">
+                    <span className="text-muted-foreground">Country</span>
+                    <span>{detail.country ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between gap-4" data-segment-field="province">
+                    <span className="text-muted-foreground">Province</span>
+                    <span>{detail.province ?? "—"}</span>
+                  </div>
+                  <div className="flex justify-between gap-4" data-segment-field="city">
+                    <span className="text-muted-foreground">City</span>
+                    <span>{detail.city ?? "—"}</span>
+                  </div>
                 </div>
               </section>
+
               <section>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">Tags</h4>
-                  <Button variant="ghost" size="sm" onClick={() => setTagOpen(true)}><Plus className="h-4 w-4" /></Button>
+                  <Button variant="ghost" size="sm" onClick={() => setTagOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="mt-2"><TagBadgeList tags={contact.tags} /></div>
+                <div className="mt-2"><TagBadgeList tags={detail.tags} /></div>
               </section>
+
               <section>
                 <h4 className="text-sm font-semibold">Custom Fields</h4>
-                <div className="mt-3 space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-muted-foreground">Customer Type</span><span>{contact.customer_type ?? "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">City</span><span>{contact.city ?? "—"}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Notes</span><span className="max-w-[200px] text-right">{contact.notes || "—"}</span></div>
+                <div className="mt-3">
+                  <ContactCustomFieldsReadOnly fields={mergedCustomFields} />
                 </div>
               </section>
+
+              <ContactMetadataPanel contact={detail} />
+
               <section className="rounded-lg border p-3">
-                <h4 className="text-sm font-semibold">Consent Status</h4>
-                <p className="mt-1 text-xs text-muted-foreground">{consentLabel(contact.consent_status)}</p>
-                <Button variant="outline" size="sm" className="mt-2" onClick={() => setConsentOpen(true)}>Update Status</Button>
-              </section>
-              <section>
-                <h4 className="text-sm font-semibold">Statistics</h4>
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  <div className="rounded-lg border p-3 text-center">
-                    <div className="text-2xl font-semibold">{contact.conversations_count}</div>
-                    <div className="text-xs text-muted-foreground">Conversations</div>
-                  </div>
-                  <div className="rounded-lg border p-3 text-center">
-                    <div className="text-2xl font-semibold">{contact.campaigns_received}</div>
-                    <div className="text-xs text-muted-foreground">Campaigns Received</div>
-                  </div>
-                  <div className="col-span-2 rounded-lg border p-3 text-center">
-                    <div className="text-2xl font-semibold">{contact.campaigns_clicked}</div>
-                    <div className="text-xs text-muted-foreground">Campaigns Clicked</div>
-                  </div>
-                </div>
+                <h4 className="text-sm font-semibold">Subscription</h4>
+                <p className="mt-1 text-xs text-muted-foreground">{consentLabel(detail.consent_status)}</p>
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => setConsentOpen(true)}>
+                  Update Subscription
+                </Button>
               </section>
             </div>
           ) : null}
-          {tab === "activity" ? <ContactTimeline activities={contact.activities ?? []} /> : null}
+
+          {tab === "activity" ? (
+            <ContactTimeline activities={detail.activities ?? []} />
+          ) : null}
+
           {tab === "notes" ? (
             <div className="space-y-3">
               <textarea
@@ -259,7 +285,7 @@ export function ContactDetailDrawer({
       {consentOpen ? (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-sm rounded-lg border bg-card p-5">
-            <h4 className="font-semibold">Change Consent Status</h4>
+            <h4 className="font-semibold">Change Subscription</h4>
             <div className="mt-3 space-y-2">
               {(["opt_in", "opt_out", "unknown"] as ConsentStatus[]).map((s) => (
                 <button
@@ -312,6 +338,8 @@ export function ContactDetailDrawer({
           submitLabel="Save Changes"
           values={editForm}
           onChange={setEditForm}
+          tags={tags}
+          fieldDefinitions={fieldDefinitions}
           onClose={() => setEditOpen(false)}
           onSubmit={() => void saveEdit()}
           saving={saving}

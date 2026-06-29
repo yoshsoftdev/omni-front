@@ -33,7 +33,7 @@ export function ContactsPage() {
         }),
         tagService.list(),
       ]);
-      setContacts(contactList);
+      setContacts(contactList.items);
       setTags(tagList);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load contacts");

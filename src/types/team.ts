@@ -20,10 +20,18 @@ export interface TeamMember {
 }
 
 export interface TeamInvitation {
-  id: string;
+  invitation_id: string;
+  invite_url: string;
+  expires_at?: string;
+  role: TeamRole;
+}
+
+export interface InvitationPreview {
+  invitation_id: string;
   email: string;
   name: string;
   role: TeamRole;
-  status: string;
-  created_at: string;
+  team_name: string;
+  team_slug: string;
+  expires_at?: string;
 }

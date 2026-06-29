@@ -1,6 +1,13 @@
 import type { Template, TemplateHeaderType } from "@/features/broadcast/types/template";
 import type { WhatsAppHeaderType } from "@/features/broadcast/types/whatsapp-preview";
 
+export function countTemplateVariables(text?: string): number {
+  if (!text?.trim()) return 0;
+  const matches = text.match(/\{\{(\d+)\}\}/g) ?? [];
+  if (matches.length === 0) return 0;
+  return Math.max(...matches.map((match) => Number(match.replace(/\D/g, ""))));
+}
+
 export function templatePreviewHeaderType(headerType: TemplateHeaderType): WhatsAppHeaderType | undefined {
   if (headerType === "none") {
     return undefined;

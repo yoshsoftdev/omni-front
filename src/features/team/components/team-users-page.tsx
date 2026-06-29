@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Bell,
   Contact,
@@ -22,21 +22,24 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InvitationSuccessDialog } from "@/features/team/components/invitation-success-dialog";
 import { InviteUserModal } from "@/features/team/components/invite-user-modal";
 import { RoleSelector } from "@/features/team/components/role-selector";
 import { UserTable } from "@/features/team/components/user-table";
 import { usePermission } from "@/features/team/hooks/use-permission";
 import { RoleBadge } from "@/features/team/components/role-badge";
 import { teamService } from "@/features/team/services/team.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 import {
   buildPermissionPreview,
-  INITIAL_ROLES,
-  PERMISSION_BY_ROLE,
+  mapApiRolesToDefs,
+  matrixToPermissionsByRole,
+  permissionsByRoleToCodes,
   PERMISSION_ROWS,
-  type MockRoleDef,
   type PermissionRow,
-} from "@/features/team/mock-data";
-import type { TeamMember, TeamRole, MemberStatus } from "@/types/team";
+  type RoleDef,
+} from "@/features/team/constants/permissions";
+import type { TeamInvitation, TeamMember, TeamRole } from "@/types/team";
 
 export function TeamUsersPage() {
   const { can } = usePermission();
@@ -47,30 +50,62 @@ export function TeamUsersPage() {
   const [roleFilter, setRoleFilter] = useState("");
   const [page, setPage] = useState(1);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [successInvitation, setSuccessInvitation] = useState<TeamInvitation | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [drawerRole, setDrawerRole] = useState<TeamRole>("agent");
   const [drawerName, setDrawerName] = useState("");
   const [drawerEmail, setDrawerEmail] = useState("");
   const [confirmDeactivateOpen, setConfirmDeactivateOpen] = useState(false);
-  const [roles, setRoles] = useState<MockRoleDef[]>(INITIAL_ROLES);
-  const [permissionsByRole, setPermissionsByRole] = useState<Record<string, Record<PermissionRow, boolean>>>(
-    () => structuredClone(PERMISSION_BY_ROLE),
-  );
-  const [selectedRoleId, setSelectedRoleId] = useState("owner");
+  const [roles, setRoles] = useState<RoleDef[]>([]);
+  const [permissionsByRole, setPermissionsByRole] = useState<Record<string, Record<PermissionRow, boolean>>>({});
+  const [selectedRoleId, setSelectedRoleId] = useState("");
   const [roleModal, setRoleModal] = useState<"create" | "edit" | null>(null);
   const [roleNameInput, setRoleNameInput] = useState("");
   const [roleDescInput, setRoleDescInput] = useState("");
   const [deleteRoleOpen, setDeleteRoleOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  useEffect(() => {
-    teamService
-      .listUsers()
-      .then(setUsers)
-      .catch(() => notify("error", "Failed to load team users"))
-      .finally(() => setUsersLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  function notify(type: "success" | "error", message: string) {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 2400);
+  }
+
+  const loadUsers = useCallback(async () => {
+    setUsersLoading(true);
+    try {
+      const rows = await teamService.listUsers();
+      setUsers(rows);
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setUsersLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadUsers();
+  }, [loadUsers]);
+
+  const loadRoles = useCallback(async () => {
+    try {
+      const [apiRoles, matrix] = await Promise.all([
+        teamService.listRoles(),
+        teamService.getPermissionMatrix(),
+      ]);
+      setRoles(mapApiRolesToDefs(apiRoles));
+      setPermissionsByRole(matrixToPermissionsByRole(matrix, apiRoles));
+      setSelectedRoleId((current) => current || apiRoles[0]?.id || "");
+      return apiRoles;
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+      return [];
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadRoles();
+  }, [loadRoles]);
 
   const selectedRole = roles.find((r) => r.id === selectedRoleId) ?? roles[0];
 
@@ -92,11 +127,6 @@ export function TeamUsersPage() {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = Math.min(startIndex + pageSize, total);
   const pagedUsers = filteredUsers.slice(startIndex, endIndex);
-
-  function notify(type: "success" | "error", message: string) {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 2400);
-  }
 
   function onSearchChange(value: string) {
     setSearch(value);
@@ -121,32 +151,27 @@ export function TeamUsersPage() {
     setRoleModal("edit");
   }
 
-  function createRole() {
+  async function createRole() {
     const title = roleNameInput.trim();
     const description = roleDescInput.trim();
     if (!title || !description) return notify("error", "Role name and description are required");
     const slug = title.toLowerCase().replace(/\s+/g, "-");
     if (roles.some((r) => r.slug === slug)) return notify("error", "Role already exists");
-    const id = `role-${Date.now()}`;
-    const newRole: MockRoleDef = {
-      id,
-      slug,
-      title,
-      description,
-      bullets: [],
-      is_system: false,
-    };
-    setRoles((prev) => [...prev, newRole]);
-    setPermissionsByRole((prev) => ({
-      ...prev,
-      [slug]: Object.fromEntries(PERMISSION_ROWS.map((row) => [row, false])) as Record<PermissionRow, boolean>,
-    }));
-    setSelectedRoleId(id);
-    setRoleModal(null);
-    notify("success", "Role created");
+    setSaving(true);
+    try {
+      const created = await teamService.createRole({ name: slug, description });
+      await loadRoles();
+      setSelectedRoleId(created.id);
+      setRoleModal(null);
+      notify("success", "Role created");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function updateRole() {
+  async function updateRole() {
     if (!selectedRole) return;
     const title = roleNameInput.trim();
     const description = roleDescInput.trim();
@@ -155,44 +180,59 @@ export function TeamUsersPage() {
     if (roles.some((r) => r.id !== selectedRole.id && r.slug === newSlug)) {
       return notify("error", "Role name already used");
     }
-    const oldSlug = selectedRole.slug;
-    setRoles((prev) =>
-      prev.map((r) =>
-        r.id === selectedRole.id ? { ...r, title, description, slug: selectedRole.is_system ? r.slug : newSlug } : r,
-      ),
-    );
-    if (!selectedRole.is_system && oldSlug !== newSlug) {
-      setPermissionsByRole((prev) => {
-        const { [oldSlug]: perms, ...rest } = prev;
-        return { ...rest, [newSlug]: perms ?? {} as Record<PermissionRow, boolean> };
+    setSaving(true);
+    try {
+      await teamService.updateRole(selectedRole.id, {
+        name: selectedRole.is_system ? selectedRole.slug : newSlug,
+        description,
       });
+      await loadRoles();
+      setRoleModal(null);
+      notify("success", "Role updated");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
     }
-    setRoleModal(null);
-    notify("success", "Role updated");
   }
 
-  function deleteRole() {
+  async function deleteRole() {
     if (!selectedRole || selectedRole.is_system) {
       return notify("error", "System role cannot be deleted");
     }
-    const slug = selectedRole.slug;
-    setRoles((prev) => prev.filter((r) => r.id !== selectedRole.id));
-    setPermissionsByRole((prev) => {
-      const { [slug]: _removed, ...rest } = prev;
-      return rest;
-    });
-    setSelectedRoleId("owner");
-    setDeleteRoleOpen(false);
-    notify("success", "Role deleted");
+    setSaving(true);
+    try {
+      await teamService.deleteRole(selectedRole.id);
+      const apiRoles = await loadRoles();
+      setSelectedRoleId(apiRoles.find((role) => role.name === "owner")?.id ?? "");
+      setDeleteRoleOpen(false);
+      notify("success", "Role deleted");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function togglePermission(row: PermissionRow) {
-    if (!selectedRole || !canManage) return;
+  async function togglePermission(row: PermissionRow) {
+    if (!selectedRole || !canManage || selectedRole.slug === "owner") return;
     const slug = selectedRole.slug;
-    setPermissionsByRole((prev) => ({
-      ...prev,
-      [slug]: { ...prev[slug], [row]: !prev[slug]?.[row] },
-    }));
+    const nextPerms = {
+      ...(permissionsByRole[slug] ?? {}),
+      [row]: !permissionsByRole[slug]?.[row],
+    } as Record<PermissionRow, boolean>;
+    const nextState = { ...permissionsByRole, [slug]: nextPerms };
+    const codes = permissionsByRoleToCodes(nextState, slug);
+    setSaving(true);
+    try {
+      await teamService.updateRolePermissions(selectedRole.id, codes);
+      setPermissionsByRole(nextState);
+      notify("success", "Permission updated");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   const drawerPermissionPreview = buildPermissionPreview(permissionsByRole, drawerRole);
@@ -283,7 +323,17 @@ export function TeamUsersPage() {
                   setDrawerEmail(member.email);
                 }}
                 onResendInvite={async (member) => {
-                  notify("success", `Invitation resent to ${member.email}`);
+                  try {
+                    const invitation = await teamService.inviteUser({
+                      name: member.name,
+                      email: member.email,
+                      role: member.role,
+                    });
+                    setSuccessInvitation(invitation);
+                    notify("success", `Invitation resent to ${member.email}`);
+                  } catch (err) {
+                    notify("error", formatApiErrorMessage(err));
+                  }
                 }}
                 onDeactivate={async (member) => {
                   setEditingMember(member);
@@ -291,8 +341,13 @@ export function TeamUsersPage() {
                 }}
                 onRemove={async (member) => {
                   if (!confirm(`Remove ${member.name} from the workspace?`)) return;
-                  setUsers((prev) => prev.filter((u) => u.id !== member.id));
-                  notify("success", `${member.name} removed`);
+                  try {
+                    await teamService.removeUser(member.id);
+                    await loadUsers();
+                    notify("success", `${member.name} removed`);
+                  } catch (err) {
+                    notify("error", formatApiErrorMessage(err));
+                  }
                 }}
               />
               <div className="mt-3 flex items-center justify-between text-sm text-muted-foreground">
@@ -494,23 +549,22 @@ export function TeamUsersPage() {
       <InviteUserModal
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
-        onInvited={() => {}}
+        onInvited={() => void loadUsers()}
         onSubmit={async (input) => {
-          const now = new Date().toISOString();
-          const newMember: TeamMember = {
-            id: String(Date.now()),
-            user_id: `u-${Date.now()}`,
-            name: input.name,
-            email: input.email,
-            role: input.role,
-            status: "invited",
-            created_at: now,
-          };
-          setUsers((prev) => [newMember, ...prev]);
+          const invitation = await teamService.inviteUser(input);
+          setSuccessInvitation(invitation);
+          await loadUsers();
           setPage(1);
           notify("success", "Invitation sent successfully");
         }}
       />
+
+      {successInvitation ? (
+        <InvitationSuccessDialog
+          invitation={successInvitation}
+          onClose={() => setSuccessInvitation(null)}
+        />
+      ) : null}
 
       {editingMember ? (
         <div className="fixed inset-0 z-50 bg-black/30">
@@ -581,14 +635,16 @@ export function TeamUsersPage() {
             <div className="mt-6 space-y-2">
               <Button
                 className="w-full"
-                onClick={() => {
-                  setUsers((prev) =>
-                    prev.map((u) =>
-                      u.id === editingMember.id ? { ...u, name: drawerName, email: drawerEmail, role: drawerRole } : u,
-                    ),
-                  );
-                  setEditingMember(null);
-                  notify("success", "Member updated");
+                onClick={async () => {
+                  if (!editingMember) return;
+                  try {
+                    await teamService.updateUserRole(editingMember.id, drawerRole);
+                    await loadUsers();
+                    setEditingMember(null);
+                    notify("success", "Member updated");
+                  } catch (err) {
+                    notify("error", formatApiErrorMessage(err));
+                  }
                 }}
               >
                 Save Changes
@@ -617,13 +673,17 @@ export function TeamUsersPage() {
                 Cancel
               </Button>
               <Button
-                onClick={() => {
-                  setUsers((prev) =>
-                    prev.map((u) => (u.id === editingMember.id ? { ...u, status: "inactive" as MemberStatus } : u)),
-                  );
-                  setConfirmDeactivateOpen(false);
-                  setEditingMember(null);
-                  notify("success", "Member deactivated");
+                onClick={async () => {
+                  if (!editingMember) return;
+                  try {
+                    await teamService.deactivateUser(editingMember.id);
+                    await loadUsers();
+                    setConfirmDeactivateOpen(false);
+                    setEditingMember(null);
+                    notify("success", "Member deactivated");
+                  } catch (err) {
+                    notify("error", formatApiErrorMessage(err));
+                  }
                 }}
               >
                 Deactivate

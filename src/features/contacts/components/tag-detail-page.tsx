@@ -31,12 +31,12 @@ export function TagDetailPage({ tagId }: { tagId: string }) {
 
   useEffect(() => {
     Promise.all([tagService.getById(tagId), contactService.list({ tag_id: tagId })])
-      .then(([tagDto, contactItems]) => {
-        const mapped = { ...tagDto, contact_count: contactItems.length };
+      .then(([tagDto, contactResult]) => {
+        const mapped = { ...tagDto, contact_count: contactResult.total };
         setTag(mapped);
         setName(mapped.name);
         setDescription(mapped.description);
-        setContacts(contactItems.slice(0, 5));
+        setContacts(contactResult.items.slice(0, 5));
       })
       .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load tag"))
       .finally(() => setLoading(false));

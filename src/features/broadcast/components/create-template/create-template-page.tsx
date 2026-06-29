@@ -67,7 +67,7 @@ export function CreateTemplatePage() {
 
   const { data: contacts = [] } = useQuery({
     queryKey: ["contacts"],
-    queryFn: () => contactService.list(),
+    queryFn: async () => (await contactService.list()).items,
   });
 
   const previewChannelName = useMemo(() => {

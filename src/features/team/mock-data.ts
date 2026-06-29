@@ -25,19 +25,39 @@ export interface MockRoleDef {
 }
 
 export const INITIAL_ROLES: MockRoleDef[] = [
-  { id: "owner", slug: "owner", title: "Owner", description: "Full access to all features.", bullets: ["Billing", "Workspace Settings", "Users", "Campaigns"], is_system: true },
-  { id: "admin", slug: "admin", title: "Admin", description: "Manage users and operations.", bullets: ["Contacts", "Templates", "Campaigns", "Reports"], is_system: true },
-  { id: "supervisor", slug: "supervisor", title: "Supervisor", description: "Manage conversations and agents.", bullets: ["Assignments", "Reports", "Monitoring"], is_system: true },
-  { id: "agent", slug: "agent", title: "Agent", description: "Reply conversations only.", bullets: ["Assigned Inbox", "Contacts View"], is_system: true },
+  {
+    id: "owner",
+    slug: "owner",
+    title: "Owner",
+    description: "Full access to all features.",
+    bullets: ["Billing", "Workspace Settings", "Users", "Campaigns"],
+    is_system: true,
+  },
+  {
+    id: "admin",
+    slug: "admin",
+    title: "Admin",
+    description: "Manage users and operations.",
+    bullets: ["Contacts", "Templates", "Campaigns", "Reports"],
+    is_system: true,
+  },
+  {
+    id: "supervisor",
+    slug: "supervisor",
+    title: "Supervisor",
+    description: "Manage conversations and agents.",
+    bullets: ["Assignments", "Reports", "Monitoring"],
+    is_system: true,
+  },
+  {
+    id: "agent",
+    slug: "agent",
+    title: "Agent",
+    description: "Reply conversations only.",
+    bullets: ["Assigned Inbox", "Contacts View"],
+    is_system: true,
+  },
 ];
-
-/** @deprecated use INITIAL_ROLES */
-export const ROLE_OVERVIEW = INITIAL_ROLES.map((r) => ({
-  role: r.slug as TeamRole,
-  title: r.title,
-  description: r.description,
-  bullets: r.bullets,
-}));
 
 export const PERMISSION_ROWS = [
   "Inbox & Conversations",
@@ -98,6 +118,13 @@ export function buildPermissionPreview(
   if (!perms) return [];
   return PERMISSION_ROWS.filter((row) => perms[row]);
 }
+
+export const PERMISSION_PREVIEW: Record<TeamRole, string[]> = {
+  owner: ["Inbox & Conversations", "Contacts", "Templates", "Broadcast Campaigns", "Reports", "Billing", "Workspace Settings"],
+  admin: ["Inbox & Conversations", "Contacts", "Templates", "Broadcast Campaigns", "Reports"],
+  supervisor: ["Inbox & Conversations", "Contacts", "Broadcast Campaigns", "Reports"],
+  agent: ["Inbox & Conversations", "Contacts"],
+};
 
 export const MOCK_WORKSPACE = {
   id: "w1",

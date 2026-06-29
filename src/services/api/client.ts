@@ -1,4 +1,5 @@
 import type { ApiResponse, AuthTokens } from "@/types/api";
+import { ApiClientError } from "@/services/api/errors";
 import { useAuthStore } from "@/store/auth-store";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
@@ -26,6 +27,12 @@ class ApiClient {
       return body.message;
     }
     return `Request failed (${status})`;
+  }
+
+  private throwApiError(body: ApiResponse<unknown>, status: number): never {
+    const code = body.error?.code ?? "internal_error";
+    const message = this.errorMessage(body, status);
+    throw new ApiClientError(code, message);
   }
 
   private async parseBody<T>(response: Response): Promise<ApiResponse<T>> {
@@ -73,7 +80,7 @@ class ApiClient {
     }
 
     if (!response.ok || body.success === false) {
-      throw new Error(this.errorMessage(body, response.status));
+      this.throwApiError(body, response.status);
     }
 
     return body;
@@ -124,7 +131,7 @@ class ApiClient {
 
     const body = await this.parseBody<T>(response);
     if (!response.ok || body.success === false) {
-      throw new Error(this.errorMessage(body, response.status));
+      this.throwApiError(body, response.status);
     }
     return body;
   }

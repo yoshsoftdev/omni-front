@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Edit3, MoreHorizontal } from "lucide-react";
+import { Copy, Edit3, MoreHorizontal } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { RoleBadge } from "@/features/team/components/role-badge";
+import { buildInviteUrl } from "@/features/team/mappers/team.mapper";
 import type { TeamMember } from "@/types/team";
 
 function initials(name: string) {
@@ -33,6 +34,17 @@ export function UserTable({
 }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  async function copyInviteLink(member: TeamMember) {
+    try {
+      await navigator.clipboard.writeText(buildInviteUrl(member.id));
+      setCopiedId(member.id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {
+      setCopiedId(null);
+    }
+  }
 
   async function runAction(id: string, action: () => Promise<void>) {
     setPendingId(id);
@@ -121,13 +133,26 @@ export function UserTable({
                         {openMenuId === user.id ? (
                           <div className="absolute right-4 z-10 mt-1 w-40 rounded-md border bg-popover p-1 shadow-md">
                             {(user.status ?? "active") === "invited" ? (
-                              <button
-                                type="button"
-                                className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-accent"
-                                onClick={() => runAction(user.id, () => onResendInvite(user))}
-                              >
-                                Resend Invite
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-accent"
+                                  onClick={() => void copyInviteLink(user)}
+                                >
+                                  <span className="inline-flex items-center gap-2">
+                                    <Copy className="h-3.5 w-3.5" />
+                                    {copiedId === user.id ? "Copied" : "Copy Invite Link"}
+                                  </span>
+                                </button>
+                                <button
+                                  type="button"
+                                  className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-accent"
+                                  onClick={() => runAction(user.id, () => onResendInvite(user))}
+                                  disabled={pendingId === user.id}
+                                >
+                                  Resend Invite
+                                </button>
+                              </>
                             ) : null}
                             <button
                               type="button"

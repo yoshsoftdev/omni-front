@@ -6,7 +6,7 @@ import { useState } from "react";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
-import { ContactFormModal } from "@/features/contacts/components/contact-form-modal";
+import { ContactFormModal, emptyContactFormValues } from "@/features/contacts/components/contact-form-modal";
 import { ContactTimeline } from "@/features/inbox/components/contact-timeline";
 import type { InboxActivityEvent, InboxContact, InboxWorkspaceNote } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
@@ -52,12 +52,7 @@ export function ContactSidebar({
   const [activeTab, setActiveTab] = useState<SidebarTab>("details");
   const [addContactOpen, setAddContactOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    consent_status: "unknown" as ConsentStatus,
-  });
+  const [form, setForm] = useState(emptyContactFormValues());
 
   if (!contact) {
     return (
@@ -119,10 +114,9 @@ export function ContactSidebar({
             className="mt-3 gap-1.5"
             onClick={() => {
               setForm({
-                name: "",
+                ...emptyContactFormValues(),
                 phone: contact.phone,
                 email: contact.email ?? "",
-                consent_status: "unknown",
               });
               setAddContactOpen(true);
             }}
@@ -301,6 +295,8 @@ export function ContactSidebar({
           submitLabel="Save Contact"
           values={form}
           onChange={setForm}
+          tags={[]}
+          fieldDefinitions={[]}
           onClose={() => setAddContactOpen(false)}
           onSubmit={() => void handleSaveContact()}
           phoneReadOnly

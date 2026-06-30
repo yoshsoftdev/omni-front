@@ -6,7 +6,7 @@ export type InboxChannel = "whatsapp" | "instagram" | "messenger" | "email";
 
 export type AgentPresence = "online" | "away" | "offline";
 
-export type InboxMessageType = "text" | "image" | "video" | "document" | "template";
+export type InboxMessageType = "text" | "image" | "video" | "audio" | "document" | "template";
 
 export type SubscriptionStatus = "subscribed" | "unsubscribed";
 
@@ -69,6 +69,12 @@ export interface InboxChatMessage {
   read?: boolean;
   sender_name?: string;
   date_label?: string;
+  attachment?: {
+    storage_object_id: string;
+    mime_type: string;
+    size_bytes: number;
+    filename: string;
+  };
 }
 
 export interface InboxActivityEvent {

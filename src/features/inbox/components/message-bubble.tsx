@@ -1,8 +1,13 @@
 "use client";
 
-import { Check, CheckCheck, FileText, Image as ImageIcon, Video } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { Check, CheckCheck, Download, FileText, Image as ImageIcon, Video } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
+import {
+  downloadAuthenticatedMedia,
+  formatBytes,
+  useAuthenticatedMediaUrl,
+} from "@/features/inbox/hooks/use-authenticated-media";
 import type { InboxChatMessage } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +17,113 @@ function formatTime(iso: string) {
   return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
+function AuthenticatedImage({ objectId, alt }: { objectId: string; alt: string }) {
+  const { url, loading } = useAuthenticatedMediaUrl(objectId);
+  const [open, setOpen] = useState(false);
+
+  if (loading) return <div className="text-xs text-muted-foreground">Loading image...</div>;
+  if (!url) return <div className="text-xs text-muted-foreground">Image unavailable</div>;
+
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="block overflow-hidden rounded-md">
+        <img src={url} alt={alt} className="max-h-48 w-full object-cover" />
+      </button>
+      {open ? (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" onClick={() => setOpen(false)}>
+          <img src={url} alt={alt} className="max-h-[90vh] max-w-full rounded-md object-contain" />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+function AuthenticatedVideo({ objectId }: { objectId: string }) {
+  const { url, loading } = useAuthenticatedMediaUrl(objectId);
+  if (loading) return <div className="text-xs text-muted-foreground">Loading video...</div>;
+  if (!url) return <div className="text-xs text-muted-foreground">Video unavailable</div>;
+  return <video src={url} controls className="max-h-48 w-full rounded-md" />;
+}
+
+function AuthenticatedAudio({ objectId }: { objectId: string }) {
+  const { url, loading } = useAuthenticatedMediaUrl(objectId);
+  if (loading) return <div className="text-xs text-muted-foreground">Loading audio...</div>;
+  if (!url) return <div className="text-xs text-muted-foreground">Audio unavailable</div>;
+  return <audio src={url} controls className="w-full" />;
+}
+
+function DocumentAttachment({
+  objectId,
+  filename,
+  sizeBytes,
+}: {
+  objectId: string;
+  filename: string;
+  sizeBytes: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => void downloadAuthenticatedMedia(objectId, filename)}
+      className="flex w-full items-center gap-2 rounded-md bg-black/5 p-2 text-left hover:bg-black/10"
+    >
+      <FileText className="h-4 w-4 shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{filename}</span>
+        <span className="text-xs text-muted-foreground">{formatBytes(sizeBytes)}</span>
+      </span>
+      <Download className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </button>
+  );
+}
+
 function MediaPreview({ message }: { message: InboxChatMessage }) {
+  const attachment = message.attachment;
+
+  if (message.type === "image" && attachment?.storage_object_id) {
+    return (
+      <div className="space-y-2">
+        <AuthenticatedImage objectId={attachment.storage_object_id} alt={attachment.filename} />
+        {message.content ? <p className="whitespace-pre-wrap text-sm">{message.content}</p> : null}
+      </div>
+    );
+  }
+
+  if (message.type === "video" && attachment?.storage_object_id) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Video className="h-4 w-4" />
+          <span>{attachment.filename}</span>
+        </div>
+        <AuthenticatedVideo objectId={attachment.storage_object_id} />
+        {message.content ? <p className="whitespace-pre-wrap text-sm">{message.content}</p> : null}
+      </div>
+    );
+  }
+
+  if (message.type === "audio" && attachment?.storage_object_id) {
+    return (
+      <div className="space-y-2">
+        <AuthenticatedAudio objectId={attachment.storage_object_id} />
+        {message.content ? <p className="whitespace-pre-wrap text-sm">{message.content}</p> : null}
+      </div>
+    );
+  }
+
+  if (message.type === "document" && attachment?.storage_object_id) {
+    return (
+      <div className="space-y-2">
+        <DocumentAttachment
+          objectId={attachment.storage_object_id}
+          filename={attachment.filename}
+          sizeBytes={attachment.size_bytes}
+        />
+        {message.content ? <p className="whitespace-pre-wrap text-sm">{message.content}</p> : null}
+      </div>
+    );
+  }
+
   if (message.type === "image") {
     return (
       <div className="flex items-center gap-2 rounded-md bg-black/5 p-2">

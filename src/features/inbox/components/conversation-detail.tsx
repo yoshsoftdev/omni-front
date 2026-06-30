@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { AssignConversationModal } from "@/features/inbox/components/assign-conversation-modal";
 import { ConversationHeader } from "@/features/inbox/components/conversation-header";
-import { MessageComposer } from "@/features/inbox/components/message-composer";
+import { MessageComposer, type ComposerSendInput } from "@/features/inbox/components/message-composer";
 import { MessageThread } from "@/features/inbox/components/message-bubble";
 import { teamService } from "@/features/team/services/team.service";
 import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features/inbox/types";
@@ -12,7 +12,7 @@ import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features
 interface ConversationDetailProps {
   conversation: InboxConversation | null;
   messages: InboxChatMessage[];
-  onSendMessage: (content: string) => Promise<void>;
+  onSendMessage: (input: ComposerSendInput) => Promise<void>;
   onConversationUpdate: (conversation: InboxConversation) => void;
   onSaveNote: (content: string) => void;
   onNotify: (message: string, type?: "success" | "error") => void;
@@ -47,11 +47,11 @@ export function ConversationDetail({
   }, []);
 
   const handleSend = useCallback(
-    async (content: string) => {
+    async (input: ComposerSendInput) => {
       if (!conversation || sending) return;
       setSending(true);
       try {
-        await onSendMessage(content);
+        await onSendMessage(input);
         onNotify("Message sent");
       } catch (err) {
         onNotify(err instanceof Error ? err.message : "Failed to send message", "error");

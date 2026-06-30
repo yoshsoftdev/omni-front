@@ -1,6 +1,6 @@
 import { apiClient } from "@/services/api/client";
 import { normalizeMessage } from "@/features/inbox/mappers/message.mapper";
-import type { Message } from "@/types/message";
+import type { Message, SendMessageInput } from "@/types/message";
 
 type PageResponse<T> = {
   items?: T[];
@@ -16,9 +16,10 @@ export const messageService = {
     return rows.map((row) => normalizeMessage(row));
   },
 
-  async send(conversationId: string, content: string) {
+  async send(conversationId: string, input: SendMessageInput) {
     const response = await apiClient.post<Message>(`/conversations/${conversationId}/messages`, {
-      content,
+      content: input.content ?? "",
+      storage_object_id: input.storage_object_id,
     });
     return normalizeMessage(response.data!);
   },

@@ -9,6 +9,7 @@ import { contactService } from "@/features/contacts/services/contact.service";
 import { resolveContactDisplayName, resolveConversationContactLabel } from "@/features/contacts/utils/contact-identity";
 import { ContactSidebar } from "@/features/inbox/components/contact-sidebar";
 import { ConversationDetail } from "@/features/inbox/components/conversation-detail";
+import type { ComposerSendInput } from "@/features/inbox/components/message-composer";
 import { ConversationList } from "@/features/inbox/components/conversation-list";
 import { useInboxRealtime } from "@/features/inbox/hooks/use-inbox-realtime";
 import { mapContactToInboxContact, mapConversationToInbox, mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
@@ -243,11 +244,15 @@ export function InboxPage() {
   }, []);
 
   const handleSendMessage = useCallback(
-    async (content: string) => {
+    async (input: ComposerSendInput) => {
       if (!selectedId || !selectedConversation) return;
 
-      const sent = await messageService.send(selectedId, content);
+      const sent = await messageService.send(selectedId, {
+        content: input.content,
+        storage_object_id: input.storageObjectId,
+      });
       const mappedMessage = mapMessageToInbox(sent);
+      const preview = input.content || sent.attachment?.filename || sent.content || "Media";
 
       setMessagesByConversation((prev) => {
         const existing = prev[selectedId] ?? [];
@@ -266,7 +271,7 @@ export function InboxPage() {
             conversation.id === selectedId
               ? {
                   ...conversation,
-                  last_message_preview: content,
+                  last_message_preview: preview,
                   last_message_at: mappedMessage.sent_at,
                   unread_count: 0,
                 }

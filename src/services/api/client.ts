@@ -118,10 +118,15 @@ class ApiClient {
     return this.request<T>(path, { ...options, method: "DELETE" });
   }
 
-  async upload<T>(path: string, file: File): Promise<ApiResponse<T>> {
+  async upload<T>(path: string, file: File, fields?: Record<string, string>): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`;
     const form = new FormData();
     form.append("file", file);
+    if (fields) {
+      for (const [key, value] of Object.entries(fields)) {
+        form.append(key, value);
+      }
+    }
 
     const response = await fetch(url, {
       method: "POST",

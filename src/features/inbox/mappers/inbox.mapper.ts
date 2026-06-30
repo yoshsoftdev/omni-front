@@ -34,15 +34,31 @@ export function mapConversationToInbox(conversation: Conversation): InboxConvers
 }
 
 export function mapMessageToInbox(message: Message): InboxChatMessage {
+  const type = mapContentType(message.content_type, message.attachment?.mime_type);
   return {
     id: message.id,
     conversation_id: message.conversation_id,
     direction: message.direction,
-    type: "text",
+    type,
     content: message.content,
     sent_at: message.sent_at,
     sender_name: message.sender_name ?? message.sender_phone,
+    attachment: message.attachment,
   };
+}
+
+function mapContentType(
+  contentType?: Message["content_type"],
+  mimeType?: string,
+): InboxChatMessage["type"] {
+  if (contentType === "image" || contentType === "video" || contentType === "audio" || contentType === "document" || contentType === "template") {
+    return contentType;
+  }
+  if (mimeType?.startsWith("image/")) return "image";
+  if (mimeType?.startsWith("video/")) return "video";
+  if (mimeType?.startsWith("audio/")) return "audio";
+  if (mimeType?.startsWith("application/")) return "document";
+  return "text";
 }
 
 function mapConsentToSubscription(status?: string): SubscriptionStatus {

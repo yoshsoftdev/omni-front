@@ -19,6 +19,12 @@ import { inboxUnreadCountQueryKey } from "@/features/inbox/query-keys";
 import { conversationService } from "@/features/inbox/services/conversation.service";
 import { messageService } from "@/features/inbox/services/message.service";
 import { enrichInboxData, mergeRealtimeConversation } from "@/features/inbox/utils/enrich-inbox";
+import {
+  computeInboxTabCounts,
+  filterConversationsByTab,
+  patchConversationStatus,
+} from "@/features/inbox/utils/conversation-filters";
+import { conversationsMatchId } from "@/features/inbox/utils/realtime-conversation";
 import { applyMessageDateLabels } from "@/features/inbox/utils/message-date";
 import type {
   InboxActivityEvent,
@@ -29,7 +35,10 @@ import type {
   InboxWorkspaceNote,
 } from "@/features/inbox/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthStore } from "@/store/auth-store";
 import type { ConsentStatus } from "@/types/contact";
+import type { Conversation } from "@/types/conversation";
+import type { Message } from "@/types/message";
 
 const PAGE_SIZE = 7;
 
@@ -51,40 +60,17 @@ function sortByLatest(conversations: InboxConversation[]) {
   });
 }
 
-function filterByTab(conversations: InboxConversation[], tab: InboxTab) {
-  switch (tab) {
-    case "open":
-      return conversations.filter((c) => c.status !== "closed");
-    case "assigned":
-      return conversations.filter((c) => c.assigned_to && c.status !== "closed");
-    case "unassigned":
-      return conversations.filter((c) => !c.assigned_to && c.status !== "closed");
-    case "closed":
-      return conversations.filter((c) => c.status === "closed");
-    default:
-      return conversations;
-  }
-}
-
-function computeTabCounts(conversations: InboxConversation[]) {
-  return {
-    open: filterByTab(conversations, "open").length,
-    assigned: filterByTab(conversations, "assigned").length,
-    unassigned: filterByTab(conversations, "unassigned").length,
-    closed: filterByTab(conversations, "closed").length,
-    all: conversations.length,
-  };
-}
-
 export function InboxPage() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const contactParam = searchParams.get("contact");
+  const agentName = useAuthStore((state) => state.user?.name ?? "");
+  const currentUserId = useAuthStore((state) => state.user?.id ?? "");
   const { notify, Toast } = useToast();
   const [conversations, setConversations] = useState<InboxConversation[]>([]);
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>({});
   const [contacts, setContacts] = useState<Record<string, InboxContact>>({});
-  const [activities] = useState<Record<string, InboxActivityEvent[]>>({});
+  const [activitiesByConversation, setActivitiesByConversation] = useState<Record<string, InboxActivityEvent[]>>({});
   const [workspaceNotes, setWorkspaceNotes] = useState<Record<string, InboxWorkspaceNote[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,6 +81,11 @@ export function InboxPage() {
   const [agentFilter, setAgentFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  const toInboxMessage = useCallback(
+    (message: Message) => mapMessageToInbox(message, agentName),
+    [agentName],
+  );
 
   const markConversationAsRead = useCallback(
     async (conversationId: string) => {
@@ -145,7 +136,7 @@ export function InboxPage() {
       .list(selectedId)
       .then((messages) => {
         if (cancelled) return;
-        const mappedMessages = applyMessageDateLabels(sortMessagesAsc(messages.map(mapMessageToInbox)));
+        const mappedMessages = applyMessageDateLabels(sortMessagesAsc(messages.map(toInboxMessage)));
         const latestMessage = mappedMessages[mappedMessages.length - 1];
         setMessagesByConversation((prev) => ({
           ...prev,
@@ -175,16 +166,39 @@ export function InboxPage() {
     return () => {
       cancelled = true;
     };
+  }, [selectedId, toInboxMessage]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    let cancelled = false;
+    Promise.all([conversationService.listActivities(selectedId), conversationService.listNotes(selectedId)])
+      .then(([activities, notes]) => {
+        if (cancelled) return;
+        setActivitiesByConversation((prev) => ({ ...prev, [selectedId]: activities }));
+        setWorkspaceNotes((prev) => ({ ...prev, [selectedId]: notes }));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setActivitiesByConversation((prev) => ({ ...prev, [selectedId]: [] }));
+          setWorkspaceNotes((prev) => ({ ...prev, [selectedId]: [] }));
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedId]);
 
-  const tabCounts = useMemo(() => computeTabCounts(conversations), [conversations]);
+  const tabCounts = useMemo(
+    () => computeInboxTabCounts(conversations, currentUserId),
+    [conversations, currentUserId],
+  );
 
   const filteredConversations = useMemo(() => {
-    let list = filterByTab(conversations, activeTab);
+    let list = filterConversationsByTab(conversations, activeTab, currentUserId);
     if (channelFilter !== "all") {
       list = list.filter((c) => c.channel === channelFilter);
     }
-    if (agentFilter !== "all") {
+    if ((activeTab === "all" || activeTab === "closed") && agentFilter !== "all") {
       list = list.filter((c) => c.assigned_to === agentFilter);
     }
     if (search.trim()) {
@@ -197,13 +211,13 @@ export function InboxPage() {
       );
     }
     return list;
-  }, [conversations, activeTab, channelFilter, agentFilter, search]);
+  }, [conversations, activeTab, channelFilter, agentFilter, search, currentUserId]);
 
   const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
   const selectedMessages = selectedId ? (messagesByConversation[selectedId] ?? []) : [];
   const selectedContact = selectedConversation ? contacts[selectedConversation.contact_id] ?? null : null;
-  const selectedActivities = selectedContact ? (activities[selectedContact.id] ?? []) : [];
-  const selectedNotes = selectedContact ? (workspaceNotes[selectedContact.id] ?? []) : [];
+  const selectedActivities = selectedId ? (activitiesByConversation[selectedId] ?? []) : [];
+  const selectedNotes = selectedId ? (workspaceNotes[selectedId] ?? []) : [];
 
   useEffect(() => {
     if (!selectedConversation || selectedConversation.unread_count <= 0) return;
@@ -239,7 +253,20 @@ export function InboxPage() {
 
   const handleConversationUpdate = useCallback((updated: InboxConversation) => {
     setConversations((prev) =>
-      sortByLatest(prev.map((c) => (c.id === updated.id ? updated : c))),
+      sortByLatest(
+        prev.map((c) =>
+          conversationsMatchId(c.id, updated.id)
+            ? {
+                ...c,
+                ...updated,
+                status: updated.status ?? c.status,
+                contact_name: updated.contact_name || c.contact_name,
+                contact_phone: updated.contact_phone || c.contact_phone,
+                tags: updated.tags.length > 0 ? updated.tags : c.tags,
+              }
+            : c,
+        ),
+      ),
     );
   }, []);
 
@@ -251,7 +278,7 @@ export function InboxPage() {
         content: input.content,
         storage_object_id: input.storageObjectId,
       });
-      const mappedMessage = mapMessageToInbox(sent);
+      const mappedMessage = toInboxMessage(sent);
       const preview = input.content || sent.attachment?.filename || sent.content || "Media";
 
       setMessagesByConversation((prev) => {
@@ -280,26 +307,24 @@ export function InboxPage() {
         ),
       );
     },
-    [selectedConversation, selectedId],
+    [selectedConversation, selectedId, toInboxMessage],
   );
 
   const handleSaveNote = useCallback(
-    (content: string) => {
-      if (!selectedContact) return;
-      const note: InboxWorkspaceNote = {
-        id: `note-${Date.now()}`,
-        category: "internal",
-        content,
-        author: "You",
-        created_at: new Date().toISOString(),
-      };
-      setWorkspaceNotes((prev) => ({
-        ...prev,
-        [selectedContact.id]: [note, ...(prev[selectedContact.id] ?? [])],
-      }));
-      notify("success", "Internal note saved");
+    async (content: string) => {
+      if (!selectedId) return;
+      try {
+        const note = await conversationService.createNote(selectedId, content);
+        setWorkspaceNotes((prev) => ({
+          ...prev,
+          [selectedId]: [note, ...(prev[selectedId] ?? [])],
+        }));
+        notify("success", "Internal note saved");
+      } catch (err) {
+        notify("error", err instanceof Error ? err.message : "Failed to save note");
+      }
     },
-    [selectedContact, notify],
+    [selectedId, notify],
   );
 
   const handleToggleSubscription = useCallback(async () => {
@@ -348,11 +373,20 @@ export function InboxPage() {
   useInboxRealtime({
     onMessageCreated: (rawMessage) => {
       const message = normalizeMessage(rawMessage);
-      const mappedMessage = mapMessageToInbox(message);
+      const mappedMessage = toInboxMessage(message);
 
       setMessagesByConversation((prev) => {
         const existing = prev[message.conversation_id] ?? [];
-        if (existing.some((item) => item.id === mappedMessage.id)) {
+        const duplicate = existing.find((item) => item.id === mappedMessage.id);
+        if (duplicate) {
+          if (!duplicate.sender_name && mappedMessage.sender_name) {
+            return {
+              ...prev,
+              [message.conversation_id]: existing.map((item) =>
+                item.id === mappedMessage.id ? { ...item, sender_name: mappedMessage.sender_name } : item,
+              ),
+            };
+          }
           return prev;
         }
         return {
@@ -391,15 +425,17 @@ export function InboxPage() {
       }
     },
     onConversationUpdated: (rawConversation) => {
-      const normalized = normalizeConversation(rawConversation);
+      const raw = rawConversation as Conversation & { Status?: Conversation["status"] };
+      const hasStatus = raw.status !== undefined || raw.Status !== undefined;
+      const normalized = normalizeConversation(raw);
 
       setConversations((prev) => {
-        const existing = prev.find((conversation) => conversation.id === normalized.id);
-        const merged = mergeRealtimeConversation(normalized, existing);
+        const existing = prev.find((conversation) => conversationsMatchId(conversation.id, normalized.id));
+        const merged = mergeRealtimeConversation(normalized, existing, undefined, { hasStatus });
 
         if (existing) {
           return sortByLatest(
-            prev.map((conversation) => (conversation.id === merged.id ? merged : conversation)),
+            prev.map((conversation) => (conversationsMatchId(conversation.id, merged.id) ? merged : conversation)),
           );
         }
         return sortByLatest([merged, ...prev]);
@@ -446,6 +482,43 @@ export function InboxPage() {
         };
       });
     },
+    onConversationStatusChange: (conversationId, status) => {
+      setConversations((prev) => patchConversationStatus(prev, conversationId, status));
+    },
+    onActivityCreated: (activity, conversationId) => {
+      const targetId = conversationId ?? selectedId;
+      if (!targetId) return;
+      setActivitiesByConversation((prev) => {
+        const existing = prev[targetId] ?? [];
+        if (existing.some((item) => item.id === activity.id)) {
+          return prev;
+        }
+        return { ...prev, [targetId]: [activity, ...existing] };
+      });
+    },
+    onNoteCreated: (note, conversationId) => {
+      const targetId = conversationId ?? selectedId;
+      if (!targetId) return;
+      setWorkspaceNotes((prev) => {
+        const existing = prev[targetId] ?? [];
+        if (existing.some((item) => item.id === note.id)) {
+          return prev;
+        }
+        return { ...prev, [targetId]: [note, ...existing] };
+      });
+      setActivitiesByConversation((prev) => ({
+        ...prev,
+        [targetId]: [
+          {
+            id: `activity-note-${note.id}`,
+            type: "note_added",
+            description: `Internal note added by ${note.author}`,
+            created_at: note.created_at,
+          },
+          ...(prev[targetId] ?? []),
+        ],
+      }));
+    },
   });
 
   return (
@@ -481,9 +554,13 @@ export function InboxPage() {
           page={page}
           pageSize={PAGE_SIZE}
           agents={agents}
+          showAgentFilter={activeTab === "all" || activeTab === "closed"}
           onTabChange={(tab) => {
             setActiveTab(tab);
             setPage(1);
+            if (tab !== "all" && tab !== "closed") {
+              setAgentFilter("all");
+            }
           }}
           onChannelFilterChange={(v) => {
             setChannelFilter(v);

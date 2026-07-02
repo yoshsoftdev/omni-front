@@ -8,6 +8,7 @@ type ApiMessage = Message & {
   content_type?: MessageContentType;
   Sender?: string;
   sender?: string;
+  SenderName?: string;
   ReceivedAt?: string;
   CreatedAt?: string;
   received_at?: string;
@@ -59,7 +60,7 @@ export function normalizeMessage(raw: ApiMessage): Message {
     content_type: raw.content_type ?? raw.ContentType ?? (attachment ? contentTypeFromMime(attachment.mime_type) : "text"),
     attachment,
     sender_phone: readString(raw.sender_phone, raw.sender, raw.Sender),
-    sender_name: raw.sender_name ?? raw.sender ?? raw.Sender,
+    sender_name: raw.sender_name ?? raw.SenderName,
     sent_by: raw.sent_by,
     sent_at: readString(raw.sent_at, raw.received_at, raw.created_at, raw.ReceivedAt, raw.CreatedAt),
     wamid: raw.wamid,

@@ -26,6 +26,7 @@ interface ConversationListProps {
   page: number;
   pageSize: number;
   agents: { id: string; name: string }[];
+  showAgentFilter?: boolean;
   onTabChange: (tab: InboxTab) => void;
   onChannelFilterChange: (value: string) => void;
   onAgentFilterChange: (value: string) => void;
@@ -46,6 +47,7 @@ export function ConversationList({
   page,
   pageSize,
   agents,
+  showAgentFilter = true,
   onTabChange,
   onChannelFilterChange,
   onAgentFilterChange,
@@ -95,7 +97,9 @@ export function ConversationList({
           <select
             value={agentFilter}
             onChange={(e) => onAgentFilterChange(e.target.value)}
-            className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
+            className={cn("h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs", !showAgentFilter && "hidden")}
+            disabled={!showAgentFilter}
+            aria-hidden={!showAgentFilter}
           >
             <option value="all">All Agents</option>
             {agents.map((agent) => (

@@ -12,6 +12,7 @@ export function mergeRealtimeConversation(
   incoming: Conversation,
   existing?: InboxConversation,
   contact?: InboxContact,
+  options?: { hasStatus?: boolean },
 ): InboxConversation {
   const { name, phone } = resolveConversationContactLabel(incoming.contact_id, {
     name: incoming.contact_name,
@@ -26,8 +27,15 @@ export function mergeRealtimeConversation(
     contact_phone: phone,
   });
 
+  const status = (() => {
+    if (options?.hasStatus) return mapped.status;
+    if (existing?.status === "closed") return "closed";
+    return existing?.status ?? mapped.status;
+  })();
+
   return {
     ...mapped,
+    status,
     tags: existing?.tags ?? contact?.tags ?? mapped.tags,
   };
 }

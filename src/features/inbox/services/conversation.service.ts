@@ -1,5 +1,6 @@
 import { apiClient } from "@/services/api/client";
 import { normalizeConversation } from "@/features/inbox/mappers/conversation.mapper";
+import type { InboxActivityEvent, InboxWorkspaceNote } from "@/features/inbox/types";
 import type { Conversation, ConversationStatus } from "@/types/conversation";
 
 type PageResponse<T> = {
@@ -39,18 +40,74 @@ export const conversationService = {
 
   async assign(id: string, userId: string | null) {
     const response = await apiClient.post<Conversation>(`/conversations/${id}/assign`, {
-      user_id: userId,
+      assignee_id: userId,
     });
-    return response.data!;
+    return normalizeConversation(response.data!);
+  },
+
+  async listActivities(id: string) {
+    const response = await apiClient.get<InboxActivityApiItem[]>(`/conversations/${id}/activities`);
+    return (response.data ?? []).map(mapActivity);
+  },
+
+  async listNotes(id: string) {
+    const response = await apiClient.get<InboxNoteApiItem[]>(`/conversations/${id}/notes`);
+    return (response.data ?? []).map(mapNote);
+  },
+
+  async createNote(id: string, content: string) {
+    const response = await apiClient.post<InboxNoteApiItem>(`/conversations/${id}/notes`, { content });
+    return mapNote(response.data!);
   },
 
   async updateStatus(id: string, status: ConversationStatus) {
     const response = await apiClient.patch<Conversation>(`/conversations/${id}/status`, { status });
-    return response.data!;
+    return normalizeConversation(response.data!);
   },
 
   async markRead(id: string) {
     const response = await apiClient.post<Conversation>(`/conversations/${id}/read`, {});
-    return response.data!;
+    return normalizeConversation(response.data!);
   },
 };
+
+type InboxActivityApiItem = {
+  id?: string;
+  ID?: string;
+  type?: InboxActivityEvent["type"];
+  Type?: InboxActivityEvent["type"];
+  description?: string;
+  Description?: string;
+  created_at?: string;
+  CreatedAt?: string;
+};
+
+type InboxNoteApiItem = {
+  id?: string;
+  ID?: string;
+  content?: string;
+  Content?: string;
+  author_name?: string;
+  AuthorName?: string;
+  created_at?: string;
+  CreatedAt?: string;
+};
+
+function mapActivity(raw: InboxActivityApiItem): InboxActivityEvent {
+  return {
+    id: raw.id ?? raw.ID ?? "",
+    type: raw.type ?? raw.Type ?? "opened",
+    description: raw.description ?? raw.Description ?? "",
+    created_at: raw.created_at ?? raw.CreatedAt ?? new Date().toISOString(),
+  };
+}
+
+function mapNote(raw: InboxNoteApiItem): InboxWorkspaceNote {
+  return {
+    id: raw.id ?? raw.ID ?? "",
+    category: "internal",
+    content: raw.content ?? raw.Content ?? "",
+    author: raw.author_name ?? raw.AuthorName ?? "Agent",
+    created_at: raw.created_at ?? raw.CreatedAt ?? new Date().toISOString(),
+  };
+}

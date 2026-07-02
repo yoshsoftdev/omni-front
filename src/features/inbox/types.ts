@@ -79,7 +79,19 @@ export interface InboxChatMessage {
 
 export interface InboxActivityEvent {
   id: string;
-  type: "opened" | "agent_replied" | "customer_replied" | "campaign_received" | "campaign_clicked" | "tag_added" | "tag_removed";
+  type:
+    | "opened"
+    | "assigned"
+    | "reassigned"
+    | "closed"
+    | "reopened"
+    | "note_added"
+    | "agent_replied"
+    | "customer_replied"
+    | "campaign_received"
+    | "campaign_clicked"
+    | "tag_added"
+    | "tag_removed";
   description: string;
   created_at: string;
 }

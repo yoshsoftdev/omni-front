@@ -6,6 +6,8 @@ import { AssignConversationModal } from "@/features/inbox/components/assign-conv
 import { ConversationHeader } from "@/features/inbox/components/conversation-header";
 import { MessageComposer, type ComposerSendInput } from "@/features/inbox/components/message-composer";
 import { MessageThread } from "@/features/inbox/components/message-bubble";
+import { mapConversationToInbox } from "@/features/inbox/mappers/inbox.mapper";
+import { conversationService } from "@/features/inbox/services/conversation.service";
 import { teamService } from "@/features/team/services/team.service";
 import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features/inbox/types";
 
@@ -63,33 +65,42 @@ export function ConversationDetail({
   );
 
   const handleAssign = useCallback(
-    (agentId: string) => {
+    async (agentId: string) => {
       if (!conversation) return;
-      const agent = agents.find((a) => a.id === agentId);
-      onConversationUpdate({
-        ...conversation,
-        assigned_to: agentId,
-        assignee_name: agent?.name,
-        status: "assigned",
-      });
-      setAssignOpen(false);
-      onNotify(agent ? `Assigned to ${agent.name}` : "Conversation assigned");
+      try {
+        const updated = await conversationService.assign(conversation.id, agentId);
+        const agent = agents.find((a) => a.id === agentId);
+        onConversationUpdate({
+          ...mapConversationToInbox(updated),
+          assignee_name: agent?.name ?? updated.assignee_name,
+        });
+        setAssignOpen(false);
+        onNotify(agent ? `Assigned to ${agent.name}` : "Conversation assigned");
+      } catch (err) {
+        onNotify(err instanceof Error ? err.message : "Failed to assign conversation", "error");
+      }
     },
     [agents, conversation, onConversationUpdate, onNotify],
   );
 
   const handleMoreAction = useCallback(
-    (action: string) => {
+    async (action: string) => {
       if (!conversation) return;
-      if (action === "close") {
-        onConversationUpdate({ ...conversation, status: "closed" });
-        onNotify("Conversation closed");
-      } else if (action === "reopen") {
-        onConversationUpdate({ ...conversation, status: "open" });
-        onNotify("Conversation reopened");
-      } else if (action === "mark_unread") {
-        onConversationUpdate({ ...conversation, unread_count: conversation.unread_count + 1 });
-        onNotify("Marked as unread");
+      try {
+        if (action === "close") {
+          const updated = await conversationService.updateStatus(conversation.id, "closed");
+          onConversationUpdate(mapConversationToInbox(updated));
+          onNotify("Conversation closed");
+        } else if (action === "reopen") {
+          const updated = await conversationService.updateStatus(conversation.id, "open");
+          onConversationUpdate(mapConversationToInbox(updated));
+          onNotify("Conversation reopened");
+        } else if (action === "mark_unread") {
+          onConversationUpdate({ ...conversation, unread_count: conversation.unread_count + 1 });
+          onNotify("Marked as unread");
+        }
+      } catch (err) {
+        onNotify(err instanceof Error ? err.message : "Action failed", "error");
       }
     },
     [conversation, onConversationUpdate, onNotify],

@@ -10,8 +10,25 @@ import type {
   SubscriptionStatus,
 } from "@/features/inbox/types";
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function isUuid(value?: string) {
+  return Boolean(value && UUID_PATTERN.test(value));
+}
+
+function resolveOutboundSenderName(message: Message, agentName?: string) {
+  if (message.direction !== "outbound") return undefined;
+  const explicit = message.sender_name?.trim();
+  if (explicit && !isUuid(explicit)) return explicit;
+  const fallback = agentName?.trim();
+  if (fallback) return fallback;
+  const sender = message.sender_phone?.trim();
+  if (sender && !isUuid(sender)) return sender;
+  return undefined;
+}
+
 function mapConversationStatus(status: ConversationStatus): InboxConversationStatus {
-  if (status === "resolved") return "closed";
+  if (status === "resolved" || status === "closed") return "closed";
   if (status === "pending") return "unassigned";
   return "open";
 }
@@ -20,8 +37,8 @@ export function mapConversationToInbox(conversation: Conversation): InboxConvers
   return {
     id: conversation.id,
     contact_id: conversation.contact_id,
-    contact_name: conversation.contact_name,
-    contact_phone: conversation.contact_phone,
+    contact_name: conversation.contact_name ?? "",
+    contact_phone: conversation.contact_phone ?? "",
     channel: "whatsapp",
     status: mapConversationStatus(conversation.status),
     assigned_to: conversation.assigned_to,
@@ -33,7 +50,7 @@ export function mapConversationToInbox(conversation: Conversation): InboxConvers
   };
 }
 
-export function mapMessageToInbox(message: Message): InboxChatMessage {
+export function mapMessageToInbox(message: Message, agentName?: string): InboxChatMessage {
   const type = mapContentType(message.content_type, message.attachment?.mime_type);
   return {
     id: message.id,
@@ -42,7 +59,7 @@ export function mapMessageToInbox(message: Message): InboxChatMessage {
     type,
     content: message.content,
     sent_at: message.sent_at,
-    sender_name: message.sender_name ?? message.sender_phone,
+    sender_name: resolveOutboundSenderName(message, agentName),
     attachment: message.attachment,
   };
 }

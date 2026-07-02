@@ -169,10 +169,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const isOutbound = message.direction === "outbound";
 
   return (
-    <div className={cn("flex", isOutbound ? "justify-end" : "justify-start")}>
+    <div className={cn("flex w-full flex-col", isOutbound ? "items-end" : "items-start")}>
       <div
         className={cn(
-          "max-w-[75%] rounded-2xl px-3.5 py-2.5 shadow-sm",
+          "w-fit max-w-[90%] rounded-2xl px-3.5 py-2.5 shadow-sm",
           isOutbound
             ? "rounded-br-md bg-emerald-100 text-foreground"
             : "rounded-bl-md border bg-background",
@@ -197,6 +197,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           ) : null}
         </div>
       </div>
+      {isOutbound && message.sender_name ? (
+        <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
+          — {message.sender_name}
+        </p>
+      ) : null}
     </div>
   );
 }

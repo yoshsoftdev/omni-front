@@ -12,8 +12,13 @@ import {
 
 import type { InboxActivityEvent } from "@/features/inbox/types";
 
-const EVENT_ICONS: Record<InboxActivityEvent["type"], ReactNode> = {
+const EVENT_ICONS: Partial<Record<InboxActivityEvent["type"], ReactNode>> = {
   opened: <MessageCircle className="h-3.5 w-3.5" />,
+  assigned: <UserCheck className="h-3.5 w-3.5" />,
+  reassigned: <UserCheck className="h-3.5 w-3.5" />,
+  closed: <UserMinus className="h-3.5 w-3.5" />,
+  reopened: <MessageCircle className="h-3.5 w-3.5" />,
+  note_added: <Tag className="h-3.5 w-3.5" />,
   agent_replied: <UserCheck className="h-3.5 w-3.5" />,
   customer_replied: <MessageCircle className="h-3.5 w-3.5" />,
   campaign_received: <Mail className="h-3.5 w-3.5" />,
@@ -44,7 +49,7 @@ export function ContactTimeline({ events }: { events: InboxActivityEvent[] }) {
             <div className="absolute left-[11px] top-6 h-full w-px bg-border" />
           ) : null}
           <div className="relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-background text-primary">
-            {EVENT_ICONS[event.type]}
+            {EVENT_ICONS[event.type] ?? <MessageCircle className="h-3.5 w-3.5" />}
           </div>
           <div className="min-w-0 flex-1 pt-0.5">
             <p className="text-sm">{event.description}</p>

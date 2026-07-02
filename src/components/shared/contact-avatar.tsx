@@ -1,8 +1,12 @@
 import { cn } from "@/lib/utils";
 
-function initials(name: string) {
-  return name
+function initials(name?: string | null) {
+  const trimmed = (name ?? "").trim();
+  if (!trimmed) return "?";
+
+  return trimmed
     .split(" ")
+    .filter(Boolean)
     .map((part) => part[0])
     .join("")
     .slice(0, 2)
@@ -20,7 +24,7 @@ export function ContactAvatar({
   size = "md",
   className,
 }: {
-  name: string;
+  name?: string | null;
   size?: keyof typeof SIZES;
   className?: string;
 }) {

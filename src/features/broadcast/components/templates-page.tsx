@@ -137,7 +137,7 @@ export function TemplatesPage() {
               disabled={syncing || isFetching || !effectiveSyncChannelId}
             >
               <RefreshCw className={syncing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-              Sync Template
+              Sync Meta Templates
             </Button>
           </div>
         }

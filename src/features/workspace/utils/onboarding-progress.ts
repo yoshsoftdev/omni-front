@@ -3,8 +3,10 @@ import { ONBOARDING_STEPS } from "@/features/workspace/types/onboarding";
 import type { ReadinessCheckId, WorkspaceReadiness } from "@/features/workspace/types/workspace-readiness";
 
 const CHECK_TO_STEP: Record<ReadinessCheckId, OnboardingStep> = {
-  channel_connected: 1,
-  template_synced: 2,
+  meta_connected: 1,
+  payment_method: 1,
+  templates_synced: 2,
+  existing_data_synced: 2,
   contacts_available: 3,
   team_members_added: 4,
   campaign_created: 5,

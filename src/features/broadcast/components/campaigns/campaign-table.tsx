@@ -50,9 +50,10 @@ interface CampaignTableProps {
   campaigns: Campaign[];
   onCancel?: (id: string) => void;
   onDuplicate?: (id: string) => void;
+  onSend?: (campaign: Campaign) => void;
 }
 
-export function CampaignTable({ campaigns, onCancel, onDuplicate }: CampaignTableProps) {
+export function CampaignTable({ campaigns, onCancel, onDuplicate, onSend }: CampaignTableProps) {
   return (
     <DataTable>
       <DataTableHead>
@@ -129,6 +130,9 @@ export function CampaignTable({ campaigns, onCancel, onDuplicate }: CampaignTabl
                           if (action === "edit") {
                             window.location.href = `/broadcast/campaigns/${campaign.id}`;
                           }
+                          if (action === "send" && onSend) {
+                            onSend(campaign);
+                          }
                           if (action === "duplicate" && onDuplicate) {
                             onDuplicate(campaign.id);
                           }
@@ -140,6 +144,9 @@ export function CampaignTable({ campaigns, onCancel, onDuplicate }: CampaignTabl
                         <option value="" disabled>
                           More
                         </option>
+                        {campaign.status === "draft" ? (
+                          <option value="send">Send Campaign</option>
+                        ) : null}
                         <option value="edit">Edit</option>
                         <option value="duplicate">Duplicate</option>
                         {campaign.status === "scheduled" || campaign.status === "draft" ? (

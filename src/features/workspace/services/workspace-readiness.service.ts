@@ -12,31 +12,47 @@ const CHECK_DEFINITIONS: Record<
   ReadinessCheckId,
   Omit<ReadinessCheck, "completed">
 > = {
-  channel_connected: {
-    id: "channel_connected",
-    label: "Channel Connected",
-    description: "At least one WhatsApp channel is connected and ready to send.",
+  meta_connected: {
+    id: "meta_connected",
+    label: "Meta Connected",
+    description: "A WhatsApp channel is connected and Meta-ready.",
   },
-  template_synced: {
-    id: "template_synced",
-    label: "Template Synced",
+  payment_method: {
+    id: "payment_method",
+    label: "Payment Method",
+    description: "A Meta payment method is configured for marketing campaigns.",
+  },
+  templates_synced: {
+    id: "templates_synced",
+    label: "Templates Synced",
     description: "Approved WhatsApp templates are available in your workspace.",
+  },
+  existing_data_synced: {
+    id: "existing_data_synced",
+    label: "Existing Data Synced",
+    description: "Contacts and templates have been synchronized from Meta.",
   },
   contacts_available: {
     id: "contacts_available",
-    label: "Contacts Available",
+    label: "Contacts Imported",
     description: "Your audience has contacts available for campaigns.",
   },
   team_members_added: {
     id: "team_members_added",
-    label: "Team Members Added",
+    label: "Team Added",
     description: "Invite teammates to collaborate on inbox and broadcasts.",
   },
   campaign_created: {
     id: "campaign_created",
-    label: "Campaign Created",
-    description: "Create your first broadcast campaign.",
+    label: "First Campaign",
+    description: "Create your first template-based broadcast.",
   },
+};
+
+const LEGACY_CHECK_ALIASES: Record<string, ReadinessCheckId> = {
+  channel_connected: "meta_connected",
+  template_synced: "templates_synced",
+  templates_recently_synced: "templates_synced",
 };
 
 const QUICK_ACTIONS: QuickAction[] = [
@@ -45,6 +61,12 @@ const QUICK_ACTIONS: QuickAction[] = [
     label: "Connect WhatsApp",
     description: "Link a WhatsApp Business channel via Meta.",
     href: "/devices/embedded-signup?returnTo=/dashboard",
+  },
+  {
+    id: "add_payment",
+    label: "Add Payment",
+    description: "Configure Meta billing before sending campaigns.",
+    href: "/devices",
   },
   {
     id: "sync_templates",
@@ -75,13 +97,23 @@ const QUICK_ACTIONS: QuickAction[] = [
 type ApiReadinessResponse = {
   score: number;
   status: WorkspaceReadinessStatus;
-  checks: Array<{ key: ReadinessCheckId; completed: boolean }>;
+  checks: Array<{ key: string; completed: boolean }>;
 };
 
+function normalizeCheckKey(key: string): ReadinessCheckId | null {
+  if (key in CHECK_DEFINITIONS) {
+    return key as ReadinessCheckId;
+  }
+  return LEGACY_CHECK_ALIASES[key] ?? null;
+}
+
 function mapApiReadiness(data: ApiReadinessResponse): WorkspaceReadiness {
-  const completionById = Object.fromEntries(
-    data.checks.map((check) => [check.key, check.completed]),
-  ) as Record<ReadinessCheckId, boolean>;
+  const completionById = {} as Record<ReadinessCheckId, boolean>;
+  for (const check of data.checks) {
+    const id = normalizeCheckKey(check.key);
+    if (!id) continue;
+    completionById[id] = completionById[id] || check.completed;
+  }
 
   const checks: ReadinessCheck[] = Object.values(CHECK_DEFINITIONS).map((definition) => ({
     ...definition,

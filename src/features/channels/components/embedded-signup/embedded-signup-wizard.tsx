@@ -5,11 +5,17 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Building2, MessageSquare, Phone, Shield } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { EmbeddedSignupConnectedSummary } from "@/features/channels/components/embedded-signup/embedded-signup-connected-summary";
 import { EmbeddedSignupLaunchCard } from "@/features/channels/components/embedded-signup/embedded-signup-launch-card";
 import { EmbeddedSignupLayout } from "@/features/channels/components/embedded-signup/embedded-signup-layout";
+import { EmbeddedSignupPaymentStep } from "@/features/channels/components/embedded-signup/embedded-signup-payment-step";
+import { EmbeddedSignupSyncStep } from "@/features/channels/components/embedded-signup/embedded-signup-sync-step";
 import { EmbeddedSignupProgress } from "@/features/channels/components/embedded-signup/embedded-signup-progress";
 import { EmbeddedSignupSuccess } from "@/features/channels/components/embedded-signup/embedded-signup-success";
 import { useMetaEmbeddedSignup } from "@/features/channels/hooks/use-meta-embedded-signup";
+import { channelPaymentService } from "@/features/channels/services/channel-payment.service";
+import { embeddedSignupService } from "@/features/channels/services/embedded-signup.service";
+import { channelsApiService } from "@/features/channels/services/channels-api.service";
 import {
   allRequirementsReady,
   useEmbeddedSignupStore,
@@ -21,17 +27,21 @@ const STEP_LABELS = {
   requirements: "Requirements Check",
   launch: "Launch Signup",
   waiting: "Connecting",
-  success: "Success",
+  connected: "Connected",
+  sync: "Sync Data",
+  payment: "Payment",
+  success: "Complete",
 } as const;
 
 export function EmbeddedSignupWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { error: sdkError } = useMetaEmbeddedSignup();
+  const { error: sdkError, launch, launching, enabled, loading: sdkLoading } = useMetaEmbeddedSignup();
 
   const {
     step,
     returnTo,
+    channelId,
     requirements,
     progressState,
     result,
@@ -39,9 +49,12 @@ export function EmbeddedSignupWizard() {
     setChannelId,
     setReturnTo,
     toggleRequirement,
+    setProgressState,
+    setResult,
   } = useEmbeddedSignupStore();
 
   const [error, setError] = useState<string | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
     const paramChannelId = searchParams.get("channelId");
@@ -52,8 +65,69 @@ export function EmbeddedSignupWizard() {
 
   const requirementsReady = allRequirementsReady(requirements);
 
-  function handleStartSetup() {
-    setError("Embedded Signup is not available yet. Waiting for Meta App Review.");
+  async function handleStartSetup() {
+    if (!enabled) {
+      setError("Meta Embedded Signup is not configured on this environment.");
+      return;
+    }
+
+    setError(null);
+    setStep("waiting");
+    setProgressState("initializing");
+
+    try {
+      let activeChannelId = channelId;
+      if (!activeChannelId) {
+        const placeholder = await channelsApiService.createEmbeddedPlaceholder("WhatsApp Business");
+        activeChannelId = placeholder.id;
+        setChannelId(activeChannelId);
+      }
+
+      const session = await embeddedSignupService.start(activeChannelId);
+      setProgressState("waiting_user_action");
+      const launchResult = await launch();
+
+      if (!launchResult.phoneNumberId) {
+        throw new Error("Phone Number ID was not received from Meta. Complete the Meta signup window.");
+      }
+
+      setProgressState("verifying_assets");
+      const completed = await embeddedSignupService.complete(activeChannelId, session.session_id, {
+        code: launchResult.code,
+        oauth_state: session.oauth_state,
+        business_id: launchResult.businessId,
+        waba_id: launchResult.wabaId,
+        phone_number_id: launchResult.phoneNumberId,
+      });
+
+      setResult({
+        channel_id: completed.channel_id,
+        phone_number: completed.phone_number ?? "",
+        waba_id: completed.waba_id ?? launchResult.wabaId,
+        business_id: completed.business_id ?? launchResult.businessId,
+        phone_number_id: completed.phone_number_id ?? launchResult.phoneNumberId,
+      });
+      setProgressState("completed");
+      setStep("connected");
+    } catch (err) {
+      setProgressState("initializing");
+      setStep("launch");
+      setError(err instanceof Error ? err.message : "Embedded signup failed");
+    }
+  }
+
+  async function handleAddPayment() {
+    if (!result?.channel_id) return;
+    setPaymentLoading(true);
+    setError(null);
+    try {
+      const url = await channelPaymentService.createPaymentLink(result.channel_id);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open payment setup");
+    } finally {
+      setPaymentLoading(false);
+    }
   }
 
   function goNext() {
@@ -74,18 +148,20 @@ export function EmbeddedSignupWizard() {
       description="Connect your WhatsApp Business channel using Meta Embedded Signup (Coexistence)."
       returnHref={returnTo}
     >
-      <div className="flex gap-2 text-xs text-muted-foreground">
-        {(["about", "requirements", "launch", "waiting", "success"] as const).map((item, index) => (
-          <span
-            key={item}
-            className={cn(
-              "rounded-full px-2 py-0.5",
-              step === item ? "bg-primary/10 font-medium text-primary" : "",
-            )}
-          >
-            {index + 1}. {STEP_LABELS[item]}
-          </span>
-        ))}
+      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+        {(["about", "requirements", "launch", "waiting", "connected", "sync", "payment", "success"] as const).map(
+          (item, index) => (
+            <span
+              key={item}
+              className={cn(
+                "rounded-full px-2 py-0.5",
+                step === item ? "bg-primary/10 font-medium text-primary" : "",
+              )}
+            >
+              {index + 1}. {STEP_LABELS[item]}
+            </span>
+          ),
+        )}
       </div>
 
       {displayError ? (
@@ -192,11 +268,8 @@ export function EmbeddedSignupWizard() {
         <div className="space-y-4">
           <EmbeddedSignupLaunchCard
             onStart={() => void handleStartSetup()}
-            disabled
+            disabled={sdkLoading || launching || !enabled}
           />
-          <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
-            Coming Soon — Waiting for Meta App Review
-          </p>
           <div className="flex justify-start">
             <Button variant="outline" onClick={goBack}>
               Back
@@ -209,11 +282,33 @@ export function EmbeddedSignupWizard() {
         <EmbeddedSignupProgress state={progressState} error={displayError} />
       ) : null}
 
+      {step === "connected" && result ? (
+        <EmbeddedSignupConnectedSummary result={result} onContinue={() => setStep("sync")} />
+      ) : null}
+
+      {step === "sync" && result ? (
+        <EmbeddedSignupSyncStep
+          channelId={result.channel_id}
+          onSkip={() => setStep("payment")}
+          onComplete={() => setStep("payment")}
+        />
+      ) : null}
+
+      {step === "payment" && result ? (
+        <div className="space-y-4">
+          <EmbeddedSignupPaymentStep
+            loading={paymentLoading}
+            onAddPayment={() => void handleAddPayment()}
+            onSkip={() => setStep("success")}
+          />
+        </div>
+      ) : null}
+
       {step === "success" && result ? (
         <div className="space-y-4">
           <EmbeddedSignupSuccess result={result} />
           <Button variant="outline" onClick={() => router.push(returnTo)}>
-            Return to {returnTo === "/onboarding" ? "Onboarding" : "Dashboard"}
+            Return to {returnTo === "/onboarding" ? "Onboarding" : "Channels"}
           </Button>
         </div>
       ) : null}

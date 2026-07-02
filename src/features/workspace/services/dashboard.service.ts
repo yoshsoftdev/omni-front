@@ -6,6 +6,10 @@ export type DashboardOverview = {
   campaigns: number;
   unread_conversations: number;
   readiness_score: number;
+  last_contact_sync_at?: string;
+  last_template_sync_at?: string;
+  last_conversation_sync_at?: string;
+  permission_status?: string;
 };
 
 export const dashboardService = {

@@ -143,8 +143,9 @@ export function OnboardingWizard() {
     readiness.checks.forEach((check) => {
       if (check.completed) {
         const stepMap: Record<string, Parameters<typeof markStepComplete>[0]> = {
-          channel_connected: "connect_whatsapp",
-          template_synced: "sync_templates",
+          meta_connected: "connect_whatsapp",
+          payment_method: "connect_whatsapp",
+          templates_synced: "sync_templates",
           contacts_available: "import_contacts",
           team_members_added: "invite_team",
           campaign_created: "create_campaign",
@@ -367,18 +368,7 @@ export function OnboardingWizard() {
             <OnboardingChecklist
               items={readiness.checks.map((check) => ({
                 ...check,
-                label:
-                  check.id === "channel_connected"
-                    ? "WhatsApp Connected"
-                    : check.id === "template_synced"
-                      ? "Templates Synced"
-                      : check.id === "contacts_available"
-                        ? "Contacts Imported"
-                        : check.id === "team_members_added"
-                          ? "Team Members Added"
-                          : check.id === "campaign_created"
-                            ? "First Campaign Created"
-                            : check.label,
+                label: check.label,
               }))}
               title="Completed setup"
             />

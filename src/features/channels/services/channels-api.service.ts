@@ -33,6 +33,7 @@ export type CreateManualChannelPayload = {
   waba_id: string;
   phone_number_id: string;
   phone_number: string;
+  business_id?: string;
 };
 
 export type VerifyManualChannelPayload = {
@@ -82,6 +83,16 @@ export const channelsApiService = {
       access_token: payload.access_token,
       waba_id: payload.waba_id,
       phone_number_id: payload.phone_number_id,
+      business_id: payload.business_id,
+    });
+    return response.data!;
+  },
+
+  async createEmbeddedPlaceholder(name: string): Promise<ApiChannel> {
+    const response = await apiClient.post<ApiChannel>("/channels", {
+      name,
+      provider: "meta_whatsapp",
+      connection_type: "embedded_coex",
     });
     return response.data!;
   },

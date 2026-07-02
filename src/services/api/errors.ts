@@ -6,6 +6,7 @@ export type ApiErrorCode =
   | "conflict"
   | "quota_exceeded"
   | "feature_not_available"
+  | "payment_required"
   | "internal_error"
   | string;
 
@@ -38,6 +39,9 @@ export function formatApiErrorMessage(error: unknown): string {
     }
     if (error.code === "feature_not_available") {
       return "This feature is not available yet.";
+    }
+    if (error.code === "payment_required") {
+      return "Marketing campaigns require a Meta payment method.";
     }
     return error.message;
   }

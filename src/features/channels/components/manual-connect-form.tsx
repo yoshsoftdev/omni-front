@@ -15,6 +15,7 @@ interface ManualConnectFormProps {
 
 export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
   const [name, setName] = useState("");
+  const [businessId, setBusinessId] = useState("");
   const [accessToken, setAccessToken] = useState("");
   const [wabaId, setWabaId] = useState("");
   const [phoneNumberId, setPhoneNumberId] = useState("");
@@ -70,6 +71,7 @@ export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
         name: name.trim(),
         ...credentials,
         phone_number: phoneNumber.trim(),
+        business_id: businessId.trim() || undefined,
       });
       onConnected();
     } catch (err) {
@@ -87,7 +89,15 @@ export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
   return (
     <form onSubmit={handleSave} className="space-y-4 rounded-lg border bg-card p-6">
       <div>
-        <h2 className="text-lg font-semibold">Manual WhatsApp Connection</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold">Manual WhatsApp Connection</h2>
+          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+            Advanced
+          </span>
+          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+            Developer
+          </span>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           Test credentials against Meta first, then save the channel once verification succeeds.
         </p>
@@ -105,7 +115,17 @@ export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="access-token">Access Token</Label>
+        <Label htmlFor="business-id">Business ID</Label>
+        <Input
+          id="business-id"
+          value={businessId}
+          onChange={(e) => setBusinessId(e.target.value)}
+          placeholder="123456789012345"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="access-token">System User Token</Label>
         <Input
           id="access-token"
           type="password"

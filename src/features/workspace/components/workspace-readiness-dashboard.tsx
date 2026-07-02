@@ -5,8 +5,10 @@ import { useEffect, useState } from "react";
 import {
   CheckCircle2,
   Circle,
+  CreditCard,
   Megaphone,
   MessageSquare,
+  RefreshCw,
   Smartphone,
   Upload,
   UserPlus,
@@ -16,6 +18,7 @@ import {
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { getWorkspaceReadiness } from "@/features/workspace/services/workspace-readiness.service";
+import { dashboardService } from "@/features/workspace/services/dashboard.service";
 import type {
   QuickAction,
   ReadinessCheck,
@@ -41,6 +44,7 @@ const STATUS_COPY = {
 
 const QUICK_ACTION_ICONS: Record<QuickAction["id"], typeof Smartphone> = {
   connect_whatsapp: Smartphone,
+  add_payment: CreditCard,
   sync_templates: MessageSquare,
   import_contacts: Upload,
   invite_team: UserPlus,
@@ -48,8 +52,10 @@ const QUICK_ACTION_ICONS: Record<QuickAction["id"], typeof Smartphone> = {
 };
 
 const CHECK_ICONS: Record<ReadinessCheck["id"], typeof Smartphone> = {
-  channel_connected: Smartphone,
-  template_synced: MessageSquare,
+  meta_connected: Smartphone,
+  payment_method: CreditCard,
+  templates_synced: MessageSquare,
+  existing_data_synced: RefreshCw,
   contacts_available: Users,
   team_members_added: UserPlus,
   campaign_created: Megaphone,
@@ -58,14 +64,18 @@ const CHECK_ICONS: Record<ReadinessCheck["id"], typeof Smartphone> = {
 export function WorkspaceReadinessDashboard() {
   const team = useAuthStore((state) => state.team);
   const [readiness, setReadiness] = useState<WorkspaceReadiness | null>(null);
+  const [overview, setOverview] = useState<Awaited<ReturnType<typeof dashboardService.getOverview>> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setLoading(true);
     setError(null);
-    getWorkspaceReadiness()
-      .then(setReadiness)
+    Promise.all([getWorkspaceReadiness(), dashboardService.getOverview()])
+      .then(([nextReadiness, nextOverview]) => {
+        setReadiness(nextReadiness);
+        setOverview(nextOverview);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Failed to load workspace readiness"))
       .finally(() => setLoading(false));
   }, []);
@@ -135,6 +145,45 @@ export function WorkspaceReadinessDashboard() {
             </div>
           </section>
 
+          {overview ? (
+            <section className="rounded-lg border bg-card p-6">
+              <h2 className="text-sm font-semibold">Meta Synchronization</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Last sync timestamps and permission status across connected channels.
+              </p>
+              <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <dt className="text-xs text-muted-foreground">Last Contact Sync</dt>
+                  <dd className="font-medium">
+                    {overview.last_contact_sync_at
+                      ? new Date(overview.last_contact_sync_at).toLocaleString()
+                      : "Never"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Last Template Sync</dt>
+                  <dd className="font-medium">
+                    {overview.last_template_sync_at
+                      ? new Date(overview.last_template_sync_at).toLocaleString()
+                      : "Never"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Last Conversation Sync</dt>
+                  <dd className="font-medium">
+                    {overview.last_conversation_sync_at
+                      ? new Date(overview.last_conversation_sync_at).toLocaleString()
+                      : "Never"}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Permission Status</dt>
+                  <dd className="font-medium capitalize">{overview.permission_status || "Unknown"}</dd>
+                </div>
+              </dl>
+            </section>
+          ) : null}
+
           <section className="rounded-lg border bg-card p-6">
             <h2 className="text-sm font-semibold">Readiness Checklist</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -197,8 +246,11 @@ export function WorkspaceReadinessDashboard() {
             <div className="mt-4">
               <Button variant="outline" size="sm" onClick={() => {
                 setLoading(true);
-                getWorkspaceReadiness()
-                  .then(setReadiness)
+                Promise.all([getWorkspaceReadiness(), dashboardService.getOverview()])
+                  .then(([nextReadiness, nextOverview]) => {
+                    setReadiness(nextReadiness);
+                    setOverview(nextOverview);
+                  })
                   .finally(() => setLoading(false));
               }}>
                 Refresh readiness

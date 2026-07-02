@@ -1,4 +1,12 @@
-export type EmbeddedSignupStep = "about" | "requirements" | "launch" | "waiting" | "success";
+export type EmbeddedSignupStep =
+  | "about"
+  | "requirements"
+  | "launch"
+  | "waiting"
+  | "connected"
+  | "sync"
+  | "payment"
+  | "success";
 
 export type EmbeddedSignupProgressState =
   | "initializing"

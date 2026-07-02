@@ -7,6 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { PageTabs } from "@/components/shared/page-tabs";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/features/broadcast/components/campaigns/campaign-table";
+import { useCampaignSendGuard } from "@/features/broadcast/hooks/use-campaign-send-guard";
 import { WhatsAppMessagePreview } from "@/features/broadcast/components/shared/whatsapp-message-preview";
 import { campaignQueryService } from "@/features/broadcast/services/campaign-query.service";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
@@ -14,6 +15,8 @@ import type { Campaign } from "@/features/broadcast/types/campaign";
 import type { Template } from "@/features/broadcast/types/template";
 import { calcPct } from "@/features/broadcast/utils/campaign-metrics";
 import { templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
+import { useToast } from "@/hooks/use-toast";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
@@ -31,9 +34,12 @@ function formatCount(value?: number) {
 }
 
 export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
+  const { notify, Toast } = useToast();
   const [campaign, setCampaign] = useState<Campaign | undefined>(undefined);
   const [template, setTemplate] = useState<Template | undefined>(undefined);
   const [loaded, setLoaded] = useState(false);
+  const [sending, setSending] = useState(false);
+  const { sendCampaign, paymentDialog } = useCampaignSendGuard(campaign?.device_id);
 
   useEffect(() => {
     setLoaded(false);
@@ -92,8 +98,29 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
           <p className="text-sm text-muted-foreground">Created by {campaign.created_by}</p>
         </div>
         <div className="flex gap-2">
+          {campaign.status === "draft" || campaign.status === "scheduled" ? (
+            <Button
+              size="sm"
+              disabled={sending}
+              onClick={() => {
+                setSending(true);
+                void sendCampaign(campaign.id, campaign.device_id)
+                  .then((updated) => {
+                    setCampaign(updated);
+                    notify("success", "Campaign queued for send");
+                  })
+                  .catch((err) => {
+                    if (formatApiErrorMessage(err) !== "Marketing campaigns require a Meta payment method.") {
+                      notify("error", formatApiErrorMessage(err));
+                    }
+                  })
+                  .finally(() => setSending(false));
+              }}
+            >
+              {sending ? "Sending..." : "Send Campaign"}
+            </Button>
+          ) : null}
           <Button variant="outline" size="sm">Edit Campaign</Button>
-          <Button variant="outline" size="sm">More</Button>
         </div>
       </div>
 
@@ -163,6 +190,8 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
           </section>
         </div>
       </div>
+      {paymentDialog}
+      <Toast />
     </div>
   );
 }

@@ -8,6 +8,7 @@ export type CreateManualChannelInput = {
   waba_id: string;
   phone_number_id: string;
   phone_number: string;
+  business_id?: string;
 };
 
 /** @deprecated Legacy wire format — use CreateManualChannelInput */

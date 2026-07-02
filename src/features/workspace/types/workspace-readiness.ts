@@ -1,6 +1,8 @@
 export type ReadinessCheckId =
-  | "channel_connected"
-  | "template_synced"
+  | "meta_connected"
+  | "payment_method"
+  | "templates_synced"
+  | "existing_data_synced"
   | "contacts_available"
   | "team_members_added"
   | "campaign_created";
@@ -16,6 +18,7 @@ export type ReadinessCheck = {
 
 export type QuickActionId =
   | "connect_whatsapp"
+  | "add_payment"
   | "sync_templates"
   | "import_contacts"
   | "invite_team"
@@ -38,8 +41,10 @@ export type WorkspaceReadiness = {
 };
 
 export const READINESS_CHECK_ORDER: ReadinessCheckId[] = [
-  "channel_connected",
-  "template_synced",
+  "meta_connected",
+  "payment_method",
+  "templates_synced",
+  "existing_data_synced",
   "contacts_available",
   "team_members_added",
   "campaign_created",

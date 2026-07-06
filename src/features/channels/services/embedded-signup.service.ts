@@ -28,6 +28,30 @@ export type EmbeddedSignupStatusResponse = {
 };
 
 export const embeddedSignupService = {
+  /** Start signup without creating a channel row (channel is created on successful complete). */
+  async startDraft() {
+    const response = await apiClient.post<StartEmbeddedSignupResponse>("/embedded-signup/start");
+    return response.data!;
+  },
+
+  async completeDraft(
+    sessionId: string,
+    body: {
+      code: string;
+      oauth_state: string;
+      business_id?: string;
+      waba_id: string;
+      phone_number_id: string;
+    },
+  ) {
+    const response = await apiClient.post<CompleteEmbeddedSignupResponse>(
+      `/embedded-signup/${sessionId}/complete`,
+      body,
+    );
+    return response.data!;
+  },
+
+  /** Existing channel re-authorization flow. */
   async start(channelId: string) {
     const response = await apiClient.post<StartEmbeddedSignupResponse>(
       `/channels/${channelId}/embedded-signup/start`,

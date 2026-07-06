@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 import type {
   EmbeddedSignupProgressState,
@@ -12,6 +11,7 @@ import { EMBEDDED_SIGNUP_REQUIREMENTS } from "@/features/channels/types/embedded
 type EmbeddedSignupState = {
   step: EmbeddedSignupStep;
   channelId: string | null;
+  ownerTeamId: string | null;
   returnTo: string;
   requirements: EmbeddedSignupRequirement[];
   progressState: EmbeddedSignupProgressState;
@@ -19,6 +19,7 @@ type EmbeddedSignupState = {
   startedAt: string | null;
   setStep: (step: EmbeddedSignupStep) => void;
   setChannelId: (channelId: string | null) => void;
+  bindTeam: (teamId: string) => void;
   setReturnTo: (returnTo: string) => void;
   toggleRequirement: (id: EmbeddedSignupRequirement["id"]) => void;
   setProgressState: (state: EmbeddedSignupProgressState) => void;
@@ -34,6 +35,7 @@ const defaultRequirements: EmbeddedSignupRequirement[] = EMBEDDED_SIGNUP_REQUIRE
 const initialState = {
   step: "about" as EmbeddedSignupStep,
   channelId: null as string | null,
+  ownerTeamId: null as string | null,
   returnTo: "/devices",
   requirements: defaultRequirements,
   progressState: "initializing" as EmbeddedSignupProgressState,
@@ -41,45 +43,33 @@ const initialState = {
   startedAt: null as string | null,
 };
 
-export const useEmbeddedSignupStore = create<EmbeddedSignupState>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
-      setStep: (step) =>
-        set({
-          step,
-          startedAt: get().startedAt ?? new Date().toISOString(),
-        }),
-      setChannelId: (channelId) => set({ channelId }),
-      setReturnTo: (returnTo) => set({ returnTo }),
-      toggleRequirement: (id) =>
-        set((state) => ({
-          requirements: state.requirements.map((item) =>
-            item.id === id ? { ...item, ready: !item.ready } : item,
-          ),
-        })),
-      setProgressState: (progressState) => set({ progressState }),
-      setResult: (result) => set({ result }),
-      reset: () =>
-        set({
-          ...initialState,
-          requirements: defaultRequirements.map((item) => ({ ...item })),
-        }),
+function createFreshState() {
+  return {
+    ...initialState,
+    requirements: defaultRequirements.map((item) => ({ ...item })),
+  };
+}
+
+export const useEmbeddedSignupStore = create<EmbeddedSignupState>()((set, get) => ({
+  ...createFreshState(),
+  setStep: (step) =>
+    set({
+      step,
+      startedAt: get().startedAt ?? new Date().toISOString(),
     }),
-    {
-      name: "omni-chan-embedded-signup",
-      partialize: (state) => ({
-        step: state.step,
-        channelId: state.channelId,
-        returnTo: state.returnTo,
-        requirements: state.requirements,
-        progressState: state.progressState,
-        result: state.result,
-        startedAt: state.startedAt,
-      }),
-    },
-  ),
-);
+  setChannelId: (channelId) => set({ channelId }),
+  bindTeam: (teamId) => set({ ownerTeamId: teamId }),
+  setReturnTo: (returnTo) => set({ returnTo }),
+  toggleRequirement: (id) =>
+    set((state) => ({
+      requirements: state.requirements.map((item) =>
+        item.id === id ? { ...item, ready: !item.ready } : item,
+      ),
+    })),
+  setProgressState: (progressState) => set({ progressState }),
+  setResult: (result) => set({ result }),
+  reset: () => set(createFreshState()),
+}));
 
 export function allRequirementsReady(requirements: EmbeddedSignupRequirement[]): boolean {
   return requirements.every((item) => item.ready);

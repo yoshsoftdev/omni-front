@@ -15,12 +15,12 @@ import { EmbeddedSignupSuccess } from "@/features/channels/components/embedded-s
 import { useMetaEmbeddedSignup } from "@/features/channels/hooks/use-meta-embedded-signup";
 import { channelPaymentService } from "@/features/channels/services/channel-payment.service";
 import { embeddedSignupService } from "@/features/channels/services/embedded-signup.service";
-import { channelsApiService } from "@/features/channels/services/channels-api.service";
 import {
   allRequirementsReady,
   useEmbeddedSignupStore,
 } from "@/features/channels/store/embedded-signup-store";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/auth-store";
 
 const STEP_LABELS = {
   about: "About Embedded Signup",
@@ -36,12 +36,12 @@ const STEP_LABELS = {
 export function EmbeddedSignupWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const teamId = useAuthStore((state) => state.team?.id);
   const { error: sdkError, launch, launching, enabled, loading: sdkLoading } = useMetaEmbeddedSignup();
 
   const {
     step,
     returnTo,
-    channelId,
     requirements,
     progressState,
     result,
@@ -51,17 +51,27 @@ export function EmbeddedSignupWizard() {
     toggleRequirement,
     setProgressState,
     setResult,
+    bindTeam,
+    reset,
   } = useEmbeddedSignupStore();
 
   const [error, setError] = useState<string | null>(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
 
   useEffect(() => {
-    const paramChannelId = searchParams.get("channelId");
+    const store = useEmbeddedSignupStore.getState();
+    if (!teamId) {
+      store.reset();
+      return;
+    }
+    if (store.ownerTeamId !== teamId) {
+      store.reset();
+    }
+    store.bindTeam(teamId);
+
     const paramReturnTo = searchParams.get("returnTo");
-    if (paramChannelId) setChannelId(paramChannelId);
     if (paramReturnTo) setReturnTo(paramReturnTo);
-  }, [searchParams, setChannelId, setReturnTo]);
+  }, [teamId, searchParams, setReturnTo]);
 
   const requirementsReady = allRequirementsReady(requirements);
 
@@ -70,20 +80,19 @@ export function EmbeddedSignupWizard() {
       setError("Meta Embedded Signup is not configured on this environment.");
       return;
     }
+    if (!teamId) {
+      setError("You must be signed in to connect WhatsApp.");
+      return;
+    }
 
+    bindTeam(teamId);
+    setChannelId(null);
     setError(null);
     setStep("waiting");
     setProgressState("initializing");
 
     try {
-      let activeChannelId = channelId;
-      if (!activeChannelId) {
-        const placeholder = await channelsApiService.createEmbeddedPlaceholder("WhatsApp Business");
-        activeChannelId = placeholder.id;
-        setChannelId(activeChannelId);
-      }
-
-      const session = await embeddedSignupService.start(activeChannelId);
+      const session = await embeddedSignupService.startDraft();
       setProgressState("waiting_user_action");
       const launchResult = await launch();
 
@@ -92,7 +101,7 @@ export function EmbeddedSignupWizard() {
       }
 
       setProgressState("verifying_assets");
-      const completed = await embeddedSignupService.complete(activeChannelId, session.session_id, {
+      const completed = await embeddedSignupService.completeDraft(session.session_id, {
         code: launchResult.code,
         oauth_state: session.oauth_state,
         business_id: launchResult.businessId,
@@ -100,6 +109,7 @@ export function EmbeddedSignupWizard() {
         phone_number_id: launchResult.phoneNumberId,
       });
 
+      setChannelId(completed.channel_id);
       setResult({
         channel_id: completed.channel_id,
         phone_number: completed.phone_number ?? "",
@@ -110,6 +120,7 @@ export function EmbeddedSignupWizard() {
       setProgressState("completed");
       setStep("connected");
     } catch (err) {
+      setChannelId(null);
       setProgressState("initializing");
       setStep("launch");
       setError(err instanceof Error ? err.message : "Embedded signup failed");

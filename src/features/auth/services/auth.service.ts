@@ -1,4 +1,5 @@
 import { apiClient } from "@/services/api/client";
+import { useEmbeddedSignupStore } from "@/features/channels/store/embedded-signup-store";
 import { useAuthStore } from "@/store/auth-store";
 import type { AuthSessionResponse, AuthTokens, MeResponse } from "@/types/api";
 
@@ -15,6 +16,16 @@ export interface LoginInput {
 }
 
 function mapSession(data: AuthSessionResponse) {
+  const previous = useAuthStore.getState();
+  const tenantChanged =
+    previous.user?.id !== data.user.id || previous.team?.id !== data.team.id;
+
+  const signup = useEmbeddedSignupStore.getState();
+  if (tenantChanged || signup.ownerTeamId !== data.team.id) {
+    signup.reset();
+  }
+  signup.bindTeam(data.team.id);
+
   const tokens: AuthTokens = {
     accessToken: data.access_token,
     refreshToken: data.refresh_token,
@@ -25,6 +36,7 @@ function mapSession(data: AuthSessionResponse) {
 
 export const authService = {
   async register(input: RegisterInput) {
+    useEmbeddedSignupStore.getState().reset();
     const response = await apiClient.post<AuthSessionResponse>(
       "/auth/register",
       {
@@ -56,6 +68,7 @@ export const authService = {
         { skipAuth: true },
       );
     } finally {
+      useEmbeddedSignupStore.getState().reset();
       useAuthStore.getState().clearAuth();
     }
   },

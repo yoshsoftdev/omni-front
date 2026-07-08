@@ -17,6 +17,7 @@ type ComposerTab = "reply" | "note";
 export interface ComposerSendInput {
   content: string;
   storageObjectId?: string;
+  replyToMessageId?: string;
 }
 
 interface PendingAttachment {
@@ -30,11 +31,24 @@ interface PendingAttachment {
 interface MessageComposerProps {
   quickReplies: QuickReplyItem[];
   sending?: boolean;
+  replyTo?: {
+    id: string;
+    sender_name?: string;
+    content: string;
+  } | null;
+  onCancelReply?: () => void;
   onSend: (input: ComposerSendInput) => void | Promise<void>;
   onSaveNote: (content: string) => void;
 }
 
-export function MessageComposer({ quickReplies, sending = false, onSend, onSaveNote }: MessageComposerProps) {
+export function MessageComposer({
+  quickReplies,
+  sending = false,
+  replyTo,
+  onCancelReply,
+  onSend,
+  onSaveNote,
+}: MessageComposerProps) {
   const [activeTab, setActiveTab] = useState<ComposerTab>("reply");
   const [content, setContent] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -81,6 +95,7 @@ export function MessageComposer({ quickReplies, sending = false, onSend, onSaveN
     await onSend({
       content: text,
       storageObjectId: attachment?.storageObjectId,
+      replyToMessageId: replyTo?.id,
     });
     setContent("");
     clearAttachment();
@@ -123,6 +138,21 @@ export function MessageComposer({ quickReplies, sending = false, onSend, onSaveN
 
       {activeTab === "reply" ? (
         <div className="p-3">
+          {replyTo ? (
+            <div className="mb-3 rounded-md border bg-muted/30 p-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Replying to {replyTo.sender_name?.trim() || "message"}
+                  </p>
+                  <p className="line-clamp-2 whitespace-pre-wrap text-xs">{replyTo.content || "(no text)"}</p>
+                </div>
+                <button type="button" onClick={onCancelReply} className="rounded-md p-1 hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          ) : null}
           {attachment ? (
             <div className="mb-3 rounded-md border bg-muted/30 p-3">
               <div className="flex items-start justify-between gap-3">

@@ -15,6 +15,7 @@ interface ConversationDetailProps {
   conversation: InboxConversation | null;
   messages: InboxChatMessage[];
   onSendMessage: (input: ComposerSendInput) => Promise<void>;
+  onDeleteMessage: (messageId: string) => Promise<void>;
   onConversationUpdate: (conversation: InboxConversation) => void;
   onSaveNote: (content: string) => void;
   onNotify: (message: string, type?: "success" | "error") => void;
@@ -24,6 +25,7 @@ export function ConversationDetail({
   conversation,
   messages,
   onSendMessage,
+  onDeleteMessage,
   onConversationUpdate,
   onSaveNote,
   onNotify,
@@ -31,6 +33,7 @@ export function ConversationDetail({
   const [assignOpen, setAssignOpen] = useState(false);
   const [agents, setAgents] = useState<InboxAgent[]>([]);
   const [sending, setSending] = useState(false);
+  const [replyToMessage, setReplyToMessage] = useState<InboxChatMessage | null>(null);
 
   useEffect(() => {
     teamService
@@ -53,8 +56,44 @@ export function ConversationDetail({
       if (!conversation || sending) return;
       setSending(true);
       try {
+        // #region agent log
+        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
+          body: JSON.stringify({
+            sessionId: "d8bb7a",
+            runId: "run1",
+            hypothesisId: "H3",
+            location: "conversation-detail.tsx:handleSend:before",
+            message: "Composer send invoked",
+            data: {
+              conversationId: conversation.id,
+              replyToMessageId: input.replyToMessageId ?? null,
+              hasStorageObject: Boolean(input.storageObjectId),
+              contentLength: input.content?.length ?? 0,
+            },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         await onSendMessage(input);
+        // #region agent log
+        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
+          body: JSON.stringify({
+            sessionId: "d8bb7a",
+            runId: "run1",
+            hypothesisId: "H3",
+            location: "conversation-detail.tsx:handleSend:after",
+            message: "Composer send resolved",
+            data: { conversationId: conversation.id },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
         onNotify("Message sent");
+        setReplyToMessage(null);
       } catch (err) {
         onNotify(err instanceof Error ? err.message : "Failed to send message", "error");
       } finally {
@@ -81,6 +120,49 @@ export function ConversationDetail({
       }
     },
     [agents, conversation, onConversationUpdate, onNotify],
+  );
+
+  const handleDelete = useCallback(
+    async (message: InboxChatMessage) => {
+      if (!conversation || message.is_deleted) return;
+      try {
+        // #region agent log
+        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
+          body: JSON.stringify({
+            sessionId: "d8bb7a",
+            runId: "run1",
+            hypothesisId: "H4",
+            location: "conversation-detail.tsx:handleDelete:before",
+            message: "Delete message invoked",
+            data: { conversationId: conversation.id, messageId: message.id, wamid: message.wamid ?? null },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        await onDeleteMessage(message.id);
+        // #region agent log
+        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
+          body: JSON.stringify({
+            sessionId: "d8bb7a",
+            runId: "run1",
+            hypothesisId: "H4",
+            location: "conversation-detail.tsx:handleDelete:after",
+            message: "Delete message resolved",
+            data: { conversationId: conversation.id, messageId: message.id },
+            timestamp: Date.now(),
+          }),
+        }).catch(() => {});
+        // #endregion
+        onNotify("Message deleted");
+      } catch (err) {
+        onNotify(err instanceof Error ? err.message : "Failed to delete message", "error");
+      }
+    },
+    [conversation, onDeleteMessage, onNotify],
   );
 
   const handleMoreAction = useCallback(
@@ -121,8 +203,15 @@ export function ConversationDetail({
         onAssignClick={() => setAssignOpen(true)}
         onMoreAction={handleMoreAction}
       />
-      <MessageThread messages={messages} />
-      <MessageComposer quickReplies={[]} sending={sending} onSend={handleSend} onSaveNote={onSaveNote} />
+      <MessageThread messages={messages} onReply={setReplyToMessage} onDelete={handleDelete} />
+      <MessageComposer
+        quickReplies={[]}
+        sending={sending}
+        replyTo={replyToMessage}
+        onCancelReply={() => setReplyToMessage(null)}
+        onSend={handleSend}
+        onSaveNote={onSaveNote}
+      />
 
       <AssignConversationModal
         open={assignOpen}

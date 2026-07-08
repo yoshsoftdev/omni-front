@@ -59,6 +59,12 @@ export function mapMessageToInbox(message: Message, agentName?: string): InboxCh
     type,
     content: message.content,
     sent_at: message.sent_at,
+    wamid: message.wamid,
+    reply_to_wamid: message.reply_to_wamid,
+    reply_to_message_id: message.reply_to_message_id,
+    is_deleted: message.is_deleted,
+    deleted_at: message.deleted_at,
+    deleted_by_source: message.deleted_by_source,
     sender_name: resolveOutboundSenderName(message, agentName),
     attachment: message.attachment,
   };

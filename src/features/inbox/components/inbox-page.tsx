@@ -273,10 +273,15 @@ export function InboxPage() {
   const handleSendMessage = useCallback(
     async (input: ComposerSendInput) => {
       if (!selectedId || !selectedConversation) return;
+      const replyToWAMID =
+        input.replyToMessageId
+          ? selectedMessages.find((message) => message.id === input.replyToMessageId)?.wamid
+          : undefined;
 
       const sent = await messageService.send(selectedId, {
         content: input.content,
         storage_object_id: input.storageObjectId,
+        reply_to_wamid: replyToWAMID,
       });
       const mappedMessage = toInboxMessage(sent);
       const preview = input.content || sent.attachment?.filename || sent.content || "Media";
@@ -307,7 +312,7 @@ export function InboxPage() {
         ),
       );
     },
-    [selectedConversation, selectedId, toInboxMessage],
+    [selectedConversation, selectedId, selectedMessages, toInboxMessage],
   );
 
   const handleSaveNote = useCallback(
@@ -325,6 +330,24 @@ export function InboxPage() {
       }
     },
     [selectedId, notify],
+  );
+
+  const handleDeleteMessage = useCallback(
+    async (messageId: string) => {
+      if (!selectedId) return;
+      const updated = await messageService.remove(selectedId, messageId);
+      const mapped = toInboxMessage(updated);
+      setMessagesByConversation((prev) => {
+        const existing = prev[selectedId] ?? [];
+        return {
+          ...prev,
+          [selectedId]: applyMessageDateLabels(
+            sortMessagesAsc(existing.map((item) => (item.id === messageId ? { ...item, ...mapped } : item))),
+          ),
+        };
+      });
+    },
+    [selectedId, toInboxMessage],
   );
 
   const handleToggleSubscription = useCallback(async () => {
@@ -583,6 +606,7 @@ export function InboxPage() {
           conversation={selectedConversation}
           messages={selectedMessages}
           onSendMessage={handleSendMessage}
+          onDeleteMessage={handleDeleteMessage}
           onConversationUpdate={handleConversationUpdate}
           onSaveNote={handleSaveNote}
           onNotify={(message, type = "success") => notify(type, message)}

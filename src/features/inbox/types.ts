@@ -74,6 +74,9 @@ export interface InboxChatMessage {
   delivered?: boolean;
   read?: boolean;
   sender_name?: string;
+  sender_phone?: string;
+  recipient_phone?: string;
+  source?: "agent_app" | "wa_business_app" | "unknown";
   date_label?: string;
   attachment?: {
     storage_object_id: string;

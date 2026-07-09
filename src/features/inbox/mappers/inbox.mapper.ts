@@ -20,11 +20,22 @@ function resolveOutboundSenderName(message: Message, agentName?: string) {
   if (message.direction !== "outbound") return undefined;
   const explicit = message.sender_name?.trim();
   if (explicit && !isUuid(explicit)) return explicit;
-  const fallback = agentName?.trim();
-  if (fallback) return fallback;
   const sender = message.sender_phone?.trim();
   if (sender && !isUuid(sender)) return sender;
+  const fallback = agentName?.trim();
+  if (fallback) return fallback;
   return undefined;
+}
+
+function resolveMessageSource(message: Message, agentName?: string): "agent_app" | "wa_business_app" | "unknown" {
+  if (message.direction !== "outbound") return "unknown";
+  const sender = message.sender_phone?.trim();
+  if (sender && !isUuid(sender)) return "wa_business_app";
+  const explicit = message.sender_name?.trim();
+  if (explicit && !isUuid(explicit)) return "agent_app";
+  const fallback = agentName?.trim();
+  if (fallback) return "agent_app";
+  return "unknown";
 }
 
 function mapConversationStatus(status: ConversationStatus): InboxConversationStatus {
@@ -52,6 +63,7 @@ export function mapConversationToInbox(conversation: Conversation): InboxConvers
 
 export function mapMessageToInbox(message: Message, agentName?: string): InboxChatMessage {
   const type = mapContentType(message.content_type, message.attachment?.mime_type);
+  const source = resolveMessageSource(message, agentName);
   return {
     id: message.id,
     conversation_id: message.conversation_id,
@@ -66,6 +78,9 @@ export function mapMessageToInbox(message: Message, agentName?: string): InboxCh
     deleted_at: message.deleted_at,
     deleted_by_source: message.deleted_by_source,
     sender_name: resolveOutboundSenderName(message, agentName),
+    sender_phone: message.sender_phone,
+    recipient_phone: message.recipient_phone,
+    source,
     attachment: message.attachment,
   };
 }

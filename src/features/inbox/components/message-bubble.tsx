@@ -176,6 +176,7 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message, repliedTo, highlighted = false, onJumpToMessage, onReply, onDelete }: MessageBubbleProps) {
   const isOutbound = message.direction === "outbound";
+  const isFromWABusinessApp = message.source === "wa_business_app";
   const [actionsOpen, setActionsOpen] = useState(false);
   const hasUnresolvedReply = Boolean(message.reply_to_wamid && !repliedTo);
 
@@ -300,9 +301,14 @@ export function MessageBubble({ message, repliedTo, highlighted = false, onJumpT
           ) : null}
         </div>
       </div>
-      {isOutbound && message.sender_name ? (
+      {isOutbound && message.sender_name && !isFromWABusinessApp ? (
         <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
           — {message.sender_name}
+        </p>
+      ) : null}
+      {isOutbound && isFromWABusinessApp ? (
+        <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
+          via WA Business App
         </p>
       ) : null}
     </div>

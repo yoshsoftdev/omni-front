@@ -16,6 +16,7 @@ export interface Message {
   attachment?: MessageAttachment;
   sender_phone: string;
   sender_name?: string;
+  recipient_phone?: string;
   sent_by?: string;
   sent_at: string;
   wamid?: string;

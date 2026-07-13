@@ -26,6 +26,10 @@ type ApiMessage = Message & {
   deleted_at?: string;
   DeletedBySource?: "user_wa" | "agent_app" | "system";
   deleted_by_source?: "user_wa" | "agent_app" | "system";
+  ClientMessageID?: string;
+  client_message_id?: string;
+  Status?: Message["status"];
+  status?: Message["status"];
 };
 
 function readString(...values: Array<string | undefined>): string {
@@ -66,6 +70,7 @@ export function normalizeMessage(raw: ApiMessage): Message {
   const attachment = normalizeAttachment(raw.attachment ?? raw.Attachment);
   return {
     id: readString(raw.id, raw.ID),
+    client_message_id: readString(raw.client_message_id, raw.ClientMessageID),
     conversation_id: readString(raw.conversation_id, raw.ConversationID),
     direction: raw.direction ?? raw.Direction ?? "inbound",
     content: raw.content ?? "",
@@ -82,6 +87,7 @@ export function normalizeMessage(raw: ApiMessage): Message {
     is_deleted: Boolean(raw.is_deleted ?? raw.IsDeleted),
     deleted_at: readString(raw.deleted_at, raw.DeletedAt),
     deleted_by_source: raw.deleted_by_source ?? raw.DeletedBySource,
+    status: raw.status ?? raw.Status,
   };
 }
 

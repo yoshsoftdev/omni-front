@@ -1,31 +1,34 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { PageHeader } from "@/components/layout/page-header";
-import { contactService } from "@/features/contacts/services/contact.service";
-import { resolveContactDisplayName, resolveConversationContactLabel } from "@/features/contacts/utils/contact-identity";
+import { CONTACTS_UPDATED_EVENT, contactService } from "@/features/contacts/services/contact.service";
 import { ContactSidebar } from "@/features/inbox/components/contact-sidebar";
 import { ConversationDetail } from "@/features/inbox/components/conversation-detail";
 import type { ComposerSendInput } from "@/features/inbox/components/message-composer";
 import { ConversationList } from "@/features/inbox/components/conversation-list";
+import { useInboxList } from "@/features/inbox/hooks/use-inbox-list";
+import { useConversationPresence } from "@/features/inbox/hooks/use-conversation-presence";
 import { useInboxRealtime } from "@/features/inbox/hooks/use-inbox-realtime";
-import { mapContactToInboxContact, mapConversationToInbox, mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
-import { normalizeConversation } from "@/features/inbox/mappers/conversation.mapper";
+import { useInboxRealtimeCache } from "@/features/inbox/hooks/use-inbox-realtime-cache";
+import {
+  applyMessageStatusUpdate,
+  markMessageFailed,
+  markMessageSending,
+  reconcileApiMessage,
+  upsertOptimisticMessage,
+} from "@/features/inbox/lib/message-reconcile";
+import { mapContactToInboxContact, mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
 import { normalizeMessage } from "@/features/inbox/mappers/message.mapper";
 import { inboxUnreadCountQueryKey } from "@/features/inbox/query-keys";
 import { conversationService } from "@/features/inbox/services/conversation.service";
 import { messageService } from "@/features/inbox/services/message.service";
-import { enrichInboxData, mergeRealtimeConversation } from "@/features/inbox/utils/enrich-inbox";
-import {
-  computeInboxTabCounts,
-  filterConversationsByTab,
-  patchConversationStatus,
-} from "@/features/inbox/utils/conversation-filters";
-import { conversationsMatchId } from "@/features/inbox/utils/realtime-conversation";
+import { computeInboxTabCounts } from "@/features/inbox/utils/conversation-filters";
 import { applyMessageDateLabels } from "@/features/inbox/utils/message-date";
+import { generateUUID } from "@/lib/uuid";
 import type {
   InboxActivityEvent,
   InboxChatMessage,
@@ -35,12 +38,10 @@ import type {
   InboxWorkspaceNote,
 } from "@/features/inbox/types";
 import { useToast } from "@/hooks/use-toast";
+import { formatApiErrorMessage } from "@/services/api/errors";
 import { useAuthStore } from "@/store/auth-store";
 import type { ConsentStatus } from "@/types/contact";
-import type { Conversation } from "@/types/conversation";
 import type { Message } from "@/types/message";
-
-const PAGE_SIZE = 7;
 
 function toMillis(value?: string): number {
   if (!value) return 0;
@@ -52,14 +53,6 @@ function sortMessagesAsc(messages: InboxChatMessage[]) {
   return [...messages].sort((a, b) => toMillis(a.sent_at) - toMillis(b.sent_at));
 }
 
-function sortByLatest(conversations: InboxConversation[]) {
-  return [...conversations].sort((a, b) => {
-    const bTime = toMillis(b.last_message_at);
-    const aTime = toMillis(a.last_message_at);
-    return bTime - aTime;
-  });
-}
-
 export function InboxPage() {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -67,20 +60,75 @@ export function InboxPage() {
   const agentName = useAuthStore((state) => state.user?.name ?? "");
   const currentUserId = useAuthStore((state) => state.user?.id ?? "");
   const { notify, Toast } = useToast();
-  const [conversations, setConversations] = useState<InboxConversation[]>([]);
+
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>({});
   const [contacts, setContacts] = useState<Record<string, InboxContact>>({});
   const [activitiesByConversation, setActivitiesByConversation] = useState<Record<string, InboxActivityEvent[]>>({});
   const [workspaceNotes, setWorkspaceNotes] = useState<Record<string, InboxWorkspaceNote[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<InboxTab>("open");
   const [channelFilter, setChannelFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
   const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const pendingMessagesRef = useRef<
+    Record<string, { conversationId: string; input: ComposerSendInput; preview: string }>
+  >({});
+
+  const loadContacts = useCallback(async () => {
+    const result = await contactService.list({ page_size: 100 });
+    const mapped: Record<string, InboxContact> = {};
+    for (const contact of result.items) {
+      mapped[contact.id] = mapContactToInboxContact(contact, true);
+    }
+    setContacts(mapped);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  const {
+    filterKey,
+    conversations,
+    loading,
+    error,
+    hasMore,
+    fetchNextPage,
+    refresh,
+    isFetchingNextPage,
+    applyListDelta,
+  } = useInboxList({
+    tab: activeTab,
+    channelFilter,
+    agentFilter,
+    search: debouncedSearch,
+    currentUserId,
+  });
+
+  useInboxRealtimeCache(filterKey);
+
+  useEffect(() => {
+    void loadContacts();
+  }, [loadContacts]);
+
+  useEffect(() => {
+    const onContactsUpdated = () => {
+      void loadContacts();
+    };
+    window.addEventListener(CONTACTS_UPDATED_EVENT, onContactsUpdated);
+    return () => window.removeEventListener(CONTACTS_UPDATED_EVENT, onContactsUpdated);
+  }, [loadContacts]);
+
+  useEffect(() => {
+    if (selectedId || conversations.length === 0) return;
+    const preferred = contactParam
+      ? conversations.find((item) => item.contact_id === contactParam)
+      : null;
+    setSelectedId(preferred?.id ?? conversations[0]?.id ?? null);
+  }, [conversations, contactParam, selectedId]);
 
   const toInboxMessage = useCallback(
     (message: Message) => mapMessageToInbox(message, agentName),
@@ -99,36 +147,6 @@ export function InboxPage() {
     [queryClient],
   );
 
-  const loadConversations = useCallback(async (preferredContactId?: string | null) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [conversationItems, contactResult] = await Promise.all([
-        conversationService.list({ page_size: 100 }),
-        contactService.list({ page_size: 100 }),
-      ]);
-      const enriched = enrichInboxData(conversationItems, contactResult.items);
-      setConversations(sortByLatest(enriched.conversations));
-      setContacts(enriched.contacts);
-
-      const sortedConversations = sortByLatest(enriched.conversations);
-      const preferredConversation = preferredContactId
-        ? sortedConversations.find((item) => item.contact_id === preferredContactId)
-        : null;
-
-      setSelectedId((current) => preferredConversation?.id ?? current ?? sortedConversations[0]?.id ?? null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load conversations");
-      setConversations([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void loadConversations(contactParam);
-  }, [loadConversations, contactParam]);
-
   useEffect(() => {
     if (!selectedId) return;
     let cancelled = false;
@@ -137,26 +155,10 @@ export function InboxPage() {
       .then((messages) => {
         if (cancelled) return;
         const mappedMessages = applyMessageDateLabels(sortMessagesAsc(messages.map(toInboxMessage)));
-        const latestMessage = mappedMessages[mappedMessages.length - 1];
         setMessagesByConversation((prev) => ({
           ...prev,
           [selectedId]: mappedMessages,
         }));
-        if (latestMessage) {
-          setConversations((prev) =>
-            sortByLatest(
-              prev.map((conversation) =>
-                conversation.id === selectedId
-                  ? {
-                      ...conversation,
-                      last_message_preview: latestMessage.content,
-                      last_message_at: latestMessage.sent_at,
-                    }
-                  : conversation,
-              ),
-            ),
-          );
-        }
       })
       .catch(() => {
         if (!cancelled) {
@@ -188,131 +190,186 @@ export function InboxPage() {
     };
   }, [selectedId]);
 
-  const tabCounts = useMemo(
-    () => computeInboxTabCounts(conversations, currentUserId),
-    [conversations, currentUserId],
+  const resolvedConversations = useMemo(
+    () =>
+      conversations.map((conversation) => {
+        const contact = contacts[conversation.contact_id];
+        if (!contact) return conversation;
+        const resolvedName = contact.contact_name || contact.name || conversation.contact_name;
+        const resolvedPhone = contact.phone || conversation.contact_phone;
+        if (resolvedName === conversation.contact_name && resolvedPhone === conversation.contact_phone) {
+          return conversation;
+        }
+        return {
+          ...conversation,
+          contact_name: resolvedName,
+          contact_phone: resolvedPhone,
+        };
+      }),
+    [conversations, contacts],
   );
 
-  const filteredConversations = useMemo(() => {
-    let list = filterConversationsByTab(conversations, activeTab, currentUserId);
-    if (channelFilter !== "all") {
-      list = list.filter((c) => c.channel === channelFilter);
-    }
-    if ((activeTab === "all" || activeTab === "closed") && agentFilter !== "all") {
-      list = list.filter((c) => c.assigned_to === agentFilter);
-    }
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (c) =>
-          c.contact_name.toLowerCase().includes(q) ||
-          c.contact_phone.includes(q) ||
-          (c.last_message_preview?.toLowerCase().includes(q) ?? false),
-      );
-    }
-    return list;
-  }, [conversations, activeTab, channelFilter, agentFilter, search, currentUserId]);
+  const tabCounts = useMemo(
+    () => computeInboxTabCounts(resolvedConversations, currentUserId),
+    [resolvedConversations, currentUserId],
+  );
 
-  const selectedConversation = conversations.find((c) => c.id === selectedId) ?? null;
-  const selectedMessages = selectedId ? (messagesByConversation[selectedId] ?? []) : [];
+  const selectedConversation = resolvedConversations.find((c) => c.id === selectedId) ?? null;
+  const {
+    typingLabel,
+    viewerLabel,
+    applySnapshot,
+    notifyTypingStart,
+    notifyTypingStop,
+  } = useConversationPresence(selectedId);
+  const selectedUnreadCount = selectedConversation?.unread_count ?? 0;
+  const selectedMessages = useMemo(
+    () => (selectedId ? (messagesByConversation[selectedId] ?? []) : []),
+    [messagesByConversation, selectedId],
+  );
   const selectedContact = selectedConversation ? contacts[selectedConversation.contact_id] ?? null : null;
   const selectedActivities = selectedId ? (activitiesByConversation[selectedId] ?? []) : [];
   const selectedNotes = selectedId ? (workspaceNotes[selectedId] ?? []) : [];
 
   useEffect(() => {
-    if (!selectedConversation || selectedConversation.unread_count <= 0) return;
-    void markConversationAsRead(selectedConversation.id);
-    setConversations((prev) =>
-      prev.map((conversation) =>
-        conversation.id === selectedConversation.id ? { ...conversation, unread_count: 0 } : conversation,
-      ),
-    );
-  }, [selectedConversation, markConversationAsRead]);
+    if (!selectedId || selectedUnreadCount <= 0) return;
+    void markConversationAsRead(selectedId);
+    applyListDelta({ conversation_id: selectedId, unread_count: 0 });
+  }, [selectedId, selectedUnreadCount, markConversationAsRead, applyListDelta]);
 
   const agents = useMemo(() => {
     const map = new Map<string, string>();
-    for (const conv of conversations) {
+    for (const conv of resolvedConversations) {
       if (conv.assigned_to && conv.assignee_name) {
         map.set(conv.assigned_to, conv.assignee_name);
       }
     }
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [conversations]);
+  }, [resolvedConversations]);
 
-  const handleSelect = useCallback((id: string) => {
-    const selectedConversation = conversations.find((conversation) => conversation.id === id);
-    setSelectedId(id);
-    setConversations((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, unread_count: 0 } : c)),
-    );
+  const handleSelect = useCallback(
+    (id: string) => {
+      const conversation = resolvedConversations.find((item) => item.id === id);
+      setSelectedId(id);
+      if ((conversation?.unread_count ?? 0) > 0) {
+        applyListDelta({ conversation_id: id, unread_count: 0 });
+        void markConversationAsRead(id);
+      }
+    },
+    [resolvedConversations, markConversationAsRead, applyListDelta],
+  );
 
-    if ((selectedConversation?.unread_count ?? 0) > 0) {
-      void markConversationAsRead(id);
-    }
-  }, [conversations, markConversationAsRead]);
+  const handleConversationUpdate = useCallback(
+    (updated: InboxConversation) => {
+      applyListDelta({
+        conversation_id: updated.id,
+        status: updated.status,
+        assigned_to: updated.assigned_to,
+        unread_count: updated.unread_count,
+        last_message: updated.last_message_preview,
+        last_message_at: updated.last_message_at,
+        priority_score: updated.priority_score,
+        waiting_since: updated.waiting_since,
+      });
+    },
+    [applyListDelta],
+  );
 
-  const handleConversationUpdate = useCallback((updated: InboxConversation) => {
-    setConversations((prev) =>
-      sortByLatest(
-        prev.map((c) =>
-          conversationsMatchId(c.id, updated.id)
-            ? {
-                ...c,
-                ...updated,
-                status: updated.status ?? c.status,
-                contact_name: updated.contact_name || c.contact_name,
-                contact_phone: updated.contact_phone || c.contact_phone,
-                tags: updated.tags.length > 0 ? updated.tags : c.tags,
-              }
-            : c,
-        ),
-      ),
-    );
-  }, []);
-
-  const handleSendMessage = useCallback(
-    async (input: ComposerSendInput) => {
-      if (!selectedId || !selectedConversation) return;
+  const dispatchSend = useCallback(
+    async (conversationId: string, clientMessageId: string, input: ComposerSendInput, preview: string) => {
       const replyToWAMID =
         input.replyToMessageId
-          ? selectedMessages.find((message) => message.id === input.replyToMessageId)?.wamid
+          ? (messagesByConversation[conversationId] ?? []).find((message) => message.id === input.replyToMessageId)?.wamid
           : undefined;
 
-      const sent = await messageService.send(selectedId, {
-        content: input.content,
-        storage_object_id: input.storageObjectId,
-        reply_to_wamid: replyToWAMID,
-      });
-      const mappedMessage = toInboxMessage(sent);
-      const preview = input.content || sent.attachment?.filename || sent.content || "Media";
-
-      setMessagesByConversation((prev) => {
-        const existing = prev[selectedId] ?? [];
-        if (existing.some((message) => message.id === mappedMessage.id)) {
-          return prev;
-        }
-        return {
+      try {
+        const sent = await messageService.send(conversationId, {
+          content: input.content,
+          storage_object_id: input.storageObjectId,
+          reply_to_wamid: replyToWAMID,
+          client_message_id: clientMessageId,
+        });
+        setMessagesByConversation((prev) => ({
           ...prev,
-          [selectedId]: applyMessageDateLabels(sortMessagesAsc([...existing, mappedMessage])),
-        };
+          [conversationId]: applyMessageDateLabels(
+            sortMessagesAsc(reconcileApiMessage(prev[conversationId] ?? [], sent, agentName)),
+          ),
+        }));
+        delete pendingMessagesRef.current[clientMessageId];
+      } catch (error) {
+        setMessagesByConversation((prev) => ({
+          ...prev,
+          [conversationId]: applyMessageDateLabels(
+            sortMessagesAsc(
+              markMessageFailed(
+                prev[conversationId] ?? [],
+                clientMessageId,
+                formatApiErrorMessage(error),
+              ),
+            ),
+          ),
+        }));
+      }
+    },
+    [agentName, messagesByConversation],
+  );
+
+  const handleSendMessage = useCallback(
+    (input: ComposerSendInput) => {
+      if (!selectedId || !selectedConversation) return;
+      const clientMessageId = generateUUID();
+      const preview = input.content || "Media";
+      const optimistic: InboxChatMessage = {
+        id: clientMessageId,
+        client_message_id: clientMessageId,
+        conversation_id: selectedId,
+        direction: "outbound",
+        type: input.storageObjectId ? "document" : "text",
+        content: input.content,
+        sent_at: new Date().toISOString(),
+        send_status: "sending",
+        sender_name: agentName,
+        reply_to_message_id: input.replyToMessageId,
+      };
+
+      pendingMessagesRef.current[clientMessageId] = {
+        conversationId: selectedId,
+        input,
+        preview,
+      };
+
+      setMessagesByConversation((prev) => ({
+        ...prev,
+        [selectedId]: applyMessageDateLabels(
+          sortMessagesAsc(upsertOptimisticMessage(prev[selectedId] ?? [], optimistic)),
+        ),
+      }));
+
+      applyListDelta({
+        conversation_id: selectedId,
+        last_message: preview,
+        last_message_at: optimistic.sent_at,
+        unread_count: 0,
       });
 
-      setConversations((prev) =>
-        sortByLatest(
-          prev.map((conversation) =>
-            conversation.id === selectedId
-              ? {
-                  ...conversation,
-                  last_message_preview: preview,
-                  last_message_at: mappedMessage.sent_at,
-                  unread_count: 0,
-                }
-              : conversation,
-          ),
-        ),
-      );
+      void dispatchSend(selectedId, clientMessageId, input, preview);
     },
-    [selectedConversation, selectedId, selectedMessages, toInboxMessage],
+    [selectedConversation, selectedId, agentName, applyListDelta, dispatchSend],
+  );
+
+  const handleRetryMessage = useCallback(
+    (clientMessageId: string) => {
+      const pending = pendingMessagesRef.current[clientMessageId];
+      if (!pending) return;
+      setMessagesByConversation((prev) => ({
+        ...prev,
+        [pending.conversationId]: applyMessageDateLabels(
+          sortMessagesAsc(markMessageSending(prev[pending.conversationId] ?? [], clientMessageId)),
+        ),
+      }));
+      void dispatchSend(pending.conversationId, clientMessageId, pending.input, pending.preview);
+    },
+    [dispatchSend],
   );
 
   const handleSaveNote = useCallback(
@@ -365,28 +422,29 @@ export function InboxPage() {
   }, [selectedContact, notify]);
 
   const handleSaveContact = useCallback(
-    async (input: { name: string; phone: string; email?: string; consent_status?: ConsentStatus }) => {
+    async (input: {
+      contact_name: string;
+      customer_name?: string;
+      phone: string;
+      email?: string;
+      consent_status?: ConsentStatus;
+    }) => {
       if (!selectedContact) return;
       try {
         const updated = await contactService.update(selectedContact.id, input);
-        const displayName = resolveContactDisplayName(updated);
         const inboxContact = mapContactToInboxContact(updated, true);
 
         setContacts((prev) => ({ ...prev, [updated.id]: inboxContact }));
-        setConversations((prev) =>
-          prev.map((conversation) =>
-            conversation.contact_id === updated.id
-              ? { ...conversation, contact_name: displayName, contact_phone: updated.phone }
-              : conversation,
-          ),
-        );
+        if (selectedConversation?.contact_id === updated.id) {
+          void loadContacts();
+        }
         notify("success", "Contact saved");
       } catch (err) {
         notify("error", err instanceof Error ? err.message : "Failed to save contact");
         throw err;
       }
     },
-    [selectedContact, notify],
+    [selectedContact, selectedConversation, notify, loadContacts],
   );
 
   const handleAddTag = useCallback(() => {
@@ -394,119 +452,47 @@ export function InboxPage() {
   }, [notify]);
 
   useInboxRealtime({
+    onCollisionUpdate: applySnapshot,
+    onMessageStatusUpdated: (payload) => {
+      if (!payload.conversation_id) return;
+      setMessagesByConversation((prev) => ({
+        ...prev,
+        [payload.conversation_id!]: applyMessageDateLabels(
+          sortMessagesAsc(applyMessageStatusUpdate(prev[payload.conversation_id!] ?? [], payload)),
+        ),
+      }));
+    },
     onMessageCreated: (rawMessage) => {
       const message = normalizeMessage(rawMessage);
-      const mappedMessage = toInboxMessage(message);
 
       setMessagesByConversation((prev) => {
         const existing = prev[message.conversation_id] ?? [];
-        const duplicate = existing.find((item) => item.id === mappedMessage.id);
-        if (duplicate) {
-          if (!duplicate.sender_name && mappedMessage.sender_name) {
-            return {
-              ...prev,
-              [message.conversation_id]: existing.map((item) =>
-                item.id === mappedMessage.id ? { ...item, sender_name: mappedMessage.sender_name } : item,
-              ),
-            };
-          }
-          return prev;
-        }
         return {
           ...prev,
           [message.conversation_id]: applyMessageDateLabels(
-            sortMessagesAsc([...existing, mappedMessage]),
+            sortMessagesAsc(reconcileApiMessage(existing, message, agentName)),
           ),
         };
       });
 
-      setConversations((prev) => {
-        const exists = prev.some((conversation) => conversation.id === message.conversation_id);
-        if (!exists) {
-          void loadConversations();
-          return prev;
-        }
-        return sortByLatest(
-          prev.map((conversation) =>
-            conversation.id === message.conversation_id
-              ? {
-                  ...conversation,
-                  last_message_preview: message.content,
-                  last_message_at: message.sent_at,
-                  unread_count:
-                    selectedId === conversation.id
-                      ? 0
-                      : conversation.unread_count + (message.direction === "inbound" ? 1 : 0),
-                }
-              : conversation,
-          ),
-        );
+      const currentConversation = conversations.find((item) => item.id === message.conversation_id);
+      const currentUnread = currentConversation?.unread_count ?? 0;
+      const nextUnread =
+        message.direction === "inbound" && selectedId !== message.conversation_id
+          ? currentUnread + 1
+          : selectedId === message.conversation_id
+            ? 0
+            : currentUnread;
+      applyListDelta({
+        conversation_id: message.conversation_id,
+        last_message: message.content,
+        last_message_at: message.sent_at,
+        unread_count: nextUnread,
       });
 
       if (selectedId === message.conversation_id && message.direction === "inbound") {
         void markConversationAsRead(message.conversation_id);
       }
-    },
-    onConversationUpdated: (rawConversation) => {
-      const raw = rawConversation as Conversation & { Status?: Conversation["status"] };
-      const hasStatus = raw.status !== undefined || raw.Status !== undefined;
-      const normalized = normalizeConversation(raw);
-
-      setConversations((prev) => {
-        const existing = prev.find((conversation) => conversationsMatchId(conversation.id, normalized.id));
-        const merged = mergeRealtimeConversation(normalized, existing, undefined, { hasStatus });
-
-        if (existing) {
-          return sortByLatest(
-            prev.map((conversation) => (conversationsMatchId(conversation.id, merged.id) ? merged : conversation)),
-          );
-        }
-        return sortByLatest([merged, ...prev]);
-      });
-
-      setContacts((contactPrev) => {
-        const current = contactPrev[normalized.contact_id];
-        const { name, phone } = resolveConversationContactLabel(normalized.contact_id, {
-          name: normalized.contact_name,
-          phone: normalized.contact_phone,
-          fallbackName: current?.name,
-          fallbackPhone: current?.phone,
-        });
-
-        if (!current) {
-          return {
-            ...contactPrev,
-            [normalized.contact_id]: {
-              id: normalized.contact_id,
-              name,
-              phone,
-              is_saved_contact: false,
-              subscription_status: "subscribed",
-              source: "whatsapp",
-              added_on: normalized.created_at ?? new Date(0).toISOString(),
-              last_activity: normalized.last_message_at ?? normalized.updated_at ?? new Date().toISOString(),
-              language: "id",
-              tags: [],
-              conversations_count: 1,
-              campaigns_received: 0,
-              campaigns_clicked: 0,
-            },
-          };
-        }
-
-        return {
-          ...contactPrev,
-          [normalized.contact_id]: {
-            ...current,
-            name,
-            phone: phone || current.phone,
-            last_activity: normalized.last_message_at ?? current.last_activity,
-          },
-        };
-      });
-    },
-    onConversationStatusChange: (conversationId, status) => {
-      setConversations((prev) => patchConversationStatus(prev, conversationId, status));
     },
     onActivityCreated: (activity, conversationId) => {
       const targetId = conversationId ?? selectedId;
@@ -556,72 +542,59 @@ export function InboxPage() {
       <div className="flex min-h-0 flex-1">
         {error ? (
           <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">{error}</div>
-        ) : loading ? (
-          <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-            Loading conversations...
-          </div>
-        ) : conversations.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
-            No conversations found.
-          </div>
         ) : (
-        <>
-        <ConversationList
-          conversations={filteredConversations}
-          selectedId={selectedId}
-          activeTab={activeTab}
-          tabCounts={tabCounts}
-          channelFilter={channelFilter}
-          agentFilter={agentFilter}
-          search={search}
-          page={page}
-          pageSize={PAGE_SIZE}
-          agents={agents}
-          showAgentFilter={activeTab === "all" || activeTab === "closed"}
-          onTabChange={(tab) => {
-            setActiveTab(tab);
-            setPage(1);
-            if (tab !== "all" && tab !== "closed") {
-              setAgentFilter("all");
-            }
-          }}
-          onChannelFilterChange={(v) => {
-            setChannelFilter(v);
-            setPage(1);
-          }}
-          onAgentFilterChange={(v) => {
-            setAgentFilter(v);
-            setPage(1);
-          }}
-          onSearchChange={(v) => {
-            setSearch(v);
-            setPage(1);
-          }}
-          onSelect={handleSelect}
-          onPageChange={setPage}
-          onRefresh={() => void loadConversations(contactParam)}
-        />
+          <>
+            <ConversationList
+              conversations={resolvedConversations}
+              selectedId={selectedId}
+              activeTab={activeTab}
+              tabCounts={tabCounts}
+              channelFilter={channelFilter}
+              agentFilter={agentFilter}
+              search={search}
+              agents={agents}
+              loading={loading}
+              hasMore={hasMore}
+              isFetchingNextPage={isFetchingNextPage}
+              showAgentFilter={activeTab === "all" || activeTab === "closed"}
+              onTabChange={(tab) => {
+                setActiveTab(tab);
+                if (tab !== "all" && tab !== "closed") {
+                  setAgentFilter("all");
+                }
+              }}
+              onChannelFilterChange={setChannelFilter}
+              onAgentFilterChange={setAgentFilter}
+              onSearchChange={setSearch}
+              onSelect={handleSelect}
+              onRefresh={() => void refresh()}
+              onLoadMore={fetchNextPage}
+            />
 
-        <ConversationDetail
-          conversation={selectedConversation}
-          messages={selectedMessages}
-          onSendMessage={handleSendMessage}
-          onDeleteMessage={handleDeleteMessage}
-          onConversationUpdate={handleConversationUpdate}
-          onSaveNote={handleSaveNote}
-          onNotify={(message, type = "success") => notify(type, message)}
-        />
+            <ConversationDetail
+              conversation={selectedConversation}
+              messages={selectedMessages}
+              presenceLabel={typingLabel ?? viewerLabel}
+              onSendMessage={handleSendMessage}
+              onDeleteMessage={handleDeleteMessage}
+              onRetryMessage={handleRetryMessage}
+              onConversationUpdate={handleConversationUpdate}
+              onSaveNote={handleSaveNote}
+              onNotify={(message, type = "success") => notify(type, message)}
+              onTypingStart={notifyTypingStart}
+              onTypingStop={notifyTypingStop}
+            />
 
-        <ContactSidebar
-          contact={selectedContact}
-          activities={selectedActivities}
-          notes={selectedNotes}
-          onSendMessage={() => notify("success", "Focus moved to message composer")}
-          onAddTag={handleAddTag}
-          onToggleSubscription={() => void handleToggleSubscription()}
-          onSaveContact={handleSaveContact}
-        />
-        </>
+            <ContactSidebar
+              contact={selectedContact}
+              activities={selectedActivities}
+              notes={selectedNotes}
+              onSendMessage={() => notify("success", "Focus moved to message composer")}
+              onAddTag={handleAddTag}
+              onToggleSubscription={() => void handleToggleSubscription()}
+              onSaveContact={handleSaveContact}
+            />
+          </>
         )}
       </div>
 

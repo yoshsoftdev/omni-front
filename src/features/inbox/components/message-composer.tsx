@@ -1,7 +1,7 @@
 "use client";
 
 import { FileText, Image as ImageIcon, Paperclip, Smile, X, Zap } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { InternalNotePanel } from "@/features/inbox/components/internal-note-panel";
@@ -30,24 +30,26 @@ interface PendingAttachment {
 
 interface MessageComposerProps {
   quickReplies: QuickReplyItem[];
-  sending?: boolean;
   replyTo?: {
     id: string;
     sender_name?: string;
     content: string;
   } | null;
   onCancelReply?: () => void;
-  onSend: (input: ComposerSendInput) => void | Promise<void>;
+  onSend: (input: ComposerSendInput) => void;
   onSaveNote: (content: string) => void;
+  onTypingStart?: () => void;
+  onTypingStop?: () => void;
 }
 
 export function MessageComposer({
   quickReplies,
-  sending = false,
   replyTo,
   onCancelReply,
   onSend,
   onSaveNote,
+  onTypingStart,
+  onTypingStop,
 }: MessageComposerProps) {
   const [activeTab, setActiveTab] = useState<ComposerTab>("reply");
   const [content, setContent] = useState("");
@@ -57,6 +59,17 @@ export function MessageComposer({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const typingStartTimerRef = useRef<number | null>(null);
+  const typingStopTimerRef = useRef<number | null>(null);
+  const isTypingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (typingStartTimerRef.current != null) window.clearTimeout(typingStartTimerRef.current);
+      if (typingStopTimerRef.current != null) window.clearTimeout(typingStopTimerRef.current);
+      if (isTypingRef.current) onTypingStop?.();
+    };
+  }, [onTypingStop]);
 
   async function handleFileSelect(file: File) {
     setUploadError(null);
@@ -87,18 +100,59 @@ export function MessageComposer({
     setUploadError(null);
   }
 
-  async function handleSend() {
+  function scheduleTypingStop() {
+    if (typingStopTimerRef.current != null) {
+      window.clearTimeout(typingStopTimerRef.current);
+    }
+    typingStopTimerRef.current = window.setTimeout(() => {
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        onTypingStop?.();
+      }
+    }, 3000);
+  }
+
+  function handleContentChange(value: string) {
+    setContent(value);
+    if (!value.trim()) {
+      if (isTypingRef.current) {
+        isTypingRef.current = false;
+        onTypingStop?.();
+      }
+      return;
+    }
+    if (typingStartTimerRef.current != null) {
+      window.clearTimeout(typingStartTimerRef.current);
+    }
+    typingStartTimerRef.current = window.setTimeout(() => {
+      if (!isTypingRef.current) {
+        isTypingRef.current = true;
+        onTypingStart?.();
+      }
+      scheduleTypingStop();
+    }, 300);
+  }
+
+  function handleSend() {
     const text = content.trim();
-    if (sending || attachment?.uploading) return;
+    if (attachment?.uploading) return;
     if (!text && !attachment?.storageObjectId) return;
     if (attachment?.error) return;
-    await onSend({
+
+    const payload: ComposerSendInput = {
       content: text,
       storageObjectId: attachment?.storageObjectId,
       replyToMessageId: replyTo?.id,
-    });
+    };
+
     setContent("");
     clearAttachment();
+    onCancelReply?.();
+    if (isTypingRef.current) {
+      isTypingRef.current = false;
+      onTypingStop?.();
+    }
+    onSend(payload);
   }
 
   function insertTemplate(text: string) {
@@ -183,7 +237,7 @@ export function MessageComposer({
 
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={(e) => handleContentChange(e.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
@@ -276,8 +330,8 @@ export function MessageComposer({
                 />
               </div>
             </div>
-            <Button size="sm" onClick={() => void handleSend()} disabled={!canSend || sending}>
-              {sending ? "Sending..." : "Send"}
+            <Button size="sm" onClick={handleSend} disabled={!canSend}>
+              Send
             </Button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 export const IMPORT_FIELD_OPTIONS = [
   { value: "", label: "Skip" },
-  { value: "name", label: "Contact Name" },
+  { value: "contact_name", label: "Contact Name" },
+  { value: "customer_name", label: "Customer Name" },
   { value: "phone", label: "Phone Number" },
   { value: "email", label: "Email" },
   { value: "city", label: "City" },

@@ -57,6 +57,8 @@ export function mapConversationToInbox(conversation: Conversation): InboxConvers
     last_message_at: conversation.last_message_at,
     last_message_preview: conversation.last_message_preview,
     unread_count: conversation.unread_count,
+    priority_score: conversation.priority_score ?? 0,
+    waiting_since: conversation.waiting_since,
     tags: [],
   };
 }
@@ -66,6 +68,7 @@ export function mapMessageToInbox(message: Message, agentName?: string): InboxCh
   const source = resolveMessageSource(message, agentName);
   return {
     id: message.id,
+    client_message_id: message.client_message_id,
     conversation_id: message.conversation_id,
     direction: message.direction,
     type,
@@ -77,12 +80,20 @@ export function mapMessageToInbox(message: Message, agentName?: string): InboxCh
     is_deleted: message.is_deleted,
     deleted_at: message.deleted_at,
     deleted_by_source: message.deleted_by_source,
+    send_status: mapSendStatus(message.status),
+    delivered: message.status === "delivered" || message.status === "read",
+    read: message.status === "read",
     sender_name: resolveOutboundSenderName(message, agentName),
     sender_phone: message.sender_phone,
     recipient_phone: message.recipient_phone,
     source,
     attachment: message.attachment,
   };
+}
+
+function mapSendStatus(status?: Message["status"]) {
+  if (!status) return undefined;
+  return status;
 }
 
 function mapContentType(
@@ -106,9 +117,12 @@ function mapConsentToSubscription(status?: string): SubscriptionStatus {
 }
 
 export function mapContactToInboxContact(contact: Contact, isSaved = true): InboxContact {
+  const displayName = resolveContactDisplayName(contact);
   return {
     id: contact.id,
-    name: resolveContactDisplayName(contact),
+    contact_name: contact.contact_name,
+    customer_name: contact.customer_name,
+    name: displayName,
     phone: contact.phone,
     email: contact.email,
     is_saved_contact: isSaved,
@@ -128,9 +142,12 @@ export function mapContactToInboxContact(contact: Contact, isSaved = true): Inbo
 }
 
 export function mapConversationToInboxContact(conversation: Conversation): InboxContact {
+  const displayName = conversation.contact_name;
   return {
     id: conversation.contact_id,
-    name: conversation.contact_name,
+    contact_name: displayName,
+    customer_name: displayName,
+    name: displayName,
     phone: conversation.contact_phone,
     is_saved_contact: false,
     subscription_status: "subscribed",

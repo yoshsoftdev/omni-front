@@ -6,9 +6,11 @@ export interface MessageAttachment {
 }
 
 export type MessageContentType = "text" | "image" | "video" | "audio" | "document" | "template" | "other";
+export type MessageDeliveryStatus = "sent" | "delivered" | "read" | "failed";
 
 export interface Message {
   id: string;
+  client_message_id?: string;
   conversation_id: string;
   direction: MessageDirection;
   content: string;
@@ -25,6 +27,7 @@ export interface Message {
   is_deleted?: boolean;
   deleted_at?: string;
   deleted_by_source?: "user_wa" | "agent_app" | "system";
+  status?: MessageDeliveryStatus;
 }
 
 export type MessageDirection = "inbound" | "outbound";
@@ -33,4 +36,5 @@ export interface SendMessageInput {
   content?: string;
   storage_object_id?: string;
   reply_to_wamid?: string;
+  client_message_id?: string;
 }

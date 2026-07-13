@@ -15,9 +15,10 @@ export function mergeRealtimeConversation(
   options?: { hasStatus?: boolean },
 ): InboxConversation {
   const { name, phone } = resolveConversationContactLabel(incoming.contact_id, {
-    name: incoming.contact_name,
-    phone: incoming.contact_phone,
-    fallbackName: contact?.name ?? existing?.contact_name,
+    contact_name: incoming.contact_name,
+    customer_name: contact?.customer_name,
+    phone: incoming.contact_phone ?? contact?.phone,
+    fallbackName: contact?.contact_name ?? contact?.name ?? existing?.contact_name,
     fallbackPhone: contact?.phone ?? existing?.contact_phone,
   });
 
@@ -50,10 +51,14 @@ export function enrichInboxData(
 
   for (const conversation of conversations) {
     const contact = contactById.get(conversation.contact_id);
-    const { name: displayName, phone } = resolveConversationContactLabel(conversation.contact_id, {
-      name: contact?.name ?? conversation.contact_name,
-      phone: contact?.phone ?? conversation.contact_phone,
-    });
+    const displayName = contact
+      ? resolveContactDisplayName(contact)
+      : resolveConversationContactLabel(conversation.contact_id, {
+          contact_name: conversation.contact_name,
+          customer_name: conversation.customer_name,
+          phone: conversation.contact_phone,
+        }).name;
+    const phone = contact?.phone ?? conversation.contact_phone;
 
     const enrichedConversation = mapConversationToInbox({
       ...conversation,
@@ -67,6 +72,8 @@ export function enrichInboxData(
     } else if (conversation.contact_id) {
       contactMap[conversation.contact_id] = {
         id: conversation.contact_id,
+        contact_name: displayName,
+        customer_name: conversation.customer_name ?? displayName,
         name: displayName,
         phone,
         is_saved_contact: false,

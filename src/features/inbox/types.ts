@@ -25,6 +25,8 @@ export interface InboxAgent {
 
 export interface InboxContact {
   id: string;
+  contact_name: string;
+  customer_name: string;
   name: string;
   phone: string;
   email?: string;
@@ -55,11 +57,16 @@ export interface InboxConversation {
   last_message_at?: string;
   last_message_preview?: string;
   unread_count: number;
+  priority_score?: number;
+  waiting_since?: string;
   tags: InboxTag[];
 }
 
+export type MessageSendStatus = "sending" | "sent" | "delivered" | "read" | "failed";
+
 export interface InboxChatMessage {
   id: string;
+  client_message_id?: string;
   conversation_id: string;
   direction: "inbound" | "outbound";
   type: InboxMessageType;
@@ -71,6 +78,8 @@ export interface InboxChatMessage {
   is_deleted?: boolean;
   deleted_at?: string;
   deleted_by_source?: "user_wa" | "agent_app" | "system";
+  send_status?: MessageSendStatus;
+  send_error?: string;
   delivered?: boolean;
   read?: boolean;
   sender_name?: string;

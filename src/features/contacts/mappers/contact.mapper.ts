@@ -12,6 +12,8 @@ import type {
 type ApiContact = Partial<Contact> & {
   ID?: string;
   Name?: string;
+  ContactName?: string;
+  CustomerName?: string;
   Phone?: string;
   Email?: string;
   Source?: string;
@@ -202,9 +204,14 @@ export function normalizeContact(raw: ApiContact): Contact {
     ?? (raw as { marketing_status?: string }).marketing_status,
   );
 
+  const contactName = readString(raw.contact_name, raw.ContactName, raw.name, raw.Name);
+  const customerName = readString(raw.customer_name, raw.CustomerName, raw.name, raw.Name, contactName);
+
   return {
     id,
-    name: readString(raw.name, raw.Name),
+    contact_name: contactName,
+    customer_name: customerName,
+    name: contactName,
     phone: readString(raw.phone, raw.Phone),
     email: readString(raw.email, raw.Email) || undefined,
     source: mapSource(raw.source ?? raw.Source),

@@ -42,7 +42,8 @@ export type ContactFieldOption = {
 };
 
 export const contactFieldOptions: ContactFieldOption[] = [
-  { value: "name", label: "Nama Kontak" },
+  { value: "contact_name", label: "Nama Kontak" },
+  { value: "customer_name", label: "Nama Customer" },
   { value: "discount", label: "Diskon Persen" },
   { value: "expired_date", label: "Tanggal Expired" },
 ];

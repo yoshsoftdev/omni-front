@@ -12,7 +12,8 @@ import { ContactTagSelector } from "@/features/contacts/components/contact-tag-s
 import type { ContactFieldDefinition, ContactTag, ConsentStatus } from "@/types/contact";
 
 export interface ContactFormValues {
-  name: string;
+  contact_name: string;
+  customer_name: string;
   phone: string;
   email: string;
   consent_status: ConsentStatus;
@@ -67,10 +68,16 @@ export function ContactFormModal({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3 md:col-span-2">
             <Input
-              placeholder="Full Name *"
-              value={values.name}
-              onChange={(e) => onChange({ ...values, name: e.target.value })}
-              data-segment-field="name"
+              placeholder="Contact Name (Inbox Display) *"
+              value={values.contact_name}
+              onChange={(e) => onChange({ ...values, contact_name: e.target.value })}
+              data-segment-field="contact_name"
+            />
+            <Input
+              placeholder="Customer Name (WhatsApp Profile)"
+              value={values.customer_name}
+              onChange={(e) => onChange({ ...values, customer_name: e.target.value })}
+              data-segment-field="customer_name"
             />
             <div className="grid gap-3 md:grid-cols-2">
               <Input
@@ -181,7 +188,8 @@ export function ContactFormModal({
 
 export function emptyContactFormValues(): ContactFormValues {
   return {
-    name: "",
+    contact_name: "",
+    customer_name: "",
     phone: "",
     email: "",
     consent_status: "unknown",
@@ -197,7 +205,9 @@ export function emptyContactFormValues(): ContactFormValues {
 }
 
 export function contactToFormValues(contact: {
-  name: string;
+  contact_name?: string;
+  customer_name?: string;
+  name?: string;
   phone: string;
   email?: string;
   consent_status: ConsentStatus;
@@ -215,7 +225,8 @@ export function contactToFormValues(contact: {
     custom_fields[field.field_key] = field.value;
   }
   return {
-    name: contact.name,
+    contact_name: contact.contact_name ?? contact.name ?? "",
+    customer_name: contact.customer_name ?? contact.name ?? "",
     phone: contact.phone,
     email: contact.email ?? "",
     consent_status: contact.consent_status,

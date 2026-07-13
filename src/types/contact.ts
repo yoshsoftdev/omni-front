@@ -44,7 +44,10 @@ export interface ContactActivity {
 
 export interface Contact {
   id: string;
-  name: string;
+  contact_name: string;
+  customer_name: string;
+  /** @deprecated use contact_name */
+  name?: string;
   phone: string;
   email?: string;
   source: ContactSource;
@@ -90,7 +93,10 @@ export interface ContactImportResult {
 }
 
 export interface ContactFormInput {
-  name: string;
+  contact_name: string;
+  customer_name?: string;
+  /** @deprecated use contact_name */
+  name?: string;
   phone: string;
   email?: string;
   notes?: string;

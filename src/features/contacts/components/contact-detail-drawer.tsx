@@ -109,15 +109,16 @@ export function ContactDetailDrawer({
   }
 
   async function saveEdit() {
-    if (!editForm.name.trim() || !editForm.phone.trim()) {
-      onNotify("error", "Name and phone are required");
+    if (!editForm.contact_name.trim() || !editForm.phone.trim()) {
+      onNotify("error", "Contact name and phone are required");
       return;
     }
 
     setSaving(true);
     try {
       const updated = await contactService.update(contact.id, {
-        name: editForm.name.trim(),
+        contact_name: editForm.contact_name.trim(),
+        customer_name: editForm.customer_name.trim() || undefined,
         phone: editForm.phone.trim(),
         email: editForm.email.trim() || undefined,
         notes: editForm.notes.trim() || undefined,
@@ -172,12 +173,15 @@ export function ContactDetailDrawer({
       <RightDrawer open onClose={onClose} footer={footer}>
         <RightDrawerHeader onClose={onClose}>
           <div className="flex items-center gap-3">
-            <ContactAvatar name={detail.name} size="lg" />
+            <ContactAvatar name={detail.contact_name} size="lg" />
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold">{detail.name}</h3>
+                <h3 className="font-semibold">{detail.contact_name}</h3>
                 <ConsentBadge status={detail.consent_status} />
               </div>
+              {detail.customer_name && detail.customer_name !== detail.contact_name ? (
+                <p className="text-xs text-muted-foreground">Customer: {detail.customer_name}</p>
+              ) : null}
               <p className="text-sm text-muted-foreground">{detail.phone}</p>
               <p className="text-xs text-muted-foreground">{detail.email ?? "No email"}</p>
             </div>

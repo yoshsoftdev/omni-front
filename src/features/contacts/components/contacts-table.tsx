@@ -15,7 +15,7 @@ export function ContactsTable({ contacts, onChanged }: ContactsTableProps) {
   const canManage = role === "owner" || role === "admin";
 
   async function handleDelete(contact: Contact) {
-    if (!confirm(`Delete contact "${contact.name}"?`)) return;
+    if (!confirm(`Delete contact "${contact.contact_name}"?`)) return;
     await contactService.remove(contact.id);
     onChanged();
   }
@@ -43,7 +43,7 @@ export function ContactsTable({ contacts, onChanged }: ContactsTableProps) {
           {contacts.map((contact) => (
             <tr key={contact.id} className="border-t">
               <td className="px-4 py-3">
-                <div className="font-medium">{contact.name}</div>
+                <div className="font-medium">{contact.contact_name}</div>
                 {contact.email ? <div className="text-xs text-muted-foreground">{contact.email}</div> : null}
               </td>
               <td className="px-4 py-3">{contact.phone}</td>

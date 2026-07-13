@@ -14,25 +14,32 @@ import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features
 interface ConversationDetailProps {
   conversation: InboxConversation | null;
   messages: InboxChatMessage[];
-  onSendMessage: (input: ComposerSendInput) => Promise<void>;
+  presenceLabel?: string | null;
+  onSendMessage: (input: ComposerSendInput) => void;
   onDeleteMessage: (messageId: string) => Promise<void>;
+  onRetryMessage: (clientMessageId: string) => void;
   onConversationUpdate: (conversation: InboxConversation) => void;
   onSaveNote: (content: string) => void;
   onNotify: (message: string, type?: "success" | "error") => void;
+  onTypingStart?: () => void;
+  onTypingStop?: () => void;
 }
 
 export function ConversationDetail({
   conversation,
   messages,
+  presenceLabel,
   onSendMessage,
   onDeleteMessage,
+  onRetryMessage,
   onConversationUpdate,
   onSaveNote,
   onNotify,
+  onTypingStart,
+  onTypingStop,
 }: ConversationDetailProps) {
   const [assignOpen, setAssignOpen] = useState(false);
   const [agents, setAgents] = useState<InboxAgent[]>([]);
-  const [sending, setSending] = useState(false);
   const [replyToMessage, setReplyToMessage] = useState<InboxChatMessage | null>(null);
 
   useEffect(() => {
@@ -50,58 +57,6 @@ export function ConversationDetail({
       )
       .catch(() => setAgents([]));
   }, []);
-
-  const handleSend = useCallback(
-    async (input: ComposerSendInput) => {
-      if (!conversation || sending) return;
-      setSending(true);
-      try {
-        // #region agent log
-        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-          body: JSON.stringify({
-            sessionId: "d8bb7a",
-            runId: "run1",
-            hypothesisId: "H3",
-            location: "conversation-detail.tsx:handleSend:before",
-            message: "Composer send invoked",
-            data: {
-              conversationId: conversation.id,
-              replyToMessageId: input.replyToMessageId ?? null,
-              hasStorageObject: Boolean(input.storageObjectId),
-              contentLength: input.content?.length ?? 0,
-            },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
-        await onSendMessage(input);
-        // #region agent log
-        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-          body: JSON.stringify({
-            sessionId: "d8bb7a",
-            runId: "run1",
-            hypothesisId: "H3",
-            location: "conversation-detail.tsx:handleSend:after",
-            message: "Composer send resolved",
-            data: { conversationId: conversation.id },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
-        onNotify("Message sent");
-        setReplyToMessage(null);
-      } catch (err) {
-        onNotify(err instanceof Error ? err.message : "Failed to send message", "error");
-      } finally {
-        setSending(false);
-      }
-    },
-    [conversation, onNotify, onSendMessage, sending],
-  );
 
   const handleAssign = useCallback(
     async (agentId: string) => {
@@ -126,37 +81,7 @@ export function ConversationDetail({
     async (message: InboxChatMessage) => {
       if (!conversation || message.is_deleted) return;
       try {
-        // #region agent log
-        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-          body: JSON.stringify({
-            sessionId: "d8bb7a",
-            runId: "run1",
-            hypothesisId: "H4",
-            location: "conversation-detail.tsx:handleDelete:before",
-            message: "Delete message invoked",
-            data: { conversationId: conversation.id, messageId: message.id, wamid: message.wamid ?? null },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
         await onDeleteMessage(message.id);
-        // #region agent log
-        fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-          body: JSON.stringify({
-            sessionId: "d8bb7a",
-            runId: "run1",
-            hypothesisId: "H4",
-            location: "conversation-detail.tsx:handleDelete:after",
-            message: "Delete message resolved",
-            data: { conversationId: conversation.id, messageId: message.id },
-            timestamp: Date.now(),
-          }),
-        }).catch(() => {});
-        // #endregion
         onNotify("Message deleted");
       } catch (err) {
         onNotify(err instanceof Error ? err.message : "Failed to delete message", "error");
@@ -200,17 +125,24 @@ export function ConversationDetail({
     <div className="flex h-full min-w-0 flex-1 flex-col bg-background">
       <ConversationHeader
         conversation={conversation}
+        presenceLabel={presenceLabel}
         onAssignClick={() => setAssignOpen(true)}
         onMoreAction={handleMoreAction}
       />
-      <MessageThread messages={messages} onReply={setReplyToMessage} onDelete={handleDelete} />
+      <MessageThread
+        messages={messages}
+        onReply={setReplyToMessage}
+        onDelete={handleDelete}
+        onRetry={onRetryMessage}
+      />
       <MessageComposer
         quickReplies={[]}
-        sending={sending}
         replyTo={replyToMessage}
         onCancelReply={() => setReplyToMessage(null)}
-        onSend={handleSend}
+        onSend={onSendMessage}
         onSaveNote={onSaveNote}
+        onTypingStart={onTypingStart}
+        onTypingStop={onTypingStop}
       />
 
       <AssignConversationModal

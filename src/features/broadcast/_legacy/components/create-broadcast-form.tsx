@@ -240,7 +240,7 @@ export function CreateBroadcastForm({ onCreated }: CreateBroadcastFormProps) {
                   checked={contactIds.includes(contact.id)}
                   onChange={() => toggleContact(contact.id)}
                 />
-                {contact.name} ({contact.phone})
+                {contact.contact_name} ({contact.phone})
               </label>
             ))}
           </div>

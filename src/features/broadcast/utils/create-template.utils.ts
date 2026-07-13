@@ -28,11 +28,11 @@ export function detectVariables(body: string): DetectedVariable[] {
 
 export function applyContactSamples(
   variables: DetectedVariable[],
-  contact?: Pick<Contact, "name" | "phone" | "email" | "notes">,
+  contact?: Pick<Contact, "contact_name" | "customer_name" | "phone" | "email" | "notes">,
 ): DetectedVariable[] {
   if (!contact) return variables;
 
-  const samples = [contact.name, contact.phone, contact.email ?? "", contact.notes ?? ""].filter(
+  const samples = [contact.customer_name, contact.contact_name, contact.phone, contact.email ?? "", contact.notes ?? ""].filter(
     (value) => String(value).trim().length > 0,
   );
 

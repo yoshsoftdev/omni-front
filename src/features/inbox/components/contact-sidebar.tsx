@@ -37,7 +37,13 @@ interface ContactSidebarProps {
   onSendMessage: () => void;
   onAddTag: () => void;
   onToggleSubscription: () => void;
-  onSaveContact?: (input: { name: string; phone: string; email?: string; consent_status?: ConsentStatus }) => Promise<void>;
+  onSaveContact?: (input: {
+    contact_name: string;
+    customer_name?: string;
+    phone: string;
+    email?: string;
+    consent_status?: ConsentStatus;
+  }) => Promise<void>;
 }
 
 export function ContactSidebar({
@@ -77,11 +83,12 @@ export function ContactSidebar({
   ];
 
   async function handleSaveContact() {
-    if (!contact || !onSaveContact || !form.name.trim()) return;
+    if (!contact || !onSaveContact || !form.contact_name.trim()) return;
     setSaving(true);
     try {
       await onSaveContact({
-        name: form.name.trim(),
+        contact_name: form.contact_name.trim(),
+        customer_name: form.customer_name.trim() || undefined,
         phone: form.phone.trim() || contact.phone,
         email: form.email.trim() || undefined,
         consent_status: form.consent_status,
@@ -95,8 +102,11 @@ export function ContactSidebar({
   return (
     <div className="flex h-full w-[420px] shrink-0 flex-col border-l bg-card">
       <div className="border-b px-5 py-5 text-center">
-        <ContactAvatar name={contact.name} size="lg" className="mx-auto h-16 w-16 text-base" />
-        <h3 className="mt-3 text-base font-semibold">{contact.name}</h3>
+        <ContactAvatar name={contact.contact_name || contact.name} size="lg" className="mx-auto h-16 w-16 text-base" />
+        <h3 className="mt-3 text-base font-semibold">{contact.contact_name || contact.name}</h3>
+        {contact.customer_name && contact.customer_name !== contact.contact_name ? (
+          <p className="text-xs text-muted-foreground">Customer: {contact.customer_name}</p>
+        ) : null}
         <p className="text-sm text-muted-foreground">{contact.phone}</p>
         {contact.email ? <p className="text-xs text-muted-foreground">{contact.email}</p> : null}
         <div className="mt-2 flex justify-center">

@@ -3,6 +3,7 @@
 import { Instagram, Mail, MessageCircle, Send } from "lucide-react";
 
 import { ContactAvatar } from "@/components/shared/contact-avatar";
+import { useWaitingLabel } from "@/features/inbox/hooks/use-waiting-label";
 import { cn } from "@/lib/utils";
 import type { InboxChannel, InboxConversation } from "@/features/inbox/types";
 
@@ -38,6 +39,8 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({ conversation, selected, onSelect }: ConversationCardProps) {
+  const waitingLabel = useWaitingLabel(conversation.waiting_since);
+
   return (
     <button
       type="button"
@@ -57,9 +60,14 @@ export function ConversationCard({ conversation, selected, onSelect }: Conversat
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <span className="truncate text-sm font-semibold">{conversation.contact_name}</span>
-          <span className="shrink-0 text-[11px] text-muted-foreground">
-            {formatTimestamp(conversation.last_message_at)}
-          </span>
+          <div className="flex shrink-0 flex-col items-end gap-0.5">
+            <span className="text-[11px] text-muted-foreground">
+              {formatTimestamp(conversation.last_message_at)}
+            </span>
+            {waitingLabel ? (
+              <span className="text-[10px] font-medium text-amber-600">{waitingLabel}</span>
+            ) : null}
+          </div>
         </div>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
           {conversation.last_message_preview?.trim() || "No messages yet"}

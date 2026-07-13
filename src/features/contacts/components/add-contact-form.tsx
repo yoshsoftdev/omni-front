@@ -34,7 +34,8 @@ export function AddContactForm({ tags, onCreated }: AddContactFormProps) {
     setLoading(true);
     try {
       await contactService.create({
-        name: name.trim(),
+        contact_name: name.trim(),
+        customer_name: name.trim(),
         phone: phone.trim(),
         email: email.trim() || undefined,
         notes: notes.trim() || undefined,

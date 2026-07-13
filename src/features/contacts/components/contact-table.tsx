@@ -44,7 +44,8 @@ export function ContactTable({
       <table className="w-full min-w-[1200px] text-sm">
         <thead>
           <tr className="border-b text-left text-muted-foreground">
-            <th className="p-4 font-medium">Name</th>
+            <th className="p-4 font-medium">Contact Name</th>
+            <th className="p-4 font-medium">Customer Name</th>
             <th className="p-4 font-medium">WhatsApp</th>
             <th className="p-4 font-medium">Email</th>
             <th className="p-4 font-medium">Subscription</th>
@@ -66,10 +67,11 @@ export function ContactTable({
             >
               <td className="p-4">
                 <div className="flex items-center gap-3">
-                  <ContactAvatar name={contact.name} />
-                  <span className="font-medium">{contact.name}</span>
+                  <ContactAvatar name={contact.contact_name} />
+                  <span className="font-medium">{contact.contact_name}</span>
                 </div>
               </td>
+              <td className="p-4 text-muted-foreground">{contact.customer_name || "—"}</td>
               <td className="p-4 text-muted-foreground">{contact.phone}</td>
               <td className="p-4 text-muted-foreground">{contact.email ?? "—"}</td>
               <td className="p-4"><ConsentBadge status={contact.consent_status} /></td>

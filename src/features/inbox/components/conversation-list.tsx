@@ -1,8 +1,9 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { RefreshCw, Search } from "lucide-react";
 
-import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { ConversationCard } from "@/features/inbox/components/conversation-card";
 import type { InboxConversation, InboxTab } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
@@ -23,18 +24,21 @@ interface ConversationListProps {
   channelFilter: string;
   agentFilter: string;
   search: string;
-  page: number;
-  pageSize: number;
   agents: { id: string; name: string }[];
   showAgentFilter?: boolean;
+  loading?: boolean;
+  hasMore?: boolean;
+  isFetchingNextPage?: boolean;
   onTabChange: (tab: InboxTab) => void;
   onChannelFilterChange: (value: string) => void;
   onAgentFilterChange: (value: string) => void;
   onSearchChange: (value: string) => void;
   onSelect: (id: string) => void;
-  onPageChange: (page: number) => void;
   onRefresh: () => void;
+  onLoadMore: () => void;
 }
+
+const ROW_HEIGHT = 76;
 
 export function ConversationList({
   conversations,
@@ -44,22 +48,67 @@ export function ConversationList({
   channelFilter,
   agentFilter,
   search,
-  page,
-  pageSize,
   agents,
   showAgentFilter = true,
+  loading = false,
+  hasMore = false,
+  isFetchingNextPage = false,
   onTabChange,
   onChannelFilterChange,
   onAgentFilterChange,
   onSearchChange,
   onSelect,
-  onPageChange,
   onRefresh,
+  onLoadMore,
 }: ConversationListProps) {
-  const totalPages = Math.max(1, Math.ceil(conversations.length / pageSize));
-  const start = conversations.length === 0 ? 0 : (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, conversations.length);
-  const pageItems = conversations.slice((page - 1) * pageSize, page * pageSize);
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const virtualizer = useVirtualizer({
+    count: conversations.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 8,
+  });
+  const virtualItems = virtualizer.getVirtualItems();
+  const lastVirtualIndex = useMemo(
+    () => (virtualItems.length > 0 ? virtualItems[virtualItems.length - 1].index : -1),
+    [virtualItems],
+  );
+
+  const handleScroll = useCallback(() => {
+    const element = parentRef.current;
+    if (!element || !hasMore || isFetchingNextPage) return;
+    const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (remaining < ROW_HEIGHT * 3) {
+      onLoadMore();
+    }
+  }, [hasMore, isFetchingNextPage, onLoadMore]);
+
+  // If the first page does not fill the viewport, keep fetching
+  // so users can immediately see more conversations.
+  useEffect(() => {
+    const element = parentRef.current;
+    if (!element || !hasMore || isFetchingNextPage) return;
+    if (element.scrollHeight <= element.clientHeight + ROW_HEIGHT) {
+      onLoadMore();
+    }
+  }, [conversations.length, hasMore, isFetchingNextPage, onLoadMore]);
+
+  useEffect(() => {
+    const element = parentRef.current;
+    if (!element || !hasMore || isFetchingNextPage) return;
+    const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
+    if (remaining < ROW_HEIGHT * 3) {
+      onLoadMore();
+    }
+  }, [conversations.length, hasMore, isFetchingNextPage, onLoadMore]);
+
+  useEffect(() => {
+    if (!hasMore || isFetchingNextPage || conversations.length === 0) return;
+    if (lastVirtualIndex >= conversations.length - 2) {
+      onLoadMore();
+    }
+  }, [lastVirtualIndex, conversations.length, hasMore, isFetchingNextPage, onLoadMore]);
 
   return (
     <div className="flex h-full w-[340px] shrink-0 flex-col border-r bg-card">
@@ -129,30 +178,45 @@ export function ConversationList({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {pageItems.length === 0 ? (
+      <div
+        ref={parentRef}
+        onScroll={handleScroll}
+        className="inbox-scrollbar min-h-0 flex-1 overflow-y-auto pr-1"
+      >
+        {loading && conversations.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">Loading conversations...</p>
+        ) : conversations.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No conversations found.</p>
         ) : (
-          pageItems.map((conversation, index) => (
-            <ConversationCard
-              key={conversation.id || `conversation-${index}`}
-              conversation={conversation}
-              selected={selectedId === conversation.id}
-              onSelect={() => onSelect(conversation.id)}
-            />
-          ))
+          <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
+            {virtualItems.map((virtualRow) => {
+              const conversation = conversations[virtualRow.index];
+              if (!conversation) return null;
+              return (
+                <div
+                  key={conversation.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  <ConversationCard
+                    conversation={conversation}
+                    selected={selectedId === conversation.id}
+                    onSelect={() => onSelect(conversation.id)}
+                  />
+                </div>
+              );
+            })}
+          </div>
         )}
+        {isFetchingNextPage ? (
+          <p className="p-3 text-center text-xs text-muted-foreground">Loading more...</p>
+        ) : null}
       </div>
-
-      <PaginationFooter
-        start={start}
-        end={end}
-        total={conversations.length}
-        totalLabel="conversations"
-        currentPage={page}
-        totalPages={totalPages}
-        onPageChange={onPageChange}
-      />
     </div>
   );
 }

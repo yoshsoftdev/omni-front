@@ -76,12 +76,22 @@ export function parseTemplateComponents(template: WhatsAppTemplate): ParsedTempl
 
 export function resolveContactFieldValue(
   field: string,
-  contact?: { name: string; phone: string; email?: string | null; notes?: string | null },
+  contact?: {
+    contact_name?: string;
+    customer_name?: string;
+    name?: string;
+    phone: string;
+    email?: string | null;
+    notes?: string | null;
+  },
 ): string {
   if (!contact) return "";
   switch (field) {
     case "name":
-      return contact.name;
+    case "customer_name":
+      return contact.customer_name || contact.name || contact.contact_name || "";
+    case "contact_name":
+      return contact.contact_name || contact.name || contact.customer_name || "";
     case "phone":
       return contact.phone;
     case "email":

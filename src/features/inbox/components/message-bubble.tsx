@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CheckCheck, CornerUpLeft, Download, FileText, Image as ImageIcon, MoreHorizontal, Trash2, Video } from "lucide-react";
+import { Check, CheckCheck, CornerUpLeft, Download, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -172,9 +172,18 @@ interface MessageBubbleProps {
   onJumpToMessage?: (id: string) => void;
   onReply?: (message: InboxChatMessage) => void;
   onDelete?: (message: InboxChatMessage) => void;
+  onRetry?: (clientMessageId: string) => void;
 }
 
-export function MessageBubble({ message, repliedTo, highlighted = false, onJumpToMessage, onReply, onDelete }: MessageBubbleProps) {
+export function MessageBubble({
+  message,
+  repliedTo,
+  highlighted = false,
+  onJumpToMessage,
+  onReply,
+  onDelete,
+  onRetry,
+}: MessageBubbleProps) {
   const isOutbound = message.direction === "outbound";
   const isFromWABusinessApp = message.source === "wa_business_app";
   const [actionsOpen, setActionsOpen] = useState(false);
@@ -291,15 +300,28 @@ export function MessageBubble({ message, repliedTo, highlighted = false, onJumpT
         >
           <span>{formatTime(message.sent_at)}</span>
           {isOutbound ? (
-            message.read ? (
+            message.send_status === "failed" ? (
+              <button
+                type="button"
+                onClick={() => onRetry?.(message.client_message_id ?? message.id)}
+                className="text-[10px] font-medium text-destructive hover:underline"
+              >
+                Failed · Retry
+              </button>
+            ) : message.send_status === "sending" ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : message.read || message.send_status === "read" ? (
               <CheckCheck className="h-3 w-3 text-blue-500" />
-            ) : message.delivered ? (
+            ) : message.delivered || message.send_status === "delivered" ? (
               <CheckCheck className="h-3 w-3" />
             ) : (
               <Check className="h-3 w-3" />
             )
           ) : null}
         </div>
+        {isOutbound && message.send_status === "failed" && message.send_error ? (
+          <p className="mt-1 text-[10px] text-destructive">{message.send_error}</p>
+        ) : null}
       </div>
       {isOutbound && message.sender_name && !isFromWABusinessApp ? (
         <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
@@ -319,9 +341,10 @@ interface MessageThreadProps {
   messages: InboxChatMessage[];
   onReply?: (message: InboxChatMessage) => void;
   onDelete?: (message: InboxChatMessage) => void;
+  onRetry?: (clientMessageId: string) => void;
 }
 
-export function MessageThread({ messages, onReply, onDelete }: MessageThreadProps) {
+export function MessageThread({ messages, onReply, onDelete, onRetry }: MessageThreadProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   let lastLabel = "";
@@ -380,6 +403,7 @@ export function MessageThread({ messages, onReply, onDelete }: MessageThreadProp
                 onJumpToMessage={jumpToMessage}
                 onReply={onReply}
                 onDelete={onDelete}
+                onRetry={onRetry}
               />
             </div>
           );

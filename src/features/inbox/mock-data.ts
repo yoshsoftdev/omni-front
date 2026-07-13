@@ -23,7 +23,7 @@ export const MOCK_AGENTS: InboxAgent[] = [
 
 export const MOCK_CONTACTS: Record<string, InboxContact> = {
   c1: {
-    id: "c1", name: "Aulia Putri", phone: "+62 812-3456-7890", email: "aulia@email.com",
+    id: "c1", contact_name: "Aulia Putri", customer_name: "Aulia Putri", name: "Aulia Putri", phone: "+62 812-3456-7890", email: "aulia@email.com",
     subscription_status: "subscribed", source: "WhatsApp", added_on: "January 20, 2026",
     last_activity: "Today, 10:45 AM", language: "Indonesian", customer_type: "Premium",
     city: "Jakarta", notes: "Preferred WhatsApp contact",
@@ -31,14 +31,14 @@ export const MOCK_CONTACTS: Record<string, InboxContact> = {
     conversations_count: 18, campaigns_received: 7, campaigns_clicked: 3,
   },
   c2: {
-    id: "c2", name: "Budi Setiawan", phone: "+62 813-9876-5432", email: "budi@email.com",
+    id: "c2", contact_name: "Budi Setiawan", customer_name: "Budi Setiawan", name: "Budi Setiawan", phone: "+62 813-9876-5432", email: "budi@email.com",
     subscription_status: "subscribed", source: "WhatsApp", added_on: "February 5, 2026",
     last_activity: "Yesterday, 5:21 PM", language: "Indonesian", customer_type: "Standard",
     city: "Bandung", tags: [TAGS.customer],
     conversations_count: 8, campaigns_received: 5, campaigns_clicked: 1,
   },
   c3: {
-    id: "c3", name: "Rina Anggraini", phone: "+62 821-1122-3344", email: "rina@email.com",
+    id: "c3", contact_name: "Rina Anggraini", customer_name: "Rina Anggraini", name: "Rina Anggraini", phone: "+62 821-1122-3344", email: "rina@email.com",
     subscription_status: "unsubscribed", source: "Instagram", added_on: "March 10, 2026",
     last_activity: "June 15, 2026", language: "Indonesian", city: "Surabaya", tags: [],
     conversations_count: 3, campaigns_received: 2, campaigns_clicked: 0,

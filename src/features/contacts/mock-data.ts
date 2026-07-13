@@ -36,7 +36,7 @@ const tag = (id: string) => {
 
 export const MOCK_CONTACTS: Contact[] = [
   {
-    id: "c1", name: "Aulia Putri", phone: "+62 812-3456-7890", email: "aulia@email.com",
+    id: "c1", contact_name: "Aulia Putri", customer_name: "Aulia Putri", phone: "+62 812-3456-7890", email: "aulia@email.com",
     source: "whatsapp", tags: [tag("t1"), tag("t2")], consent_status: "opt_in", marketing_status: marketingFromConsent("opt_in"), custom_fields: [],
     last_activity_at: "2026-06-17T10:45:00Z", language: "Indonesian", customer_type: "Premium",
     city: "Jakarta", notes: "Preferred WhatsApp contact", created_at: "2026-01-20T08:00:00Z", updated_at: "2026-06-17T10:45:00Z",
@@ -48,7 +48,7 @@ export const MOCK_CONTACTS: Contact[] = [
     ],
   },
   {
-    id: "c2", name: "Budi Setiawan", phone: "+62 813-9876-5432", email: "budi@email.com",
+    id: "c2", contact_name: "Budi Setiawan", customer_name: "Budi Setiawan", phone: "+62 813-9876-5432", email: "budi@email.com",
     source: "import", tags: [tag("t2"), tag("t4")], consent_status: "opt_in", marketing_status: "subscribed", custom_fields: [],
     last_activity_at: "2026-06-16T17:21:00Z", language: "Indonesian", customer_type: "Standard",
     city: "Bandung", notes: "", created_at: "2026-02-05T08:00:00Z", updated_at: "2026-06-16T17:21:00Z",
@@ -56,14 +56,14 @@ export const MOCK_CONTACTS: Contact[] = [
     activities: [{ id: "a3", type: "import", text: "Imported via CSV", created_at: "2026-02-05T08:00:00Z" }],
   },
   {
-    id: "c3", name: "Dewi Lestari", phone: "+62 821-1122-3344", email: "dewi@email.com",
+    id: "c3", contact_name: "Dewi Lestari", customer_name: "Dewi Lestari", phone: "+62 821-1122-3344", email: "dewi@email.com",
     source: "manual", tags: [tag("t6")], consent_status: "unknown", marketing_status: "unknown", custom_fields: [],
     last_activity_at: "2026-06-15T13:00:00Z", language: "Indonesian", customer_type: "Prospect",
     city: "Surabaya", notes: "Follow up next week", created_at: "2026-03-10T08:00:00Z", updated_at: "2026-06-15T13:00:00Z",
     conversations_count: 3, campaigns_received: 2, campaigns_clicked: 0, last_conversation_at: "2026-06-15T13:00:00Z", activities: [],
   },
   {
-    id: "c4", name: "Ricky Saputra", phone: "+62 856-7788-9900", email: "ricky@email.com",
+    id: "c4", contact_name: "Ricky Saputra", customer_name: "Ricky Saputra", phone: "+62 856-7788-9900", email: "ricky@email.com",
     source: "whatsapp", tags: [tag("t3")], consent_status: "opt_out", marketing_status: "unsubscribed", custom_fields: [],
     last_activity_at: "2026-06-12T10:20:00Z", language: "Indonesian", customer_type: "Reseller",
     city: "Jakarta", notes: "", created_at: "2026-02-20T08:00:00Z", updated_at: "2026-06-12T10:20:00Z",
@@ -71,7 +71,7 @@ export const MOCK_CONTACTS: Contact[] = [
     activities: [{ id: "a4", type: "consent", text: "Opted out of marketing", created_at: "2026-06-01T08:00:00Z" }],
   },
   {
-    id: "c5", name: "Nadia Permata", phone: "+62 877-5544-3322", email: "nadia@email.com",
+    id: "c5", contact_name: "Nadia Permata", customer_name: "Nadia Permata", phone: "+62 877-5544-3322", email: "nadia@email.com",
     source: "api", tags: [tag("t1"), tag("t4")], consent_status: "opt_in", marketing_status: "subscribed", custom_fields: [],
     last_activity_at: "2026-06-17T08:10:00Z", language: "English", customer_type: "Premium",
     city: "Jakarta", notes: "VIP since 2025", created_at: "2026-01-05T08:00:00Z", updated_at: "2026-06-17T08:10:00Z",
@@ -79,49 +79,49 @@ export const MOCK_CONTACTS: Contact[] = [
     activities: [],
   },
   {
-    id: "c6", name: "Arif Prasetyo", phone: "+62 812-9988-7766", email: "arif@email.com",
+    id: "c6", contact_name: "Arif Prasetyo", customer_name: "Arif Prasetyo", phone: "+62 812-9988-7766", email: "arif@email.com",
     source: "import", tags: [tag("t5")], consent_status: "unknown", marketing_status: "unknown", custom_fields: [],
     last_activity_at: "2026-05-20T10:00:00Z", language: "Indonesian", customer_type: "Standard",
     city: "Medan", notes: "", created_at: "2026-04-01T08:00:00Z", updated_at: "2026-05-20T10:00:00Z",
     conversations_count: 1, campaigns_received: 3, campaigns_clicked: 0, last_conversation_at: "2026-05-20T10:00:00Z", activities: [],
   },
   {
-    id: "c7", name: "Maya Sari", phone: "+62 858-2233-4455", email: "maya@email.com",
+    id: "c7", contact_name: "Maya Sari", customer_name: "Maya Sari", phone: "+62 858-2233-4455", email: "maya@email.com",
     source: "whatsapp", tags: [tag("t2"), tag("t6")], consent_status: "opt_in", marketing_status: "subscribed", custom_fields: [],
     last_activity_at: "2026-06-16T14:11:00Z", language: "Indonesian", customer_type: "Standard",
     city: "Jakarta", notes: "", created_at: "2026-03-15T08:00:00Z", updated_at: "2026-06-16T14:11:00Z",
     conversations_count: 6, campaigns_received: 4, campaigns_clicked: 1, last_conversation_at: "2026-06-16T14:11:00Z", activities: [],
   },
   {
-    id: "c8", name: "Rizki Ramadhan", phone: "+62 811-6677-8899", email: "rizki@email.com",
+    id: "c8", contact_name: "Rizki Ramadhan", customer_name: "Rizki Ramadhan", phone: "+62 811-6677-8899", email: "rizki@email.com",
     source: "manual", tags: [tag("t4")], consent_status: "opt_in", marketing_status: "subscribed", custom_fields: [],
     last_activity_at: "2026-06-17T07:11:00Z", language: "Indonesian", customer_type: "Hot Lead",
     city: "Bandung", notes: "Interested in enterprise plan", created_at: "2026-05-01T08:00:00Z", updated_at: "2026-06-17T07:11:00Z",
     conversations_count: 4, campaigns_received: 2, campaigns_clicked: 1, last_conversation_at: "2026-06-17T07:11:00Z", activities: [],
   },
   {
-    id: "c9", name: "Tania Wijaya", phone: "+62 822-3344-5566", email: "tania@email.com",
+    id: "c9", contact_name: "Tania Wijaya", customer_name: "Tania Wijaya", phone: "+62 822-3344-5566", email: "tania@email.com",
     source: "import", tags: [tag("t2")], consent_status: "opt_out", marketing_status: "unsubscribed", custom_fields: [],
     last_activity_at: "2026-06-10T09:00:00Z", language: "Indonesian", customer_type: "Standard",
     city: "Semarang", notes: "", created_at: "2026-04-10T08:00:00Z", updated_at: "2026-06-10T09:00:00Z",
     conversations_count: 2, campaigns_received: 6, campaigns_clicked: 0, last_conversation_at: "2026-06-10T09:00:00Z", activities: [],
   },
   {
-    id: "c10", name: "Fajar Nugroho", phone: "+62 878-9900-1122", email: "fajar@email.com",
+    id: "c10", contact_name: "Fajar Nugroho", customer_name: "Fajar Nugroho", phone: "+62 878-9900-1122", email: "fajar@email.com",
     source: "whatsapp", tags: [tag("t3"), tag("t2")], consent_status: "opt_in", marketing_status: "subscribed", custom_fields: [],
     last_activity_at: "2026-06-16T09:50:00Z", language: "Indonesian", customer_type: "Reseller",
     city: "Jakarta", notes: "", created_at: "2026-02-28T08:00:00Z", updated_at: "2026-06-16T09:50:00Z",
     conversations_count: 9, campaigns_received: 8, campaigns_clicked: 2, last_conversation_at: "2026-06-16T09:50:00Z", activities: [],
   },
   {
-    id: "c11", name: "Lina Kartika", phone: "+62 813-4455-6677", email: "lina@email.com",
+    id: "c11", contact_name: "Lina Kartika", customer_name: "Lina Kartika", phone: "+62 813-4455-6677", email: "lina@email.com",
     source: "api", tags: [tag("t1")], consent_status: "opt_in", marketing_status: "subscribed", custom_fields: [],
     last_activity_at: "2026-06-17T06:41:00Z", language: "English", customer_type: "Premium",
     city: "Jakarta", notes: "", created_at: "2026-01-25T08:00:00Z", updated_at: "2026-06-17T06:41:00Z",
     conversations_count: 14, campaigns_received: 9, campaigns_clicked: 4, last_conversation_at: "2026-06-17T06:41:00Z", activities: [],
   },
   {
-    id: "c12", name: "Steven Fernandes", phone: "+62 812-0000-1111", email: "steven@email.com",
+    id: "c12", contact_name: "Steven Fernandes", customer_name: "Steven Fernandes", phone: "+62 812-0000-1111", email: "steven@email.com",
     source: "manual", tags: [tag("t2")], consent_status: "opt_in", marketing_status: "subscribed", custom_fields: [],
     last_activity_at: "2026-06-17T10:00:00Z", language: "English", customer_type: "Premium",
     city: "Jakarta", notes: "Workspace owner contact", created_at: "2026-01-01T08:00:00Z", updated_at: "2026-06-17T10:00:00Z",
@@ -139,7 +139,8 @@ export const CONTACT_SOURCES = [
 
 export const IMPORT_FIELD_OPTIONS = [
   { value: "", label: "Skip" },
-  { value: "name", label: "Contact Name" },
+  { value: "contact_name", label: "Contact Name" },
+  { value: "customer_name", label: "Customer Name" },
   { value: "phone", label: "Phone Number" },
   { value: "email", label: "Email" },
   { value: "city", label: "City" },

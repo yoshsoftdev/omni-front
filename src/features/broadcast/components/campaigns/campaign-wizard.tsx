@@ -47,7 +47,8 @@ const formControlClass =
   "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const FIELD_OPTIONS = [
-  { value: "name", label: "Contact Name" },
+  { value: "contact_name", label: "Contact Name" },
+  { value: "customer_name", label: "Customer Name" },
   { value: "discount", label: "Discount" },
   { value: "expired_date", label: "Expiry Date" },
   { value: "order_number", label: "Order Number" },

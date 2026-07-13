@@ -91,14 +91,15 @@ export function ContactsListPage() {
   const start = total === 0 ? 0 : (currentPage - 1) * pageSize;
 
   async function submitContact(values: ContactFormValues, contactId?: string) {
-    if (!values.name.trim() || !values.phone.trim()) {
-      notify("error", "Name and phone are required");
+    if (!values.contact_name.trim() || !values.phone.trim()) {
+      notify("error", "Contact name and phone are required");
       return;
     }
     setSaving(true);
     try {
       const payload = {
-        name: values.name.trim(),
+        contact_name: values.contact_name.trim(),
+        customer_name: values.customer_name.trim() || undefined,
         phone: values.phone.trim(),
         email: values.email.trim() || undefined,
         notes: values.notes.trim() || undefined,
@@ -135,7 +136,7 @@ export function ContactsListPage() {
   }
 
   async function handleDeleteContact(contact: Contact) {
-    if (!confirm(`Delete contact "${contact.name}"?`)) return;
+    if (!confirm(`Delete contact "${contact.contact_name}"?`)) return;
     try {
       await contactService.remove(contact.id);
       if (selectedContact?.id === contact.id) setSelectedContact(null);

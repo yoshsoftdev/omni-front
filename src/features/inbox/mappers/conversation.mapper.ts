@@ -4,6 +4,7 @@ type ApiConversation = Conversation & {
   ID?: string;
   ContactID?: string;
   ContactName?: string;
+  CustomerName?: string;
   ContactPhone?: string;
   ChannelID?: string;
   AssignedTo?: string;
@@ -11,6 +12,8 @@ type ApiConversation = Conversation & {
   UnreadCount?: number;
   LastMessagePreview?: string;
   LastMessageAt?: string;
+  PriorityScore?: number;
+  WaitingSince?: string;
   CreatedAt?: string;
   UpdatedAt?: string;
   Status?: ConversationStatus;
@@ -34,6 +37,7 @@ export function normalizeConversation(raw: ApiConversation): Conversation {
     id,
     contact_id: contactId,
     contact_name: readString(raw.contact_name, raw.ContactName),
+    customer_name: readString(raw.customer_name, raw.CustomerName),
     contact_phone: readString(raw.contact_phone, raw.ContactPhone),
     device_id: channelId,
     status: raw.status ?? raw.Status ?? "open",
@@ -43,6 +47,8 @@ export function normalizeConversation(raw: ApiConversation): Conversation {
     last_message_at: raw.last_message_at ?? raw.LastMessageAt,
     last_message_preview: raw.last_message_preview ?? raw.LastMessagePreview,
     unread_count: raw.unread_count ?? raw.UnreadCount ?? 0,
+    priority_score: raw.priority_score ?? raw.PriorityScore ?? 0,
+    waiting_since: raw.waiting_since ?? raw.WaitingSince,
     created_at: raw.created_at ?? raw.CreatedAt,
     updated_at: raw.updated_at ?? raw.UpdatedAt,
   };

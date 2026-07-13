@@ -26,8 +26,21 @@ type PageResponse<T> = {
   };
 };
 
+export const CONTACTS_UPDATED_EVENT = "contacts:updated";
+
+function emitContactsUpdated(contactId?: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(
+    new CustomEvent(CONTACTS_UPDATED_EVENT, {
+      detail: { contact_id: contactId ?? "" },
+    }),
+  );
+}
+
 function buildContactPayload(input: Partial<ContactFormInput>) {
   const payload: Record<string, unknown> = {};
+  if (input.contact_name !== undefined) payload.contact_name = input.contact_name;
+  if (input.customer_name !== undefined) payload.customer_name = input.customer_name;
   if (input.name !== undefined) payload.name = input.name;
   if (input.phone !== undefined) payload.phone = input.phone;
   if (input.email !== undefined) payload.email = input.email;
@@ -82,16 +95,21 @@ export const contactService = {
 
   async create(input: ContactFormInput) {
     const response = await apiClient.post<Contact>("/contacts", buildContactPayload(input));
-    return normalizeContact(response.data!);
+    const saved = normalizeContact(response.data!);
+    emitContactsUpdated(saved.id);
+    return saved;
   },
 
   async update(id: string, input: Partial<ContactFormInput>) {
     const response = await apiClient.patch<Contact>(`/contacts/${id}`, buildContactPayload(input));
-    return normalizeContact(response.data!);
+    const saved = normalizeContact(response.data!);
+    emitContactsUpdated(saved.id);
+    return saved;
   },
 
   async remove(id: string) {
     await apiClient.delete(`/contacts/${id}`);
+    emitContactsUpdated(id);
   },
 
   async importCSV(file: File) {

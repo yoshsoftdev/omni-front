@@ -52,3 +52,29 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .inbox-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+
+  .inbox-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .inbox-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .inbox-scrollbar::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    background-color: hsl(var(--border));
+  }
+
+  .inbox-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--muted-foreground));
+  }
+}

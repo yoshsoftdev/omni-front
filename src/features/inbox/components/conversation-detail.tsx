@@ -130,6 +130,7 @@ export function ConversationDetail({
         onMoreAction={handleMoreAction}
       />
       <MessageThread
+        key={conversation.id}
         messages={messages}
         onReply={setReplyToMessage}
         onDelete={handleDelete}

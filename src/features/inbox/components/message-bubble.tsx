@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, CheckCheck, CornerUpLeft, Download, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import {
   downloadAuthenticatedMedia,
@@ -345,7 +345,7 @@ interface MessageThreadProps {
 }
 
 export function MessageThread({ messages, onReply, onDelete, onRetry }: MessageThreadProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   let lastLabel = "";
   const byWAMID = new Map<string, { id: string; content: string }>();
@@ -356,11 +356,10 @@ export function MessageThread({ messages, onReply, onDelete, onRetry }: MessageT
     }
   }
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({
-      behavior: messages.length > 1 ? "smooth" : "auto",
-      block: "end",
-    });
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
   }, [messages]);
 
   function jumpToMessage(id: string) {
@@ -372,7 +371,7 @@ export function MessageThread({ messages, onReply, onDelete, onRetry }: MessageT
   }
 
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-4">
+    <div ref={containerRef} className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-4">
       {messages.length === 0 ? (
         <p className="text-center text-sm text-muted-foreground">No messages yet.</p>
       ) : (
@@ -409,7 +408,6 @@ export function MessageThread({ messages, onReply, onDelete, onRetry }: MessageT
           );
         })
       )}
-      <div ref={bottomRef} aria-hidden className="h-px shrink-0" />
     </div>
   );
 }

@@ -123,11 +123,9 @@ export function InboxPage() {
   }, [loadContacts]);
 
   useEffect(() => {
-    if (selectedId || conversations.length === 0) return;
-    const preferred = contactParam
-      ? conversations.find((item) => item.contact_id === contactParam)
-      : null;
-    setSelectedId(preferred?.id ?? conversations[0]?.id ?? null);
+    if (selectedId || !contactParam || conversations.length === 0) return;
+    const preferred = conversations.find((item) => item.contact_id === contactParam);
+    if (preferred) setSelectedId(preferred.id);
   }, [conversations, contactParam, selectedId]);
 
   const toInboxMessage = useCallback(

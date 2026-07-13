@@ -13,21 +13,40 @@ export interface CollisionSnapshot {
   typing: CollisionAgent[];
 }
 
+let activeConversationId: string | null = null;
+
 export const presenceService = {
+  getActiveConversationId() {
+    return activeConversationId;
+  },
+
   async open(conversationId: string) {
     const response = await apiClient.post<CollisionSnapshot>(
       `/conversations/${conversationId}/presence/open`,
       {},
     );
+    activeConversationId = conversationId;
     return response.data!;
   },
 
   async close(conversationId: string) {
-    const response = await apiClient.post<CollisionSnapshot>(
-      `/conversations/${conversationId}/presence/close`,
-      {},
-    );
-    return response.data!;
+    try {
+      const response = await apiClient.post<CollisionSnapshot>(
+        `/conversations/${conversationId}/presence/close`,
+        {},
+      );
+      return response.data!;
+    } finally {
+      if (activeConversationId === conversationId) {
+        activeConversationId = null;
+      }
+    }
+  },
+
+  async closeActive() {
+    const conversationId = activeConversationId;
+    if (!conversationId) return;
+    await this.close(conversationId).catch(() => {});
   },
 
   async typing(conversationId: string, action: "start" | "stop") {

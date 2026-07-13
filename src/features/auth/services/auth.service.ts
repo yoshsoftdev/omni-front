@@ -1,5 +1,6 @@
 import { apiClient } from "@/services/api/client";
 import { useEmbeddedSignupStore } from "@/features/channels/store/embedded-signup-store";
+import { presenceService } from "@/features/inbox/services/presence.service";
 import { useAuthStore } from "@/store/auth-store";
 import type { AuthSessionResponse, AuthTokens, MeResponse } from "@/types/api";
 
@@ -61,6 +62,8 @@ export const authService = {
 
   async logout() {
     const refreshToken = useAuthStore.getState().tokens?.refreshToken;
+    // Clear collision presence while the access token is still valid.
+    await presenceService.closeActive();
     try {
       await apiClient.post(
         "/auth/logout",

@@ -23,6 +23,9 @@ export function ContactTimeline({ activities }: { activities: ContactActivity[] 
           <div className="relative z-10 mt-1 h-3.5 w-3.5 shrink-0 rounded-full border-2 border-primary bg-background" />
           <div className="min-w-0 flex-1 rounded-lg border bg-background p-3">
             <div className="text-sm">{activity.text}</div>
+            {activity.actor_name ? (
+              <div className="mt-1 text-xs text-muted-foreground">by {activity.actor_name}</div>
+            ) : null}
             <div className="mt-1 flex items-center text-xs text-muted-foreground">
               <CalendarDays className="mr-1 h-3 w-3" />
               {formatDateTime(activity.created_at)}

@@ -18,6 +18,11 @@ export interface ConversationDelta {
   contact_name?: string;
   contact_phone?: string;
   channel_type?: string;
+  provider?: string;
+  provider_profile_id?: string;
+  linked_providers?: string[];
+  is_source_of_truth?: boolean;
+  linked_account_count?: number;
 }
 
 function deltaId(delta: ConversationDelta): string {
@@ -42,7 +47,7 @@ export function mergeDelta(
     contact_id: delta.contact_id ?? "",
     contact_name: delta.contact_name ?? "",
     contact_phone: delta.contact_phone ?? "",
-    channel: "whatsapp",
+    channel: delta.provider ?? delta.channel_type ?? "unknown",
     status: "open",
     unread_count: 0,
     tags: [],
@@ -64,6 +69,11 @@ export function mergeDelta(
     contact_id: delta.contact_id ?? base.contact_id,
     contact_name: contactName,
     contact_phone: contactPhone,
+    channel: delta.provider ?? delta.channel_type ?? base.channel,
+    provider_profile_id: delta.provider_profile_id ?? base.provider_profile_id,
+    linked_providers: (delta.linked_providers as InboxConversation["linked_providers"]) ?? base.linked_providers,
+    is_source_of_truth: delta.is_source_of_truth ?? base.is_source_of_truth,
+    linked_account_count: delta.linked_account_count ?? base.linked_account_count,
     status: delta.status ? mapStatus(delta.status) : base.status,
     assigned_to: delta.assigned_to !== undefined ? delta.assigned_to : base.assigned_to,
     last_message_preview: delta.last_message ?? delta.last_message_preview ?? base.last_message_preview,

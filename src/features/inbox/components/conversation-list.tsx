@@ -22,6 +22,7 @@ interface ConversationListProps {
   activeTab: InboxTab;
   tabCounts: Record<InboxTab, number>;
   channelFilter: string;
+  channelUnreadCounts?: Record<string, number>;
   agentFilter: string;
   search: string;
   agents: { id: string; name: string }[];
@@ -38,7 +39,7 @@ interface ConversationListProps {
   onLoadMore: () => void;
 }
 
-const ROW_HEIGHT = 76;
+const ROW_HEIGHT = 72;
 
 export function ConversationList({
   conversations,
@@ -46,6 +47,7 @@ export function ConversationList({
   activeTab,
   tabCounts,
   channelFilter,
+  channelUnreadCounts = {},
   agentFilter,
   search,
   agents,
@@ -137,11 +139,11 @@ export function ConversationList({
             onChange={(e) => onChannelFilterChange(e.target.value)}
             className="h-8 flex-1 rounded-md border border-input bg-background px-2 text-xs"
           >
-            <option value="all">All Channels</option>
-            <option value="whatsapp">WhatsApp</option>
-            <option value="instagram">Instagram</option>
-            <option value="messenger">Messenger</option>
-            <option value="email">Email</option>
+            <option value="all">All Channels ({channelUnreadCounts.all ?? 0})</option>
+            <option value="whatsapp">WhatsApp ({channelUnreadCounts.whatsapp ?? 0})</option>
+            <option value="instagram">Instagram ({channelUnreadCounts.instagram ?? 0})</option>
+            <option value="messenger">Messenger ({channelUnreadCounts.messenger ?? 0})</option>
+            <option value="email">Email ({channelUnreadCounts.email ?? 0})</option>
           </select>
           <select
             value={agentFilter}
@@ -206,7 +208,15 @@ export function ConversationList({
                   <ConversationCard
                     conversation={conversation}
                     selected={selectedId === conversation.id}
-                    onSelect={() => onSelect(conversation.id)}
+                    onSelect={() => {
+                      // Temporary debug to verify selected conversation channel mapping.
+                      console.log("[Inbox] Conversation selected", {
+                        id: conversation.id,
+                        channel: conversation.channel,
+                        contact_id: conversation.contact_id,
+                      });
+                      onSelect(conversation.id);
+                    }}
                   />
                 </div>
               );

@@ -3,9 +3,11 @@
 import { Instagram, Mail, MessageCircle, Send } from "lucide-react";
 
 import { ContactAvatar } from "@/components/shared/contact-avatar";
+import { providerLabel } from "@/components/shared/provider-badge";
 import { useWaitingLabel } from "@/features/inbox/hooks/use-waiting-label";
 import { cn } from "@/lib/utils";
 import type { InboxChannel, InboxConversation } from "@/features/inbox/types";
+import type { ProviderKind } from "@/types/contact";
 
 function ChannelIcon({ channel, className }: { channel: InboxChannel; className?: string }) {
   const props = { className: className ?? "h-3.5 w-3.5" };
@@ -51,7 +53,7 @@ export function ConversationCard({ conversation, selected, onSelect }: Conversat
       )}
     >
       <div className="relative shrink-0">
-        <ContactAvatar name={conversation.contact_name} size="md" />
+        <ContactAvatar name={conversation.contact_name} src={conversation.contact_avatar_url} size="md" />
         <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-background">
           <ChannelIcon channel={conversation.channel} />
         </span>
@@ -70,6 +72,10 @@ export function ConversationCard({ conversation, selected, onSelect }: Conversat
           </div>
         </div>
         <p className="mt-0.5 line-clamp-1 text-xs text-muted-foreground">
+          <span className="font-medium text-muted-foreground/80">
+            {providerLabel(conversation.channel as ProviderKind)}
+          </span>
+          <span className="mx-1 text-muted-foreground/50">·</span>
           {conversation.last_message_preview?.trim() || "No messages yet"}
         </p>
       </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ProviderBadge } from "@/components/shared/provider-badge";
 import { contactService } from "@/features/contacts/services/contact.service";
+import { contactProviderKinds } from "@/features/contacts/utils/contact-identity";
 import { useAuthStore } from "@/store/auth-store";
 import type { Contact } from "@/types/contact";
 
@@ -34,7 +36,7 @@ export function ContactsTable({ contacts, onChanged }: ContactsTableProps) {
         <thead className="bg-muted/50">
           <tr>
             <th className="px-4 py-3 text-left font-medium">Name</th>
-            <th className="px-4 py-3 text-left font-medium">Phone</th>
+            <th className="px-4 py-3 text-left font-medium">Providers</th>
             <th className="px-4 py-3 text-left font-medium">Tags</th>
             {canManage ? <th className="px-4 py-3 text-right font-medium">Actions</th> : null}
           </tr>
@@ -46,7 +48,13 @@ export function ContactsTable({ contacts, onChanged }: ContactsTableProps) {
                 <div className="font-medium">{contact.contact_name}</div>
                 {contact.email ? <div className="text-xs text-muted-foreground">{contact.email}</div> : null}
               </td>
-              <td className="px-4 py-3">{contact.phone}</td>
+              <td className="px-4 py-3">
+                <div className="flex flex-wrap gap-1">
+                  {contactProviderKinds(contact).map((provider) => (
+                    <ProviderBadge key={provider} provider={provider} compact />
+                  ))}
+                </div>
+              </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-1">
                   {contact.tags?.map((tag) => (

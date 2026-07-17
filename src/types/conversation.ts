@@ -6,7 +6,14 @@ export interface Conversation {
   contact_name: string;
   customer_name?: string;
   contact_phone: string;
+  contact_avatar_url?: string;
+  provider_profile_id?: string;
+  provider?: string;
+  linked_providers?: string[];
+  is_source_of_truth?: boolean;
+  linked_account_count?: number;
   device_id: string;
+  channel_type?: string;
   status: ConversationStatus;
   assigned_to?: string;
   assignee_name?: string;

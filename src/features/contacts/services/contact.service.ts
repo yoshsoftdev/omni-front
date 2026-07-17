@@ -14,6 +14,9 @@ import type {
   ContactListParams,
   ContactListResult,
   ContactStats,
+  ContactActivity,
+  LinkedContact,
+  ProviderProfile,
 } from "@/types/contact";
 
 type PageResponse<T> = {
@@ -91,6 +94,66 @@ export const contactService = {
   async getById(id: string) {
     const response = await apiClient.get<Contact>(`/contacts/${id}`);
     return normalizeContact(response.data!);
+  },
+
+  async listProviders(contactId: string): Promise<ProviderProfile[]> {
+    const response = await apiClient.get<{ providers?: ProviderProfile[] }>(`/contacts/${contactId}/providers`);
+    return response.data?.providers ?? [];
+  },
+
+  async listActivities(contactId: string): Promise<ContactActivity[]> {
+    const response = await apiClient.get<{
+      activities?: Array<ContactActivity & { description?: string }>;
+    }>(`/contacts/${contactId}/activities`);
+    return (response.data?.activities ?? []).flatMap((activity) => {
+      const text = activity.text?.trim() || activity.description?.trim();
+      return text ? [{ ...activity, text }] : [];
+    });
+  },
+
+  async listLinks(contactId: string): Promise<LinkedContact[]> {
+    const response = await apiClient.get<{ linked_contacts?: LinkedContact[] }>(
+      `/contacts/${contactId}/links`,
+    );
+    return response.data?.linked_contacts ?? [];
+  },
+
+  async linkContact(contactId: string, linkedContactId: string): Promise<LinkedContact> {
+    const response = await apiClient.post<LinkedContact>(`/contacts/${contactId}/links`, {
+      contact_id: linkedContactId,
+    });
+    emitContactsUpdated(contactId);
+    emitContactsUpdated(linkedContactId);
+    return response.data!;
+  },
+
+  async unlinkContact(contactId: string, linkedContactId: string) {
+    await apiClient.delete(`/contacts/${contactId}/links/${linkedContactId}`);
+    emitContactsUpdated(contactId);
+    emitContactsUpdated(linkedContactId);
+  },
+
+  async linkProvider(profileId: string, contactId: string) {
+    const response = await apiClient.post<{ profile: ProviderProfile }>(`/providers/${profileId}/link`, {
+      contact_id: contactId,
+    });
+    emitContactsUpdated(contactId);
+    return response.data!;
+  },
+
+  async unlinkProvider(profileId: string) {
+    const response = await apiClient.post<{ profile: ProviderProfile; new_contact_id: string }>(
+      `/providers/${profileId}/unlink`,
+      {},
+    );
+    emitContactsUpdated();
+    return response.data!;
+  },
+
+  async setSourceOfTruth(profileId: string) {
+    const response = await apiClient.patch<ProviderProfile>(`/providers/${profileId}/source-of-truth`, {});
+    emitContactsUpdated(response.data?.contact_id);
+    return response.data!;
   },
 
   async create(input: ContactFormInput) {

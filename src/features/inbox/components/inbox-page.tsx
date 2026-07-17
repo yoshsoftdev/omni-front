@@ -14,6 +14,7 @@ import { useInboxList } from "@/features/inbox/hooks/use-inbox-list";
 import { useConversationPresence } from "@/features/inbox/hooks/use-conversation-presence";
 import { useInboxRealtime } from "@/features/inbox/hooks/use-inbox-realtime";
 import { useInboxRealtimeCache } from "@/features/inbox/hooks/use-inbox-realtime-cache";
+import { useInboxUnreadCount } from "@/features/inbox/hooks/use-inbox-unread-count";
 import {
   applyMessageStatusUpdate,
   markMessageFailed,
@@ -22,7 +23,7 @@ import {
   upsertOptimisticMessage,
 } from "@/features/inbox/lib/message-reconcile";
 import { mapContactToInboxContact, mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
-import { normalizeMessage } from "@/features/inbox/mappers/message.mapper";
+import { contentTypeFromMime, normalizeMessage } from "@/features/inbox/mappers/message.mapper";
 import { inboxUnreadCountQueryKey } from "@/features/inbox/query-keys";
 import { conversationService } from "@/features/inbox/services/conversation.service";
 import { messageService } from "@/features/inbox/services/message.service";
@@ -31,6 +32,7 @@ import { applyMessageDateLabels } from "@/features/inbox/utils/message-date";
 import { generateUUID } from "@/lib/uuid";
 import type {
   InboxActivityEvent,
+  InboxChannel,
   InboxChatMessage,
   InboxContact,
   InboxConversation,
@@ -49,9 +51,34 @@ function toMillis(value?: string): number {
   return Number.isNaN(t) ? 0 : t;
 }
 
+function optimisticAttachmentPreview(input: ComposerSendInput): string {
+  if (input.content.trim()) return input.content.trim();
+  const mimeType = input.attachment?.mime_type ?? "";
+  const type = mimeType ? contentTypeFromMime(mimeType) : "text";
+  switch (type) {
+    case "audio":
+      return "Voice note";
+    case "image":
+      return "Photo";
+    case "video":
+      return "Video";
+    case "document":
+      return input.attachment?.filename || "Document";
+    default:
+      return "Media";
+  }
+}
+
 function sortMessagesAsc(messages: InboxChatMessage[]) {
   return [...messages].sort((a, b) => toMillis(a.sent_at) - toMillis(b.sent_at));
 }
+
+const CHANNEL_NOTIFY_PREFIX: Partial<Record<InboxChannel, string>> = {
+  whatsapp: "🟢 WhatsApp",
+  instagram: "🟣 Instagram",
+  messenger: "🔵 Messenger",
+  email: "⚪ Email",
+};
 
 export function InboxPage() {
   const searchParams = useSearchParams();
@@ -60,6 +87,7 @@ export function InboxPage() {
   const agentName = useAuthStore((state) => state.user?.name ?? "");
   const currentUserId = useAuthStore((state) => state.user?.id ?? "");
   const { notify, Toast } = useToast();
+  const { count: totalUnreadCount } = useInboxUnreadCount();
 
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>({});
   const [contacts, setContacts] = useState<Record<string, InboxContact>>({});
@@ -212,6 +240,22 @@ export function InboxPage() {
     [resolvedConversations, currentUserId],
   );
 
+  const channelUnreadCounts = useMemo(() => {
+    const counts: Record<string, number> = {
+      all: totalUnreadCount,
+      whatsapp: 0,
+      instagram: 0,
+      messenger: 0,
+      email: 0,
+    };
+    for (const conversation of resolvedConversations) {
+      const unread = conversation.unread_count ?? 0;
+      if (unread <= 0) continue;
+      counts[conversation.channel] = (counts[conversation.channel] ?? 0) + unread;
+    }
+    return counts;
+  }, [resolvedConversations, totalUnreadCount]);
+
   const selectedConversation = resolvedConversations.find((c) => c.id === selectedId) ?? null;
   const {
     typingLabel,
@@ -274,17 +318,12 @@ export function InboxPage() {
   );
 
   const dispatchSend = useCallback(
-    async (conversationId: string, clientMessageId: string, input: ComposerSendInput, preview: string) => {
-      const replyToWAMID =
-        input.replyToMessageId
-          ? (messagesByConversation[conversationId] ?? []).find((message) => message.id === input.replyToMessageId)?.wamid
-          : undefined;
-
+    async (conversationId: string, clientMessageId: string, input: ComposerSendInput, _preview: string) => {
       try {
         const sent = await messageService.send(conversationId, {
           content: input.content,
           storage_object_id: input.storageObjectId,
-          reply_to_wamid: replyToWAMID,
+          reply_to_message_id: input.replyToMessageId,
           client_message_id: clientMessageId,
         });
         setMessagesByConversation((prev) => ({
@@ -293,8 +332,16 @@ export function InboxPage() {
             sortMessagesAsc(reconcileApiMessage(prev[conversationId] ?? [], sent, agentName)),
           ),
         }));
+        if (sent.delivery_notice) {
+          notify("success", sent.delivery_notice);
+        }
         delete pendingMessagesRef.current[clientMessageId];
       } catch (error) {
+        console.error("[Inbox] Send message failed", {
+          conversationId,
+          error: formatApiErrorMessage(error),
+          raw: error,
+        });
         setMessagesByConversation((prev) => ({
           ...prev,
           [conversationId]: applyMessageDateLabels(
@@ -309,25 +356,29 @@ export function InboxPage() {
         }));
       }
     },
-    [agentName, messagesByConversation],
+    [agentName, notify],
   );
 
   const handleSendMessage = useCallback(
     (input: ComposerSendInput) => {
       if (!selectedId || !selectedConversation) return;
       const clientMessageId = generateUUID();
-      const preview = input.content || "Media";
+      const messageType = input.attachment
+        ? contentTypeFromMime(input.attachment.mime_type)
+        : "text";
+      const preview = optimisticAttachmentPreview(input);
       const optimistic: InboxChatMessage = {
         id: clientMessageId,
         client_message_id: clientMessageId,
         conversation_id: selectedId,
         direction: "outbound",
-        type: input.storageObjectId ? "document" : "text",
-        content: input.content,
+        type: messageType,
+        content: input.content || (messageType === "audio" ? "Voice note" : preview),
         sent_at: new Date().toISOString(),
         send_status: "sending",
         sender_name: agentName,
         reply_to_message_id: input.replyToMessageId,
+        attachment: input.attachment,
       };
 
       pendingMessagesRef.current[clientMessageId] = {
@@ -491,6 +542,16 @@ export function InboxPage() {
       if (selectedId === message.conversation_id && message.direction === "inbound") {
         void markConversationAsRead(message.conversation_id);
       }
+
+      if (message.direction === "inbound" && selectedId !== message.conversation_id) {
+        const channel = currentConversation?.channel ?? "whatsapp";
+        const contactName = currentConversation?.contact_name?.trim() || "New message";
+        const preview = message.content?.trim() || "Media";
+        notify(
+          "success",
+          `${CHANNEL_NOTIFY_PREFIX[channel] ?? channel} · ${contactName} · ${preview}`,
+        );
+      }
     },
     onActivityCreated: (activity, conversationId) => {
       const targetId = conversationId ?? selectedId;
@@ -548,6 +609,7 @@ export function InboxPage() {
               activeTab={activeTab}
               tabCounts={tabCounts}
               channelFilter={channelFilter}
+              channelUnreadCounts={channelUnreadCounts}
               agentFilter={agentFilter}
               search={search}
               agents={agents}

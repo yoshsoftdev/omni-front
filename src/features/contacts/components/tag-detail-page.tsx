@@ -94,7 +94,7 @@ export function TagDetailPage({ tagId }: { tagId: string }) {
           ) : (
             recentContacts.map((contact) => (
               <div key={contact.id} className="flex items-center gap-3 rounded-lg border p-3">
-                <ContactAvatar name={contact.contact_name} />
+                <ContactAvatar name={contact.contact_name} src={contact.avatar_url} />
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">{contact.contact_name}</div>
                   <div className="text-xs text-muted-foreground">{contact.phone}</div>

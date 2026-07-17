@@ -27,6 +27,22 @@ describe("mergeDelta", () => {
     expect(merged.last_message_preview).toBe("Hello");
     expect(merged.contact_name).toBe("Alice");
   });
+
+  it("preserves provider context and never defaults unknown deltas to WhatsApp", () => {
+    const created = mergeDelta(undefined, {
+      conversation_id: "instagram-conversation",
+      provider: "instagram",
+      provider_profile_id: "profile-1",
+      linked_providers: ["whatsapp", "instagram"],
+      linked_account_count: 2,
+    });
+    expect(created.channel).toBe("instagram");
+    expect(created.provider_profile_id).toBe("profile-1");
+    expect(created.linked_providers).toEqual(["whatsapp", "instagram"]);
+
+    const unknown = mergeDelta(undefined, { conversation_id: "future-provider" });
+    expect(unknown.channel).toBe("unknown");
+  });
 });
 
 describe("mergeDeltas", () => {

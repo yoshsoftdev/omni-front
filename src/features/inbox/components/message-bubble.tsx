@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, CheckCheck, CornerUpLeft, Download, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { Check, CheckCheck, CornerUpLeft, Download, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video, Volume2 } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState, forwardRef } from "react";
 
+import { AuthenticatedAudio } from "@/features/inbox/components/authenticated-audio";
 import {
   downloadAuthenticatedMedia,
   formatBytes,
@@ -44,13 +45,6 @@ function AuthenticatedVideo({ objectId }: { objectId: string }) {
   if (loading) return <div className="text-xs text-muted-foreground">Loading video...</div>;
   if (!url) return <div className="text-xs text-muted-foreground">Video unavailable</div>;
   return <video src={url} controls className="max-h-48 w-full rounded-md" />;
-}
-
-function AuthenticatedAudio({ objectId }: { objectId: string }) {
-  const { url, loading } = useAuthenticatedMediaUrl(objectId);
-  if (loading) return <div className="text-xs text-muted-foreground">Loading audio...</div>;
-  if (!url) return <div className="text-xs text-muted-foreground">Audio unavailable</div>;
-  return <audio src={url} controls className="w-full" />;
 }
 
 function DocumentAttachment({
@@ -104,10 +98,28 @@ function MediaPreview({ message }: { message: InboxChatMessage }) {
   }
 
   if (message.type === "audio" && attachment?.storage_object_id) {
+    const caption = message.content.trim();
+    const showCaption =
+      caption !== "" &&
+      !["audio", "voice note"].includes(caption.toLowerCase()) &&
+      caption.toLowerCase() !== attachment.filename.trim().toLowerCase();
+
     return (
       <div className="space-y-2">
-        <AuthenticatedAudio objectId={attachment.storage_object_id} />
-        {message.content ? <p className="whitespace-pre-wrap text-sm">{message.content}</p> : null}
+        <AuthenticatedAudio
+          objectId={attachment.storage_object_id}
+          filename={attachment.filename}
+        />
+        {showCaption ? <p className="whitespace-pre-wrap text-sm">{caption}</p> : null}
+      </div>
+    );
+  }
+
+  if (message.type === "audio") {
+    return (
+      <div className="flex min-w-48 items-center gap-2 rounded-md bg-black/5 px-3 py-2 text-sm text-muted-foreground">
+        <Volume2 className="h-4 w-4 shrink-0" />
+        <span>Voice note unavailable</span>
       </div>
     );
   }
@@ -159,6 +171,31 @@ function MediaPreview({ message }: { message: InboxChatMessage }) {
       </div>
     );
   }
+  if (
+    message.type === "other" ||
+    message.content === "Mentioned your story" ||
+    message.content === "Replied to a story" ||
+    message.content === "Shared a reel" ||
+    message.content === "Shared a post" ||
+    message.content === "Shared a story" ||
+    message.content.startsWith("Shared a post\n")
+  ) {
+    const [label, ...rest] = message.content.split("\n");
+    const body = rest.join("\n").trim();
+    const isStory =
+      label === "Mentioned your story" ||
+      label === "Replied to a story" ||
+      label === "Shared a story";
+    return (
+      <div className="rounded-md border bg-muted/40 px-2.5 py-2 text-sm text-foreground">
+        <span className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {isStory ? <Video className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
+          {label || "Instagram event"}
+        </span>
+        {body ? <p className="whitespace-pre-wrap text-sm">{body}</p> : null}
+      </div>
+    );
+  }
   return <p className="whitespace-pre-wrap text-sm">{message.content}</p>;
 }
 
@@ -175,6 +212,60 @@ interface MessageBubbleProps {
   onRetry?: (clientMessageId: string) => void;
 }
 
+const MessageActions = forwardRef<
+  HTMLDivElement,
+  {
+    open: boolean;
+    onToggle: () => void;
+    onReply: () => void;
+    onDelete: () => void;
+    canReply: boolean;
+    canDelete: boolean;
+    align?: "left" | "right";
+  }
+>(function MessageActions({ open, onToggle, onReply, onDelete, canReply, canDelete, align = "right" }, ref) {
+  return (
+    <div ref={ref} className="relative flex shrink-0 self-center">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="rounded-full p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 focus-visible:opacity-100 data-[open=true]:opacity-100"
+        data-open={open}
+        title="Message actions"
+      >
+        <MoreHorizontal className="h-4 w-4" />
+      </button>
+      {open ? (
+        <div
+          className={cn(
+            "absolute top-full z-20 mt-1 min-w-28 rounded-md border bg-background p-1 shadow-lg",
+            align === "left" ? "left-0" : "right-0",
+          )}
+        >
+          <button
+            type="button"
+            onClick={onReply}
+            disabled={!canReply}
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <CornerUpLeft className="h-3.5 w-3.5" />
+            Reply
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={!canDelete}
+            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-destructive hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Delete
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+});
+
 export function MessageBubble({
   message,
   repliedTo,
@@ -187,89 +278,52 @@ export function MessageBubble({
   const isOutbound = message.direction === "outbound";
   const isFromWABusinessApp = message.source === "wa_business_app";
   const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const hasUnresolvedReply = Boolean(message.reply_to_wamid && !repliedTo);
 
+  useEffect(() => {
+    if (!actionsOpen) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      if (!actionsRef.current?.contains(event.target as Node)) {
+        setActionsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [actionsOpen]);
+
   return (
-    <div className={cn("group flex w-full flex-col", isOutbound ? "items-end" : "items-start")}>
-      <div
-        className={cn(
-          "relative w-fit max-w-[90%] rounded-2xl px-3.5 py-2.5 shadow-sm transition-all",
-          isOutbound
-            ? "rounded-br-md bg-emerald-100 text-foreground"
-            : "rounded-bl-md border bg-background",
-          highlighted ? "ring-2 ring-amber-400" : "",
-        )}
-      >
-        <div className={cn("absolute top-1.5", isOutbound ? "left-1.5" : "right-1.5")}>
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setActionsOpen((prev) => !prev)}
-              className="rounded-full p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-black/10 group-hover:opacity-100 focus-visible:opacity-100"
-              title="Message actions"
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </button>
-            {actionsOpen ? (
-              <div className={cn("absolute z-10 mt-1 min-w-28 rounded-md border bg-background p-1 shadow-md", isOutbound ? "left-0" : "right-0")}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    // #region agent log
-                    fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-                      body: JSON.stringify({
-                        sessionId: "d8bb7a",
-                        runId: "run1",
-                        hypothesisId: "H1",
-                        location: "message-bubble.tsx:reply-action",
-                        message: "Reply action clicked",
-                        data: { messageId: message.id, wamid: message.wamid ?? null, isDeleted: Boolean(message.is_deleted) },
-                        timestamp: Date.now(),
-                      }),
-                    }).catch(() => {});
-                    // #endregion
-                    setActionsOpen(false);
-                    onReply?.(message);
-                  }}
-                  disabled={!message.wamid}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <CornerUpLeft className="h-3.5 w-3.5" />
-                  Reply
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    // #region agent log
-                    fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-                      body: JSON.stringify({
-                        sessionId: "d8bb7a",
-                        runId: "run1",
-                        hypothesisId: "H2",
-                        location: "message-bubble.tsx:delete-action",
-                        message: "Delete action clicked",
-                        data: { messageId: message.id, wamid: message.wamid ?? null, isDeleted: Boolean(message.is_deleted) },
-                        timestamp: Date.now(),
-                      }),
-                    }).catch(() => {});
-                    // #endregion
-                    setActionsOpen(false);
-                    onDelete?.(message);
-                  }}
-                  disabled={message.is_deleted}
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-destructive hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Delete
-                </button>
-              </div>
-            ) : null}
-          </div>
-        </div>
+    <div className={cn("group flex w-full gap-1", isOutbound ? "justify-end" : "justify-start")}>
+      {isOutbound ? (
+        <MessageActions
+          ref={actionsRef}
+          open={actionsOpen}
+          align="left"
+          onToggle={() => setActionsOpen((prev) => !prev)}
+          onReply={() => {
+            setActionsOpen(false);
+            onReply?.(message);
+          }}
+          onDelete={() => {
+            setActionsOpen(false);
+            onDelete?.(message);
+          }}
+          canReply={Boolean(message.wamid)}
+          canDelete={!message.is_deleted}
+        />
+      ) : null}
+      <div className={cn("flex w-fit max-w-[85%] flex-col", isOutbound ? "items-end" : "items-start")}>
+        <div
+          className={cn(
+            "w-full rounded-2xl px-3.5 py-2.5 shadow-sm transition-all",
+            isOutbound
+              ? "rounded-br-md bg-emerald-100 text-foreground"
+              : "rounded-bl-md border bg-background",
+            highlighted ? "ring-2 ring-amber-400" : "",
+          )}
+        >
         {repliedTo ? (
           <button
             type="button"
@@ -322,16 +376,34 @@ export function MessageBubble({
         {isOutbound && message.send_status === "failed" && message.send_error ? (
           <p className="mt-1 text-[10px] text-destructive">{message.send_error}</p>
         ) : null}
+        </div>
+        {isOutbound && message.sender_name && !isFromWABusinessApp ? (
+          <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
+            — {message.sender_name}
+          </p>
+        ) : null}
+        {isOutbound && isFromWABusinessApp ? (
+          <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
+            via WA Business App
+          </p>
+        ) : null}
       </div>
-      {isOutbound && message.sender_name && !isFromWABusinessApp ? (
-        <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
-          — {message.sender_name}
-        </p>
-      ) : null}
-      {isOutbound && isFromWABusinessApp ? (
-        <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
-          via WA Business App
-        </p>
+      {!isOutbound ? (
+        <MessageActions
+          ref={actionsRef}
+          open={actionsOpen}
+          onToggle={() => setActionsOpen((prev) => !prev)}
+          onReply={() => {
+            setActionsOpen(false);
+            onReply?.(message);
+          }}
+          onDelete={() => {
+            setActionsOpen(false);
+            onDelete?.(message);
+          }}
+          canReply={Boolean(message.wamid)}
+          canDelete={!message.is_deleted}
+        />
       ) : null}
     </div>
   );

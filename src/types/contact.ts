@@ -1,7 +1,39 @@
-export type ContactSource = "whatsapp" | "import" | "manual" | "api" | "meta_inbound";
+export type ContactSource = "whatsapp" | "import" | "manual" | "api" | "meta_inbound" | "ig";
 export type ConsentStatus = "opt_in" | "opt_out" | "unknown";
 export type MarketingStatus = "subscribed" | "unsubscribed" | "unknown";
 export type ContactFieldType = "text" | "number" | "date" | "boolean" | "select";
+export type ProviderKind = "whatsapp" | "instagram" | "messenger" | "telegram" | "email" | (string & {});
+export type ProviderStatus = "active" | "unavailable" | "unlinked";
+
+export interface ProviderProfile {
+  id: string;
+  contact_id: string;
+  provider: ProviderKind;
+  provider_user_id: string;
+  channel_id?: string;
+  display_name?: string;
+  username?: string;
+  phone?: string;
+  avatar_url?: string;
+  email?: string;
+  metadata?: Record<string, unknown>;
+  connected_at: string;
+  status: ProviderStatus;
+  is_source_of_truth: boolean;
+  conversation_ids?: string[];
+}
+
+export interface LinkedContact {
+  link_id: string;
+  id: string;
+  contact_name: string;
+  customer_name: string;
+  phone: string;
+  email?: string;
+  avatar_url?: string;
+  provider_kinds: ProviderKind[];
+  linked_at: string;
+}
 
 export interface ContactTagRef {
   id: string;
@@ -37,8 +69,9 @@ export interface ContactLastCampaign {
 
 export interface ContactActivity {
   id: string;
-  type: "message" | "campaign" | "tag" | "import" | "consent";
+  type: "message" | "campaign" | "tag" | "import" | "consent" | "provider_linked" | "provider_unlinked" | "source_of_truth_changed";
   text: string;
+  actor_name?: string;
   created_at: string;
 }
 
@@ -50,8 +83,11 @@ export interface Contact {
   name?: string;
   phone: string;
   email?: string;
+  avatar_url?: string;
   source: ContactSource;
   tags: ContactTagRef[];
+  providers?: ProviderProfile[];
+  linked_contacts?: LinkedContact[];
   consent_status: ConsentStatus;
   marketing_status: MarketingStatus;
   last_activity_at?: string;

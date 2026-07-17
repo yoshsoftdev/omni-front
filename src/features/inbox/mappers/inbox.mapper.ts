@@ -1,7 +1,7 @@
 import { resolveContactDisplayName } from "@/features/contacts/utils/contact-identity";
 import type { Conversation, ConversationStatus } from "@/types/conversation";
 import type { Message } from "@/types/message";
-import type { Contact } from "@/types/contact";
+import type { Contact, ProviderKind } from "@/types/contact";
 import type {
   InboxChatMessage,
   InboxContact,
@@ -44,13 +44,26 @@ function mapConversationStatus(status: ConversationStatus): InboxConversationSta
   return "open";
 }
 
+function mapInboxChannel(channelType?: string): InboxConversation["channel"] {
+  const normalized = (channelType ?? "").toLowerCase();
+  if (normalized === "ig") return "instagram";
+  if (normalized === "meta" || normalized === "meta_whatsapp") return "whatsapp";
+  return normalized || "unknown";
+}
+
 export function mapConversationToInbox(conversation: Conversation): InboxConversation {
   return {
     id: conversation.id,
     contact_id: conversation.contact_id,
     contact_name: conversation.contact_name ?? "",
+    customer_name: conversation.customer_name,
     contact_phone: conversation.contact_phone ?? "",
-    channel: "whatsapp",
+    contact_avatar_url: conversation.contact_avatar_url,
+    channel: mapInboxChannel(conversation.channel_type),
+    provider_profile_id: conversation.provider_profile_id,
+    linked_providers: (conversation.linked_providers ?? []) as ProviderKind[],
+    is_source_of_truth: conversation.is_source_of_truth ?? false,
+    linked_account_count: conversation.linked_account_count ?? 0,
     status: mapConversationStatus(conversation.status),
     assigned_to: conversation.assigned_to,
     assignee_name: conversation.assignee_name,
@@ -100,13 +113,20 @@ function mapContentType(
   contentType?: Message["content_type"],
   mimeType?: string,
 ): InboxChatMessage["type"] {
-  if (contentType === "image" || contentType === "video" || contentType === "audio" || contentType === "document" || contentType === "template") {
+  if (
+    contentType === "image" ||
+    contentType === "video" ||
+    contentType === "audio" ||
+    contentType === "document" ||
+    contentType === "template"
+  ) {
     return contentType;
   }
   if (mimeType?.startsWith("image/")) return "image";
   if (mimeType?.startsWith("video/")) return "video";
   if (mimeType?.startsWith("audio/")) return "audio";
   if (mimeType?.startsWith("application/")) return "document";
+  if (contentType === "other") return "other";
   return "text";
 }
 
@@ -125,6 +145,7 @@ export function mapContactToInboxContact(contact: Contact, isSaved = true): Inbo
     name: displayName,
     phone: contact.phone,
     email: contact.email,
+    avatar_url: contact.avatar_url,
     is_saved_contact: isSaved,
     subscription_status: mapConsentToSubscription(contact.consent_status),
     source: contact.source,
@@ -149,6 +170,7 @@ export function mapConversationToInboxContact(conversation: Conversation): Inbox
     customer_name: displayName,
     name: displayName,
     phone: conversation.contact_phone,
+    avatar_url: conversation.contact_avatar_url,
     is_saved_contact: false,
     subscription_status: "subscribed",
     source: "whatsapp",

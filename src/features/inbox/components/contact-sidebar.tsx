@@ -102,7 +102,7 @@ export function ContactSidebar({
   return (
     <div className="flex h-full w-[420px] shrink-0 flex-col border-l bg-card">
       <div className="border-b px-5 py-5 text-center">
-        <ContactAvatar name={contact.contact_name || contact.name} size="lg" className="mx-auto h-16 w-16 text-base" />
+        <ContactAvatar name={contact.contact_name || contact.name} src={contact.avatar_url} size="lg" className="mx-auto h-16 w-16 text-base" />
         <h3 className="mt-3 text-base font-semibold">{contact.contact_name || contact.name}</h3>
         {contact.customer_name && contact.customer_name !== contact.contact_name ? (
           <p className="text-xs text-muted-foreground">Customer: {contact.customer_name}</p>

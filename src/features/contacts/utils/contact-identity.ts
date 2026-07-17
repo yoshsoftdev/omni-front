@@ -1,3 +1,13 @@
+import type { Contact, ProviderKind } from "@/types/contact";
+
+export function contactProviderKinds(contact: Contact): ProviderKind[] {
+  return Array.from(new Set(
+    (contact.providers ?? [])
+      .filter((profile) => profile.contact_id === contact.id)
+      .map((profile) => profile.provider),
+  ));
+}
+
 export function normalizePhoneDigits(phone: string): string {
   return phone.replace(/\D/g, "");
 }

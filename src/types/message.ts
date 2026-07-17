@@ -28,6 +28,7 @@ export interface Message {
   deleted_at?: string;
   deleted_by_source?: "user_wa" | "agent_app" | "system";
   status?: MessageDeliveryStatus;
+  delivery_notice?: string;
 }
 
 export type MessageDirection = "inbound" | "outbound";
@@ -36,5 +37,6 @@ export interface SendMessageInput {
   content?: string;
   storage_object_id?: string;
   reply_to_wamid?: string;
+  reply_to_message_id?: string;
   client_message_id?: string;
 }

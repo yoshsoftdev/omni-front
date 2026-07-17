@@ -137,6 +137,7 @@ export function ConversationDetail({
         onRetry={onRetryMessage}
       />
       <MessageComposer
+        channel={conversation.channel}
         quickReplies={[]}
         replyTo={replyToMessage}
         onCancelReply={() => setReplyToMessage(null)}

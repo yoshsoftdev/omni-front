@@ -6,6 +6,11 @@ type ApiConversation = Conversation & {
   ContactName?: string;
   CustomerName?: string;
   ContactPhone?: string;
+  ProviderProfileID?: string;
+  Provider?: string;
+  LinkedProviders?: string[];
+  IsSourceOfTruth?: boolean;
+  LinkedAccountCount?: number;
   ChannelID?: string;
   AssignedTo?: string;
   AssigneeName?: string;
@@ -39,7 +44,17 @@ export function normalizeConversation(raw: ApiConversation): Conversation {
     contact_name: readString(raw.contact_name, raw.ContactName),
     customer_name: readString(raw.customer_name, raw.CustomerName),
     contact_phone: readString(raw.contact_phone, raw.ContactPhone),
+    contact_avatar_url: readString(
+      raw.contact_avatar_url,
+      (raw as { ContactAvatarURL?: string }).ContactAvatarURL,
+    ) || undefined,
+    provider_profile_id: raw.provider_profile_id ?? raw.ProviderProfileID,
+    provider: readString(raw.provider, raw.Provider),
+    linked_providers: raw.linked_providers ?? raw.LinkedProviders ?? [],
+    is_source_of_truth: raw.is_source_of_truth ?? raw.IsSourceOfTruth ?? false,
+    linked_account_count: raw.linked_account_count ?? raw.LinkedAccountCount ?? 0,
     device_id: channelId,
+    channel_type: readString(raw.channel_type, (raw as { ChannelType?: string }).ChannelType) || undefined,
     status: raw.status ?? raw.Status ?? "open",
     assigned_to: raw.assigned_to ?? raw.AssignedTo,
     assignee_name: raw.assignee_name ?? raw.AssigneeName,

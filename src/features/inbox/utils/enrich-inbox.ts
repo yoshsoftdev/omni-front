@@ -26,6 +26,7 @@ export function mergeRealtimeConversation(
     ...incoming,
     contact_name: name,
     contact_phone: phone,
+    contact_avatar_url: incoming.contact_avatar_url ?? contact?.avatar_url ?? existing?.contact_avatar_url,
   });
 
   const status = (() => {
@@ -64,6 +65,7 @@ export function enrichInboxData(
       ...conversation,
       contact_name: displayName,
       contact_phone: phone,
+      contact_avatar_url: conversation.contact_avatar_url ?? contact?.avatar_url,
     });
     enrichedConversations.push(enrichedConversation);
 

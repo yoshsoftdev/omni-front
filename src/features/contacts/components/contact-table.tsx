@@ -5,9 +5,11 @@ import { Edit3, Eye, MoreHorizontal } from "lucide-react";
 
 import { ConsentBadge } from "@/components/shared/consent-badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
+import { ProviderBadge } from "@/components/shared/provider-badge";
 import { SourceIcon, sourceLabel } from "@/components/shared/source-icon";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
+import { contactProviderKinds } from "@/features/contacts/utils/contact-identity";
 import type { Contact } from "@/types/contact";
 
 function formatActivity(date?: string) {
@@ -46,7 +48,7 @@ export function ContactTable({
           <tr className="border-b text-left text-muted-foreground">
             <th className="p-4 font-medium">Contact Name</th>
             <th className="p-4 font-medium">Customer Name</th>
-            <th className="p-4 font-medium">WhatsApp</th>
+            <th className="p-4 font-medium">Providers</th>
             <th className="p-4 font-medium">Email</th>
             <th className="p-4 font-medium">Subscription</th>
             <th className="p-4 font-medium">Tags</th>
@@ -67,12 +69,18 @@ export function ContactTable({
             >
               <td className="p-4">
                 <div className="flex items-center gap-3">
-                  <ContactAvatar name={contact.contact_name} />
+                  <ContactAvatar name={contact.contact_name} src={contact.avatar_url} />
                   <span className="font-medium">{contact.contact_name}</span>
                 </div>
               </td>
               <td className="p-4 text-muted-foreground">{contact.customer_name || "—"}</td>
-              <td className="p-4 text-muted-foreground">{contact.phone}</td>
+              <td className="p-4">
+                <div className="flex flex-wrap gap-1">
+                  {contactProviderKinds(contact).map((provider) => (
+                    <ProviderBadge key={provider} provider={provider} compact />
+                  ))}
+                </div>
+              </td>
               <td className="p-4 text-muted-foreground">{contact.email ?? "—"}</td>
               <td className="p-4"><ConsentBadge status={contact.consent_status} /></td>
               <td className="p-4"><TagBadgeList tags={contact.tags} /></td>

@@ -6,7 +6,9 @@ import type {
   ContactFieldType,
   ContactLastCampaign,
   ContactSource,
+  LinkedContact,
   MarketingStatus,
+  ProviderProfile,
 } from "@/types/contact";
 
 type ApiContact = Partial<Contact> & {
@@ -32,6 +34,8 @@ type ApiContact = Partial<Contact> & {
   CustomFields?: ApiCustomField[];
   LastCampaign?: ApiLastCampaign;
   ConversationsCount?: number;
+  Providers?: ProviderProfile[];
+  LinkedContacts?: LinkedContact[];
 };
 
 type ApiCustomField = {
@@ -86,6 +90,7 @@ export function consentToMarketing(status?: ConsentStatus): MarketingStatus {
 
 function mapSource(source?: string): ContactSource {
   const normalized = (source ?? "").toLowerCase();
+  if (normalized === "ig") return "ig";
   if (normalized === "whatsapp" || normalized === "meta_inbound") return normalized === "meta_inbound" ? "meta_inbound" : "whatsapp";
   if (normalized === "import") return "import";
   if (normalized === "api") return "api";
@@ -174,6 +179,37 @@ function mapLastCampaign(raw?: ApiLastCampaign): ContactLastCampaign | undefined
   };
 }
 
+function mapLinkedContacts(raw: ApiContact): LinkedContact[] {
+  const rows = raw.linked_contacts ?? raw.LinkedContacts ?? [];
+  return rows
+    .map((linked) => ({
+      link_id: readString(linked.link_id, (linked as { LinkID?: string }).LinkID),
+      id: readString(linked.id, (linked as { ID?: string }).ID),
+      contact_name: readString(
+        linked.contact_name,
+        (linked as { ContactName?: string }).ContactName,
+      ),
+      customer_name: readString(
+        linked.customer_name,
+        (linked as { CustomerName?: string }).CustomerName,
+      ),
+      phone: readString(linked.phone, (linked as { Phone?: string }).Phone),
+      email: readString(linked.email, (linked as { Email?: string }).Email) || undefined,
+      avatar_url:
+        readString(linked.avatar_url, (linked as { AvatarURL?: string }).AvatarURL)
+        || undefined,
+      provider_kinds:
+        linked.provider_kinds
+        ?? (linked as { ProviderKinds?: LinkedContact["provider_kinds"] }).ProviderKinds
+        ?? [],
+      linked_at: readString(
+        linked.linked_at,
+        (linked as { LinkedAt?: string }).LinkedAt,
+      ),
+    }))
+    .filter((linked) => linked.id && linked.link_id);
+}
+
 export function normalizeFieldDefinition(raw: Partial<ContactFieldDefinition> & {
   FieldKey?: string;
   FieldType?: string;
@@ -214,8 +250,11 @@ export function normalizeContact(raw: ApiContact): Contact {
     name: contactName,
     phone: readString(raw.phone, raw.Phone),
     email: readString(raw.email, raw.Email) || undefined,
+    avatar_url: readString(raw.avatar_url, (raw as { AvatarURL?: string }).AvatarURL) || undefined,
     source: mapSource(raw.source ?? raw.Source),
     tags: mapTags(raw),
+    providers: raw.providers ?? raw.Providers ?? [],
+    linked_contacts: mapLinkedContacts(raw),
     consent_status: mapConsentStatus(marketingStatus),
     marketing_status: marketingStatus,
     last_activity_at: readString(raw.last_activity_at, raw.LastActivityAt) || undefined,

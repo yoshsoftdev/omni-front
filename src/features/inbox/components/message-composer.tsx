@@ -8,7 +8,7 @@ import { InternalNotePanel } from "@/features/inbox/components/internal-note-pan
 import { QuickReplySelector } from "@/features/inbox/components/quick-reply-selector";
 import { formatBytes } from "@/features/inbox/hooks/use-authenticated-media";
 import { storageService } from "@/features/inbox/services/storage.service";
-import type { QuickReplyItem } from "@/features/inbox/types";
+import type { InboxChannel, QuickReplyItem } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
@@ -17,6 +17,12 @@ type ComposerTab = "reply" | "note";
 export interface ComposerSendInput {
   content: string;
   storageObjectId?: string;
+  attachment?: {
+    storage_object_id: string;
+    mime_type: string;
+    size_bytes: number;
+    filename: string;
+  };
   replyToMessageId?: string;
 }
 
@@ -29,6 +35,7 @@ interface PendingAttachment {
 }
 
 interface MessageComposerProps {
+  channel?: InboxChannel;
   quickReplies: QuickReplyItem[];
   replyTo?: {
     id: string;
@@ -43,6 +50,7 @@ interface MessageComposerProps {
 }
 
 export function MessageComposer({
+  channel = "whatsapp",
   quickReplies,
   replyTo,
   onCancelReply,
@@ -51,6 +59,14 @@ export function MessageComposer({
   onTypingStart,
   onTypingStop,
 }: MessageComposerProps) {
+  const isInstagramChannel = channel === "instagram";
+  const mediaAccept = isInstagramChannel
+    ? "image/jpeg,image/png,video/mp4,video/quicktime,video/webm,video/ogg,audio/aac,audio/mp4,audio/mpeg,audio/wav,application/pdf"
+    : "image/jpeg,image/png,video/mp4,video/3gpp,audio/*,application/pdf";
+  const documentAccept = isInstagramChannel
+    ? "application/pdf"
+    : "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const fileAccept = isInstagramChannel ? mediaAccept : undefined;
   const [activeTab, setActiveTab] = useState<ComposerTab>("reply");
   const [content, setContent] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
@@ -142,6 +158,15 @@ export function MessageComposer({
     const payload: ComposerSendInput = {
       content: text,
       storageObjectId: attachment?.storageObjectId,
+      attachment:
+        attachment?.storageObjectId
+          ? {
+              storage_object_id: attachment.storageObjectId,
+              mime_type: attachment.file.type,
+              size_bytes: attachment.file.size,
+              filename: attachment.file.name,
+            }
+          : undefined,
       replyToMessageId: replyTo?.id,
     };
 
@@ -163,12 +188,12 @@ export function MessageComposer({
 
   return (
     <div className="border-t bg-card">
-      <div className="flex border-b">
+      <div className="flex gap-1 border-b px-2">
         <button
           type="button"
           onClick={() => setActiveTab("reply")}
           className={cn(
-            "px-4 py-2.5 text-sm font-medium",
+            "px-3 py-2.5 text-sm font-medium transition-colors",
             activeTab === "reply"
               ? "border-b-2 border-primary text-primary"
               : "text-muted-foreground hover:text-foreground",
@@ -180,7 +205,7 @@ export function MessageComposer({
           type="button"
           onClick={() => setActiveTab("note")}
           className={cn(
-            "px-4 py-2.5 text-sm font-medium",
+            "px-3 py-2.5 text-sm font-medium transition-colors",
             activeTab === "note"
               ? "border-b-2 border-primary text-primary"
               : "text-muted-foreground hover:text-foreground",
@@ -244,13 +269,14 @@ export function MessageComposer({
                 void handleSend();
               }
             }}
-            placeholder="Type your message..."
-            className="min-h-[80px] w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm"
+            placeholder={isInstagramChannel ? "Type your Instagram message..." : "Type your message..."}
+            className="min-h-[72px] w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             rows={3}
           />
           <input
             ref={fileInputRef}
             type="file"
+            accept={fileAccept}
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -261,7 +287,7 @@ export function MessageComposer({
           <input
             ref={imageInputRef}
             type="file"
-            accept="image/jpeg,image/png,video/mp4,video/3gpp,audio/*,application/pdf"
+            accept={mediaAccept}
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -272,7 +298,7 @@ export function MessageComposer({
           <input
             ref={documentInputRef}
             type="file"
-            accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            accept={documentAccept}
             className="hidden"
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -282,30 +308,32 @@ export function MessageComposer({
           />
           <div className="mt-2 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
-                title="Attach file"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Paperclip className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
-                title="Image"
-                onClick={() => imageInputRef.current?.click()}
-              >
-                <ImageIcon className="h-4 w-4 text-muted-foreground" />
-              </button>
-              <button
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
-                title="Document"
-                onClick={() => documentInputRef.current?.click()}
-              >
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                  title="Attach file"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <button
+                  type="button"
+                  className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                  title="Image"
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                </button>
+                <button
+                  type="button"
+                  className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                  title="Document"
+                  onClick={() => documentInputRef.current?.click()}
+                >
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </>
               <button
                 type="button"
                 className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"

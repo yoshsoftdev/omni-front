@@ -1,25 +1,62 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Edit3, MessageSquare, Plus, Tag } from "lucide-react";
 
 import { ConsentBadge, consentLabel } from "@/components/shared/consent-badge";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
+import { ProviderBadge } from "@/components/shared/provider-badge";
 import { RightDrawer, RightDrawerBody, RightDrawerHeader, RightDrawerTabs } from "@/components/shared/right-drawer";
+import { SourceIcon, sourceLabel } from "@/components/shared/source-icon";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
 import { ContactCustomFieldsReadOnly } from "@/features/contacts/components/contact-custom-fields-form";
+import { ContactChannels } from "@/features/contacts/components/contact-channels";
 import {
   ContactFormModal,
   contactToFormValues,
   type ContactFormValues,
 } from "@/features/contacts/components/contact-form-modal";
-import { ContactMetadataPanel } from "@/features/contacts/components/contact-metadata-panel";
 import { ContactTimeline } from "@/features/contacts/components/contact-timeline";
+import { LinkContactDialog } from "@/features/contacts/components/link-contact-dialog";
 import { contactFieldService, contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
-import type { Contact, ContactFieldDefinition, ContactTag, ConsentStatus } from "@/types/contact";
+import type {
+  Contact,
+  ContactFieldDefinition,
+  ContactSource,
+  ContactTag,
+  ConsentStatus,
+  ProviderKind,
+} from "@/types/contact";
+
+function formatDateTime(date?: string) {
+  if (!date) return "—";
+  const value = new Date(date);
+  if (Number.isNaN(value.getTime())) return "—";
+  return value.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function profileTimezone(contact: Contact) {
+  for (const profile of contact.providers ?? []) {
+    const timezone = profile.metadata?.timezone ?? profile.metadata?.time_zone;
+    if (typeof timezone === "string" && timezone.trim()) return timezone;
+  }
+  return undefined;
+}
+
+function sourceProvider(source: ContactSource): ProviderKind | undefined {
+  if (source === "whatsapp" || source === "meta_inbound") return "whatsapp";
+  if (source === "ig") return "instagram";
+  return undefined;
+}
 
 export function ContactDetailDrawer({
   contact,
@@ -39,7 +76,7 @@ export function ContactDetailDrawer({
   onRefresh?: () => Promise<void>;
 }) {
   const router = useRouter();
-  const [tab, setTab] = useState("details");
+  const [tab, setTab] = useState("overview");
   const [consentOpen, setConsentOpen] = useState(false);
   const [tagOpen, setTagOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -47,20 +84,31 @@ export function ContactDetailDrawer({
   const [notes, setNotes] = useState(contact.notes ?? "");
   const [editForm, setEditForm] = useState<ContactFormValues>(contactToFormValues(contact));
   const [detail, setDetail] = useState(contact);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const contactRef = useRef(contact);
+  const onUpdateRef = useRef(onUpdate);
+  contactRef.current = contact;
+  onUpdateRef.current = onUpdate;
+
+  const refreshDetail = useCallback(async () => {
+    const [full, activities] = await Promise.all([
+      contactService.getById(contact.id),
+      contactService.listActivities(contact.id),
+    ]);
+    const enriched = { ...full, activities };
+    setDetail(enriched);
+    setNotes(enriched.notes ?? "");
+    setEditForm(contactToFormValues(enriched));
+    onUpdateRef.current(enriched);
+  }, [contact.id]);
 
   useEffect(() => {
-    setDetail(contact);
-    setNotes(contact.notes ?? "");
-    setEditForm(contactToFormValues(contact));
-    void contactService.getById(contact.id)
-      .then((full) => {
-        setDetail(full);
-        setNotes(full.notes ?? "");
-        setEditForm(contactToFormValues(full));
-        onUpdate(full);
-      })
-      .catch(() => undefined);
-  }, [contact.id]);
+    const selected = contactRef.current;
+    setDetail(selected);
+    setNotes(selected.notes ?? "");
+    setEditForm(contactToFormValues(selected));
+    void refreshDetail().catch(() => undefined);
+  }, [contact.id, refreshDetail]);
 
   async function changeConsent(status: ConsentStatus) {
     setSaving(true);
@@ -142,7 +190,22 @@ export function ContactDetailDrawer({
     }
   }
 
-  const mergedCustomFields = contactFieldService.mergeDefinitionsWithValues(fieldDefinitions, detail);
+  const mergedCustomFields = contactFieldService
+    .mergeDefinitionsWithValues(fieldDefinitions, detail)
+    .filter((field) => field.value !== null && field.value !== "");
+  const ownProfiles = (detail.providers ?? []).filter(
+    (profile) => profile.contact_id === detail.id,
+  );
+  const mainProfile = ownProfiles.find((profile) => profile.is_source_of_truth);
+  const contactSourceProvider = sourceProvider(detail.source);
+  const sourceProfile = contactSourceProvider
+    ? ownProfiles.find((profile) => profile.provider === contactSourceProvider)
+    : undefined;
+  const contactAvatar = sourceProfile?.avatar_url
+    || ownProfiles.find((profile) => profile.avatar_url)?.avatar_url
+    || detail.avatar_url;
+  const linkedAccountCount = detail.linked_contacts?.length ?? 0;
+  const timezone = profileTimezone(detail);
 
   const footer = (
     <div className="space-y-2">
@@ -173,7 +236,7 @@ export function ContactDetailDrawer({
       <RightDrawer open onClose={onClose} footer={footer}>
         <RightDrawerHeader onClose={onClose}>
           <div className="flex items-center gap-3">
-            <ContactAvatar name={detail.contact_name} size="lg" />
+            <ContactAvatar name={detail.contact_name} src={contactAvatar} size="lg" />
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">{detail.contact_name}</h3>
@@ -182,8 +245,22 @@ export function ContactDetailDrawer({
               {detail.customer_name && detail.customer_name !== detail.contact_name ? (
                 <p className="text-xs text-muted-foreground">Customer: {detail.customer_name}</p>
               ) : null}
-              <p className="text-sm text-muted-foreground">{detail.phone}</p>
-              <p className="text-xs text-muted-foreground">{detail.email ?? "No email"}</p>
+              <p className="text-sm text-muted-foreground">{detail.phone || "—"}</p>
+              <p className="text-xs text-muted-foreground">{detail.email ?? "—"}</p>
+              {contactSourceProvider ? (
+                <div className="mt-2 flex flex-wrap items-center gap-1">
+                  <span className="mr-1 text-[11px] font-medium text-muted-foreground">
+                    Contact source:
+                  </span>
+                  <ProviderBadge provider={contactSourceProvider} />
+                </div>
+              ) : (
+                <div className="mt-2 flex items-center gap-1.5 text-[11px]">
+                  <span className="font-medium text-muted-foreground">Contact source:</span>
+                  <SourceIcon source={detail.source} className="h-3.5 w-3.5" />
+                  <span>{sourceLabel(detail.source)}</span>
+                </div>
+              )}
             </div>
             <Button
               variant="ghost"
@@ -199,7 +276,8 @@ export function ContactDetailDrawer({
           </div>
           <RightDrawerTabs
             tabs={[
-              { value: "details", label: "Details" },
+              { value: "overview", label: "Overview" },
+              { value: "profile", label: "Profile" },
               { value: "activity", label: "Activity" },
               { value: "notes", label: "Notes" },
             ]}
@@ -209,31 +287,85 @@ export function ContactDetailDrawer({
         </RightDrawerHeader>
 
         <RightDrawerBody>
-          {tab === "details" ? (
+          {tab === "overview" ? (
+            <section>
+              <h4 className="text-sm font-semibold">Customer Summary</h4>
+              <div className="mt-3 space-y-3 text-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Customer Name</span>
+                  <span className="text-right">{detail.customer_name || "—"}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Main Account</span>
+                  {mainProfile ? (
+                    <ProviderBadge provider={mainProfile.provider} />
+                  ) : (
+                    <span>Not Available</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Assigned Agent</span>
+                  <span>Not Available</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Conversation Status</span>
+                  <span>Not Available</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Linked Accounts</span>
+                  <span>{linkedAccountCount}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">First Contact</span>
+                  <span className="text-right">{formatDateTime(detail.created_at)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="text-muted-foreground">Last Activity</span>
+                  <span className="text-right">{formatDateTime(detail.last_activity_at)}</span>
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          {tab === "profile" ? (
             <div className="space-y-5">
+              <ContactChannels
+                contactId={detail.id}
+                profiles={ownProfiles}
+                onLink={() => setLinkOpen(true)}
+                onRefresh={refreshDetail}
+              />
+
+              {detail.email || detail.language || timezone ? (
+                <section>
+                  <h4 className="text-sm font-semibold">Identity</h4>
+                  <div className="mt-3 space-y-2 text-sm">
+                    {detail.email ? (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">Email</span>
+                        <span className="break-all text-right">{detail.email}</span>
+                      </div>
+                    ) : null}
+                    {detail.language ? (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">Language</span>
+                        <span>{detail.language}</span>
+                      </div>
+                    ) : null}
+                    {timezone ? (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">Timezone</span>
+                        <span>{timezone}</span>
+                      </div>
+                    ) : null}
+                  </div>
+                </section>
+              ) : null}
+
               <section>
-                <h4 className="text-sm font-semibold">Profile</h4>
-                <div className="mt-3 space-y-2 text-sm">
-                  <div className="flex justify-between gap-4" data-segment-field="company">
-                    <span className="text-muted-foreground">Company</span>
-                    <span>{detail.company ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between gap-4" data-segment-field="job_title">
-                    <span className="text-muted-foreground">Job Title</span>
-                    <span>{detail.job_title ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between gap-4" data-segment-field="country">
-                    <span className="text-muted-foreground">Country</span>
-                    <span>{detail.country ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between gap-4" data-segment-field="province">
-                    <span className="text-muted-foreground">Province</span>
-                    <span>{detail.province ?? "—"}</span>
-                  </div>
-                  <div className="flex justify-between gap-4" data-segment-field="city">
-                    <span className="text-muted-foreground">City</span>
-                    <span>{detail.city ?? "—"}</span>
-                  </div>
+                <h4 className="text-sm font-semibold">Custom Fields</h4>
+                <div className="mt-3">
+                  <ContactCustomFieldsReadOnly fields={mergedCustomFields} />
                 </div>
               </section>
 
@@ -246,15 +378,6 @@ export function ContactDetailDrawer({
                 </div>
                 <div className="mt-2"><TagBadgeList tags={detail.tags} /></div>
               </section>
-
-              <section>
-                <h4 className="text-sm font-semibold">Custom Fields</h4>
-                <div className="mt-3">
-                  <ContactCustomFieldsReadOnly fields={mergedCustomFields} />
-                </div>
-              </section>
-
-              <ContactMetadataPanel contact={detail} />
 
               <section className="rounded-lg border p-3">
                 <h4 className="text-sm font-semibold">Subscription</h4>
@@ -272,6 +395,9 @@ export function ContactDetailDrawer({
 
           {tab === "notes" ? (
             <div className="space-y-3">
+              {!notes.trim() ? (
+                <p className="text-sm text-muted-foreground">No notes.</p>
+              ) : null}
               <textarea
                 className="min-h-[200px] w-full rounded-md border bg-background p-3 text-sm"
                 value={notes}
@@ -347,6 +473,13 @@ export function ContactDetailDrawer({
           onClose={() => setEditOpen(false)}
           onSubmit={() => void saveEdit()}
           saving={saving}
+        />
+      ) : null}
+      {linkOpen ? (
+        <LinkContactDialog
+          target={detail}
+          onClose={() => setLinkOpen(false)}
+          onLinked={refreshDetail}
         />
       ) : null}
     </>

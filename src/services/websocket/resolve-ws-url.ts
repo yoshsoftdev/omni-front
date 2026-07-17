@@ -12,7 +12,7 @@ export function resolveWsBaseUrl(): string {
   }
 
   if (typeof window === "undefined") {
-    const port = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8090";
+    const port = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8066";
     return `ws://127.0.0.1:${port}/ws`;
   }
 
@@ -25,7 +25,7 @@ export function resolveWsBaseUrl(): string {
     return `${wsProtocol}//${window.location.host}/ws`;
   }
 
-  const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8090";
+  const backendPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8066";
   return `ws://${window.location.hostname}:${backendPort}/ws`;
 }
 
@@ -41,9 +41,9 @@ export function resolveWsCandidates(): string[] {
 
   const isHttps = window.location.protocol === "https:";
   const wsProtocol = isHttps ? "wss:" : "ws:";
-  const envPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8070";
+  const envPort = process.env.NEXT_PUBLIC_BACKEND_PORT ?? "8066";
   const envPortUrl = `${wsProtocol}//${window.location.hostname}:${envPort}/ws`;
-  const commonFallback = `${wsProtocol}//${window.location.hostname}:8070/ws`;
+  const commonFallback = `${wsProtocol}//${window.location.hostname}:8066/ws`;
   const sameOrigin = `${wsProtocol}//${window.location.host}/ws`;
 
   // In local HTTP dev, Next (3000) often doesn't proxy WS; try backend port first.

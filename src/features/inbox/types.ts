@@ -1,12 +1,14 @@
+import type { ProviderKind } from "@/types/contact";
+
 export type InboxTab = "open" | "assigned" | "unassigned" | "closed" | "all";
 
 export type InboxConversationStatus = "open" | "assigned" | "unassigned" | "closed";
 
-export type InboxChannel = "whatsapp" | "instagram" | "messenger" | "email";
+export type InboxChannel = ProviderKind;
 
 export type AgentPresence = "online" | "away" | "offline";
 
-export type InboxMessageType = "text" | "image" | "video" | "audio" | "document" | "template";
+export type InboxMessageType = "text" | "image" | "video" | "audio" | "document" | "template" | "other";
 
 export type SubscriptionStatus = "subscribed" | "unsubscribed";
 
@@ -30,6 +32,7 @@ export interface InboxContact {
   name: string;
   phone: string;
   email?: string;
+  avatar_url?: string;
   is_saved_contact?: boolean;
   subscription_status: SubscriptionStatus;
   source: string;
@@ -49,8 +52,14 @@ export interface InboxConversation {
   id: string;
   contact_id: string;
   contact_name: string;
+  customer_name?: string;
   contact_phone: string;
+  contact_avatar_url?: string;
   channel: InboxChannel;
+  provider_profile_id?: string;
+  linked_providers?: ProviderKind[];
+  is_source_of_truth?: boolean;
+  linked_account_count?: number;
   status: InboxConversationStatus;
   assigned_to?: string;
   assignee_name?: string;

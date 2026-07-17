@@ -21,48 +21,14 @@ export const messageService = {
       content: input.content ?? "",
       storage_object_id: input.storage_object_id,
       reply_to_wamid: input.reply_to_wamid,
+      reply_to_message_id: input.reply_to_message_id,
       client_message_id: input.client_message_id,
     });
     return normalizeMessage(response.data!);
   },
 
   async remove(conversationId: string, messageId: string) {
-    // #region agent log
-    fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-      body: JSON.stringify({
-        sessionId: "d8bb7a",
-        runId: "run1",
-        hypothesisId: "H2",
-        location: "message.service.ts:remove:request",
-        message: "Delete API request",
-        data: { conversationId, messageId },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     const response = await apiClient.delete<Message>(`/conversations/${conversationId}/messages/${messageId}`);
-    // #region agent log
-    fetch("http://localhost:7465/ingest/6e3b7074-0a01-4186-8903-41796bcf051e", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "d8bb7a" },
-      body: JSON.stringify({
-        sessionId: "d8bb7a",
-        runId: "run1",
-        hypothesisId: "H2",
-        location: "message.service.ts:remove:response",
-        message: "Delete API response",
-        data: {
-          conversationId,
-          messageId,
-          responseIsDeleted: Boolean((response.data as Message | undefined)?.is_deleted),
-          responseDeletedBySource: (response.data as Message | undefined)?.deleted_by_source ?? null,
-        },
-        timestamp: Date.now(),
-      }),
-    }).catch(() => {});
-    // #endregion
     return normalizeMessage(response.data!);
   },
 };

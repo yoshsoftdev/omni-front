@@ -18,6 +18,8 @@ type ApiMessage = Message & {
   Attachment?: MessageAttachment;
   ReplyToWAMID?: string;
   reply_to_wamid?: string;
+  WAMID?: string;
+  wamid?: string;
   ReplyToMessageID?: string;
   reply_to_message_id?: string;
   IsDeleted?: boolean;
@@ -30,6 +32,8 @@ type ApiMessage = Message & {
   client_message_id?: string;
   Status?: Message["status"];
   status?: Message["status"];
+  DeliveryNotice?: string;
+  delivery_notice?: string;
 };
 
 function readString(...values: Array<string | undefined>): string {
@@ -81,17 +85,18 @@ export function normalizeMessage(raw: ApiMessage): Message {
     sender_name: raw.sender_name ?? raw.SenderName,
     sent_by: raw.sent_by,
     sent_at: readString(raw.sent_at, raw.received_at, raw.created_at, raw.ReceivedAt, raw.CreatedAt),
-    wamid: raw.wamid,
+    wamid: readString(raw.wamid, raw.WAMID),
     reply_to_wamid: readString(raw.reply_to_wamid, raw.ReplyToWAMID),
     reply_to_message_id: readString(raw.reply_to_message_id, raw.ReplyToMessageID),
     is_deleted: Boolean(raw.is_deleted ?? raw.IsDeleted),
     deleted_at: readString(raw.deleted_at, raw.DeletedAt),
     deleted_by_source: raw.deleted_by_source ?? raw.DeletedBySource,
     status: raw.status ?? raw.Status,
+    delivery_notice: readString(raw.delivery_notice, raw.DeliveryNotice),
   };
 }
 
-function contentTypeFromMime(mimeType: string): MessageContentType {
+export function contentTypeFromMime(mimeType: string): MessageContentType {
   if (mimeType.startsWith("image/")) return "image";
   if (mimeType.startsWith("video/")) return "video";
   if (mimeType.startsWith("audio/")) return "audio";

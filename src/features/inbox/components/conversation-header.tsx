@@ -3,11 +3,13 @@
 import { MoreHorizontal, UserPlus } from "lucide-react";
 
 import { ContactAvatar } from "@/components/shared/contact-avatar";
+import { providerLabel } from "@/components/shared/provider-badge";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
 import { ChannelIcon } from "@/features/inbox/components/conversation-card";
 import type { InboxConversation, InboxConversationStatus } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
+import type { ProviderKind } from "@/types/contact";
 
 const STATUS_STYLES: Record<InboxConversationStatus, string> = {
   open: "bg-emerald-100 text-emerald-700 border-emerald-200",
@@ -47,14 +49,16 @@ export function ConversationHeader({
       <div className="flex items-center justify-between gap-3 px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
         <div className="relative">
-          <ContactAvatar name={conversation.contact_name} size="lg" />
+          <ContactAvatar name={conversation.contact_name} src={conversation.contact_avatar_url} size="lg" />
           <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-background">
             <ChannelIcon channel={conversation.channel} className="h-3.5 w-3.5" />
           </span>
         </div>
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-base font-semibold">{conversation.contact_name || "Unknown contact"}</h2>
+            <h2 className="truncate text-base font-semibold">
+              {conversation.customer_name || conversation.contact_name || "Unknown contact"}
+            </h2>
             <span
               className={cn(
                 "rounded-full border px-2 py-0.5 text-[10px] font-medium",
@@ -64,6 +68,9 @@ export function ConversationHeader({
               {statusLabel(displayStatus)}
             </span>
           </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {providerLabel(conversation.channel as ProviderKind)} conversation
+          </p>
           <TagBadgeList tags={conversation.tags} className="mt-1.5" />
         </div>
       </div>

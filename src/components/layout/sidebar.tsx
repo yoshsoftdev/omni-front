@@ -41,7 +41,7 @@ const navItems: Array<{
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/devices", label: "WhatsApp", icon: Smartphone },
+  { href: "/devices", label: "Onboarding", icon: Smartphone },
   { href: "/broadcast/campaigns", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
   { href: "/automation", label: "Automation", icon: Sparkles },
   { href: "/team/users", label: "Team", icon: UsersRound },
@@ -129,7 +129,9 @@ export function Sidebar() {
               )}
             >
               <Icon className="h-4 w-4" />
-              {item.label}
+              {item.href === "/inbox" && inboxUnreadBadge
+                ? `${item.label} (${inboxUnreadBadge})`
+                : item.label}
               {item.href === "/inbox" && inboxUnreadBadge ? (
                 <span
                   className={cn(

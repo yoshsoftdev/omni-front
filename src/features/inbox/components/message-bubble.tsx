@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CheckCheck, CornerUpLeft, Download, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video, Volume2 } from "lucide-react";
+import { Check, CheckCheck, CornerUpLeft, Download, ExternalLink, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video, Volume2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, forwardRef } from "react";
 
 import { AuthenticatedAudio } from "@/features/inbox/components/authenticated-audio";
@@ -17,6 +17,81 @@ function formatTime(iso: string) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "--:--";
   return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+function parseInstagramShareContent(content: string): { label: string; title: string; url: string } {
+  const lines = content
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const urlIndex = lines.findIndex((line) => /^https?:\/\//i.test(line));
+  const url = urlIndex >= 0 ? lines[urlIndex] : "";
+  const rest = urlIndex >= 0 ? lines.filter((_, index) => index !== urlIndex) : lines;
+  return {
+    label: rest[0] ?? "",
+    title: rest.slice(1).join("\n"),
+    url,
+  };
+}
+
+function isInstagramShareContent(content: string): boolean {
+  return (
+    content === "Mentioned your story" ||
+    content === "Replied to a story" ||
+    content === "Shared a reel" ||
+    content === "Shared a post" ||
+    content === "Shared a story" ||
+    content === "Link" ||
+    content.startsWith("Shared a post\n") ||
+    content.startsWith("Shared a reel\n") ||
+    content.startsWith("Link\n")
+  );
+}
+
+function linkHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
+function InstagramOGLinkCard({ content }: { content: string }) {
+  const { label, title, url } = parseInstagramShareContent(content);
+  const isStory =
+    label === "Mentioned your story" ||
+    label === "Replied to a story" ||
+    label === "Shared a story";
+
+  if (url) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block max-w-72 overflow-hidden rounded-md border bg-muted/40 text-left transition-colors hover:bg-muted/70"
+      >
+        <div className="space-y-1 px-2.5 py-2">
+          <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            {isStory ? <Video className="h-3 w-3" /> : <ExternalLink className="h-3 w-3" />}
+            {label || "Instagram link"}
+          </span>
+          {title ? <p className="line-clamp-2 text-sm font-medium text-foreground">{title}</p> : null}
+          <span className="block truncate text-xs text-sky-700 dark:text-sky-400">{linkHost(url)}</span>
+        </div>
+      </a>
+    );
+  }
+
+  return (
+    <div className="rounded-md border bg-muted/40 px-2.5 py-2 text-sm text-foreground">
+      <span className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {isStory ? <Video className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
+        {label || "Instagram event"}
+      </span>
+      {title ? <p className="whitespace-pre-wrap text-sm">{title}</p> : null}
+    </div>
+  );
 }
 
 function AuthenticatedImage({ objectId, alt }: { objectId: string; alt: string }) {
@@ -171,30 +246,8 @@ function MediaPreview({ message }: { message: InboxChatMessage }) {
       </div>
     );
   }
-  if (
-    message.type === "other" ||
-    message.content === "Mentioned your story" ||
-    message.content === "Replied to a story" ||
-    message.content === "Shared a reel" ||
-    message.content === "Shared a post" ||
-    message.content === "Shared a story" ||
-    message.content.startsWith("Shared a post\n")
-  ) {
-    const [label, ...rest] = message.content.split("\n");
-    const body = rest.join("\n").trim();
-    const isStory =
-      label === "Mentioned your story" ||
-      label === "Replied to a story" ||
-      label === "Shared a story";
-    return (
-      <div className="rounded-md border bg-muted/40 px-2.5 py-2 text-sm text-foreground">
-        <span className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-          {isStory ? <Video className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
-          {label || "Instagram event"}
-        </span>
-        {body ? <p className="whitespace-pre-wrap text-sm">{body}</p> : null}
-      </div>
-    );
+  if (message.type === "other" || isInstagramShareContent(message.content)) {
+    return <InstagramOGLinkCard content={message.content} />;
   }
   return <p className="whitespace-pre-wrap text-sm">{message.content}</p>;
 }

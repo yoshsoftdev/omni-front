@@ -23,6 +23,7 @@ interface InboxCacheState {
   applyDelta: (filterKey: string, delta: ConversationDelta) => void;
   applyDeltas: (filterKey: string, deltas: ConversationDelta[]) => void;
   remove: (filterKey: string, conversationId: string) => void;
+  clearAll: () => void;
 }
 
 function mergeUnique(existing: InboxConversation[], incoming: InboxConversation[]): InboxConversation[] {
@@ -128,5 +129,9 @@ export const useInboxCacheStore = create<InboxCacheState>((set, get) => ({
         },
       },
     }));
+  },
+
+  clearAll() {
+    set({ caches: {} });
   },
 }));

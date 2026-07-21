@@ -86,15 +86,15 @@ export const campaignService = {
   },
 
   async send(id: string, contactIds?: string[]): Promise<Campaign> {
-    const response = await apiClient.post<CampaignDTO>(`/campaigns/${id}/send`, {
+    const response = await apiClient.post<unknown>(`/campaigns/${id}/send`, {
       contact_ids: contactIds ?? [],
     });
-    return parseCampaignDto(response.data!);
+    return parseCampaignDto(normalizeCampaignDto(response.data));
   },
 
   async cancel(id: string): Promise<Campaign> {
-    const response = await apiClient.post<CampaignDTO>(`/campaigns/${id}/cancel`, {});
-    return parseCampaignDto(response.data!);
+    const response = await apiClient.post<unknown>(`/campaigns/${id}/cancel`, {});
+    return parseCampaignDto(normalizeCampaignDto(response.data));
   },
 
   async report(id: string): Promise<CampaignReport> {

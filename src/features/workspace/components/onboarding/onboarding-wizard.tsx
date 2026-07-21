@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { CreditCard, Loader2, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DeviceStatusBadge } from "@/features/devices/components/device-status-badge";
 import { templateService } from "@/features/broadcast/services/broadcast.service";
+import { EmbeddedSignupPaymentStep } from "@/features/channels/components/embedded-signup/embedded-signup-payment-step";
+import { channelPaymentService } from "@/features/channels/services/channel-payment.service";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import { OnboardingChecklist } from "@/features/workspace/components/onboarding/onboarding-checklist";
 import { OnboardingLayout } from "@/features/workspace/components/onboarding/onboarding-layout";
@@ -51,6 +53,7 @@ export function OnboardingWizard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadSnapshot = useCallback(async () => {
@@ -85,6 +88,27 @@ export function OnboardingWizard() {
       setError(err instanceof Error ? err.message : "Failed to refresh");
     } finally {
       setRefreshing(false);
+    }
+  }
+
+  const paymentConfigured =
+    readiness?.checks.find((check) => check.id === "payment_method")?.completed ?? false;
+  const defaultChannelId = snapshot?.connectedChannels[0]?.id;
+
+  async function handleAddPayment() {
+    if (!defaultChannelId) {
+      setError("Connect a WhatsApp channel before adding a payment method.");
+      return;
+    }
+    setPaymentLoading(true);
+    setError(null);
+    try {
+      const url = await channelPaymentService.createPaymentLink(defaultChannelId);
+      window.open(url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open payment setup");
+    } finally {
+      setPaymentLoading(false);
     }
   }
 
@@ -322,9 +346,24 @@ export function OnboardingWizard() {
           description={stepDefinition?.description ?? ""}
           primaryAction={{ label: "Create Campaign", href: "/broadcast/campaigns/create" }}
           secondaryAction={{ label: "View Campaigns", href: "/broadcast/campaigns" }}
+          tertiaryAction={
+            paymentConfigured
+              ? undefined
+              : {
+                  label: paymentLoading ? "Opening..." : "Add Payment",
+                  onClick: () => void handleAddPayment(),
+                  disabled: paymentLoading || snapshot.connectedChannels.length === 0,
+                }
+          }
           skipAction={{ label: "Skip", onClick: () => handleSkip("create_campaign") }}
         >
-          <Metric label="Existing Campaigns" value={String(snapshot.campaigns.length)} />
+          <dl className="grid gap-3 text-sm sm:grid-cols-2">
+            <Metric label="Existing Campaigns" value={String(snapshot.campaigns.length)} />
+            <Metric
+              label="Payment Method"
+              value={paymentConfigured ? "Configured" : "Not Configured"}
+            />
+          </dl>
           {snapshot.campaigns.length > 0 ? (
             <ul className="space-y-2 text-sm">
               {snapshot.campaigns.slice(0, 5).map((campaign) => (
@@ -336,6 +375,18 @@ export function OnboardingWizard() {
             </ul>
           ) : (
             <p className="text-sm text-muted-foreground">No campaigns created yet.</p>
+          )}
+          {!paymentConfigured ? (
+            <EmbeddedSignupPaymentStep
+              loading={paymentLoading}
+              onAddPayment={() => void handleAddPayment()}
+              hideSkip
+            />
+          ) : (
+            <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-100">
+              <CreditCard className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>Meta payment method is configured. You can send marketing campaigns.</p>
+            </div>
           )}
         </OnboardingStepCard>
       ) : null}

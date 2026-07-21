@@ -1,9 +1,11 @@
 import type { CreateTemplateForm, DetectedVariable } from "@/features/broadcast/types/create-template";
+import { isMediaHeader } from "@/features/broadcast/utils/create-template.utils";
 
 type MetaButton = {
   type: string;
   text: string;
   url?: string;
+  phone_number?: string;
   example?: string[];
   otp_type?: string;
 };
@@ -14,10 +16,24 @@ export function buildMetaTemplateComponents(
 ): unknown[] {
   const components: unknown[] = [];
 
-  if (form.headerType === "image" || form.headerType === "video" || form.headerType === "document") {
-    throw new Error(
-      "Header gambar/video/dokumen memerlukan upload media ke Meta. Gunakan header None untuk submit via API.",
-    );
+  if (form.headerType === "text" && form.headerText?.trim()) {
+    components.push({
+      type: "HEADER",
+      format: "TEXT",
+      text: form.headerText.trim(),
+    });
+  } else if (isMediaHeader(form.headerType)) {
+    if (!form.headerObjectId) {
+      throw new Error("Unggah media header ke storage terlebih dahulu.");
+    }
+    components.push({
+      type: "HEADER",
+      format: form.headerType.toUpperCase(),
+      example: {
+        // Storage object id — backend converts to Meta resumable upload header_handle.
+        header_handle: [form.headerObjectId],
+      },
+    });
   }
 
   const bodyExamples = variables.length > 0 ? [variables.map((v) => v.sampleValue)] : undefined;
@@ -37,7 +53,7 @@ export function buildMetaTemplateComponents(
     });
   }
 
-  if (form.buttons.length > 0) {
+  if (form.buttonMode !== "none" && form.buttons.length > 0) {
     const buttons: MetaButton[] = form.buttons.map((button) => {
       const text = button.text.trim();
       if (button.type === "url") {
@@ -51,6 +67,13 @@ export function buildMetaTemplateComponents(
           metaButton.example = [url.replace(/\{\{\d+\}\}/g, "demo")];
         }
         return metaButton;
+      }
+      if (button.type === "phone_number") {
+        return {
+          type: "PHONE_NUMBER",
+          text,
+          phone_number: button.phoneNumber?.trim() ?? "",
+        };
       }
       if (button.type === "copy_code") {
         return {
@@ -87,7 +110,7 @@ export function buildCreateTemplatePayload(
   variables: DetectedVariable[],
 ): CreateTemplatePayload {
   if (!form.deviceId) {
-    throw new Error("Pilih WABA / device terlebih dahulu.");
+    throw new Error("Pilih channel WhatsApp (WABA) terlebih dahulu.");
   }
 
   return {

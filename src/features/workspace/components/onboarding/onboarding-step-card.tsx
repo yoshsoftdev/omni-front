@@ -21,6 +21,12 @@ type OnboardingStepCardProps = {
     href?: string;
     disabled?: boolean;
   };
+  tertiaryAction?: {
+    label: string;
+    onClick?: () => void;
+    href?: string;
+    disabled?: boolean;
+  };
   skipAction?: {
     label: string;
     onClick: () => void;
@@ -56,6 +62,7 @@ export function OnboardingStepCard({
   children,
   primaryAction,
   secondaryAction,
+  tertiaryAction,
   skipAction,
 }: OnboardingStepCardProps) {
   return (
@@ -70,6 +77,7 @@ export function OnboardingStepCard({
       <div className="flex flex-wrap items-center gap-2 border-t pt-4">
         {primaryAction ? <ActionButton action={primaryAction} variant="default" /> : null}
         {secondaryAction ? <ActionButton action={secondaryAction} variant="outline" /> : null}
+        {tertiaryAction ? <ActionButton action={tertiaryAction} variant="outline" /> : null}
         {skipAction && !skipAction.hidden ? (
           <Button variant="ghost" onClick={skipAction.onClick} disabled={skipAction.disabled} className="ml-auto">
             {skipAction.label}

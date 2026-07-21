@@ -13,6 +13,7 @@ export const createTemplateCategoryOptions = [
 
 export const headerTypeOptions = [
   { value: "none", label: "None" },
+  { value: "text", label: "Text" },
   { value: "image", label: "Image" },
   { value: "video", label: "Video" },
   { value: "document", label: "Document" },
@@ -20,7 +21,6 @@ export const headerTypeOptions = [
 
 export const defaultTemplateButtons: TemplateButton[] = [
   { id: "btn_1", type: "url", text: "Belanja Sekarang", url: "https://skinsure.id/shop" },
-  { id: "btn_2", type: "quick_reply", text: "Hubungi Kami" },
 ];
 
 export const defaultCreateTemplateForm: CreateTemplateForm = {
@@ -30,6 +30,7 @@ export const defaultCreateTemplateForm: CreateTemplateForm = {
   category: "marketing",
   headerType: "none",
   headerFileName: undefined,
+  headerObjectId: undefined,
   body: `Halo {{1}} 👋
 
 Dapatkan diskon {{2}}% untuk semua produk Hydrabalance Moisturizer.
@@ -38,6 +39,7 @@ Berlaku sampai {{3}}.
 
 Terima kasih telah menjadi pelanggan setia kami.`,
   footer: "",
+  buttonMode: "cta",
   buttons: defaultTemplateButtons,
 };
 

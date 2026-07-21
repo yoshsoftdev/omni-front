@@ -8,13 +8,13 @@ import { PageHeader } from "@/components/layout/page-header";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CampaignTable } from "@/features/broadcast/components/campaigns/campaign-table";
+import { useCampaignSendGuard } from "@/features/broadcast/hooks/use-campaign-send-guard";
 import { campaignQueryService } from "@/features/broadcast/services/campaign-query.service";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
-import { segmentService } from "@/features/segments/services/segment.service";
-import type { Segment } from "@/features/segments/types/segment";
 import type { Campaign, CampaignStatus } from "@/features/broadcast/types/campaign";
 import type { Template } from "@/features/broadcast/types/template";
 import { useToast } from "@/hooks/use-toast";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Status" },
@@ -32,18 +32,12 @@ export function CampaignsListPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [templateFilter, setTemplateFilter] = useState("all");
-  const [segmentFilter, setSegmentFilter] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [segments, setSegments] = useState<Segment[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
 
   useEffect(() => {
     campaignQueryService.getCampaigns().then(setCampaigns);
-  }, []);
-
-  useEffect(() => {
-    segmentService.list().then(setSegments);
   }, []);
 
   useEffect(() => {
@@ -54,7 +48,6 @@ export function CampaignsListPage() {
     return campaigns.filter((c) => {
       if (statusFilter !== "all" && c.status !== statusFilter) return false;
       if (templateFilter !== "all" && c.template_id !== templateFilter) return false;
-      if (segmentFilter !== "all" && c.segment_id !== segmentFilter) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         if (!c.name.toLowerCase().includes(q) && !c.template_name.toLowerCase().includes(q)) return false;
@@ -63,7 +56,7 @@ export function CampaignsListPage() {
       if (dateTo && c.created_at.slice(0, 10) > dateTo) return false;
       return true;
     });
-  }, [campaigns, statusFilter, templateFilter, segmentFilter, search, dateFrom, dateTo]);
+  }, [campaigns, statusFilter, templateFilter, search, dateFrom, dateTo]);
 
   function handleCancel(id: string) {
     setCampaigns((prev) =>
@@ -92,11 +85,26 @@ export function CampaignsListPage() {
     notify("success", "Campaign duplicated");
   }
 
+  const { sendCampaign, paymentDialog } = useCampaignSendGuard();
+
+  function handleSend(campaign: Campaign) {
+    void sendCampaign(campaign.id, campaign.device_id)
+      .then((updated) => {
+        setCampaigns((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+        notify("success", "Campaign queued for send");
+      })
+      .catch((error) => {
+        if (formatApiErrorMessage(error) !== "Marketing campaigns require a Meta payment method.") {
+          notify("error", formatApiErrorMessage(error));
+        }
+      });
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Campaigns"
-        description="Create and manage your broadcast campaigns."
+        description="Create and manage WhatsApp broadcast campaigns."
         right={
           <Button asChild>
             <Link href="/broadcast/campaigns/create">
@@ -125,19 +133,19 @@ export function CampaignsListPage() {
             onChange={setTemplateFilter}
             options={[{ value: "all", label: "All Templates" }, ...templates.map((t) => ({ value: t.id, label: t.name }))]}
           />
-          <FilterSelect
-            label="Segment"
-            value={segmentFilter}
-            onChange={setSegmentFilter}
-            options={[{ value: "all", label: "All Segments" }, ...segments.map((s) => ({ value: s.id, label: s.name }))]}
-          />
           <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="h-9 rounded-md border px-2 text-sm" />
           <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="h-9 rounded-md border px-2 text-sm" />
         </FilterBar>
 
-        <CampaignTable campaigns={filtered} onCancel={handleCancel} onDuplicate={handleDuplicate} />
+        <CampaignTable
+          campaigns={filtered}
+          onCancel={handleCancel}
+          onDuplicate={handleDuplicate}
+          onSend={handleSend}
+        />
       </div>
 
+      {paymentDialog}
       <Toast />
     </div>
   );

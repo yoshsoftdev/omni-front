@@ -7,13 +7,15 @@ import { Button } from "@/components/ui/button";
 type EmbeddedSignupPaymentStepProps = {
   loading?: boolean;
   onAddPayment: () => void;
-  onSkip: () => void;
+  onSkip?: () => void;
+  hideSkip?: boolean;
 };
 
 export function EmbeddedSignupPaymentStep({
   loading = false,
   onAddPayment,
   onSkip,
+  hideSkip = false,
 }: EmbeddedSignupPaymentStepProps) {
   return (
     <div className="space-y-5 rounded-lg border bg-card p-6">
@@ -27,7 +29,9 @@ export function EmbeddedSignupPaymentStep({
           <p className="mt-2 text-sm text-muted-foreground">
             A payment method is required before sending marketing campaigns.
           </p>
-          <p className="mt-1 text-sm text-muted-foreground">You can skip this step for now.</p>
+          {!hideSkip ? (
+            <p className="mt-1 text-sm text-muted-foreground">You can skip this step for now.</p>
+          ) : null}
         </div>
       </div>
 
@@ -35,9 +39,11 @@ export function EmbeddedSignupPaymentStep({
         <Button onClick={onAddPayment} disabled={loading}>
           {loading ? "Opening..." : "Add Payment"}
         </Button>
-        <Button variant="outline" onClick={onSkip} disabled={loading}>
-          Skip
-        </Button>
+        {!hideSkip && onSkip ? (
+          <Button variant="outline" onClick={onSkip} disabled={loading}>
+            Skip
+          </Button>
+        ) : null}
       </div>
     </div>
   );

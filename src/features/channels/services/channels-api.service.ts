@@ -5,6 +5,7 @@ export type ApiChannel = {
   team_id: string;
   name: string;
   provider: string;
+  channel_type?: string;
   status: string;
   connection_type?: string;
   phone_number?: string;

@@ -143,7 +143,7 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
             <dl className="mt-4 space-y-3 text-sm">
               <InfoRow label="Campaign Name" value={campaign.name} />
               <InfoRow label="Template" value={campaign.template_name} />
-              <InfoRow label="Segment" value={campaign.segment_name} />
+              <InfoRow label="Audience" value={campaign.audience?.name || campaign.segment_name || "—"} />
               <InfoRow label="Schedule" value={formatDateTime(campaign.scheduled_at)} />
               <InfoRow label="Created By" value={campaign.created_by ?? "—"} />
               <InfoRow label="Created At" value={formatDateTime(campaign.created_at)} />
@@ -153,10 +153,13 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
           <section className="rounded-lg border bg-card p-5">
             <h2 className="text-sm font-semibold">Audience Summary</h2>
             <dl className="mt-4 space-y-3 text-sm">
-              <InfoRow label="Segment Name" value={campaign.segment_name || "—"} />
+              <InfoRow
+                label="Audience"
+                value={campaign.audience?.name || campaign.segment_name || "—"}
+              />
               <InfoRow
                 label="Estimated Recipients"
-                value={formatCount(campaign.segment_contact_count ?? campaign.total_contacts)}
+                value={formatCount(campaign.audience?.recipient_count ?? campaign.total_contacts)}
               />
             </dl>
           </section>

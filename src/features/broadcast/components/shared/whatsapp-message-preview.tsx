@@ -1,6 +1,6 @@
 "use client";
 
-import { ExternalLink, MessageCircle, Verified } from "lucide-react";
+import { ExternalLink, MessageCircle, Phone, Verified } from "lucide-react";
 
 import type { WhatsAppMessagePreviewProps } from "@/features/broadcast/types/whatsapp-preview";
 
@@ -8,7 +8,9 @@ export function WhatsAppMessagePreview({
   heading = "Preview WhatsApp",
   deviceName,
   languageLabel,
-  headerType = "image",
+  headerType = "none",
+  headerText,
+  headerPreviewUrl,
   body,
   footer,
   buttons = [],
@@ -38,7 +40,16 @@ export function WhatsAppMessagePreview({
         <div className="p-3">
           <div className="ml-auto max-w-[92%] overflow-hidden rounded-lg bg-white shadow-sm">
             {headerType === "image" ? (
-              <div className="aspect-[1.91/1] w-full bg-gradient-to-br from-amber-100 via-rose-50 to-teal-100" />
+              headerPreviewUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={headerPreviewUrl}
+                  alt=""
+                  className="aspect-[1.91/1] w-full object-cover"
+                />
+              ) : (
+                <div className="aspect-[1.91/1] w-full bg-gradient-to-br from-amber-100 via-rose-50 to-teal-100" />
+              )
             ) : null}
             {headerType === "video" ? (
               <div className="flex aspect-video w-full items-center justify-center bg-muted text-xs text-muted-foreground">
@@ -52,6 +63,9 @@ export function WhatsAppMessagePreview({
             ) : null}
 
             <div className="space-y-2 p-3">
+              {headerType === "text" && headerText ? (
+                <p className="text-sm font-semibold text-foreground">{headerText}</p>
+              ) : null}
               <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{body}</p>
               {footer ? <p className="text-xs text-muted-foreground">{footer}</p> : null}
               <div className="text-right text-[10px] text-muted-foreground">10.30</div>
@@ -66,6 +80,8 @@ export function WhatsAppMessagePreview({
                   >
                     {button.type === "url" ? (
                       <ExternalLink className="h-3.5 w-3.5" />
+                    ) : button.type === "phone_number" ? (
+                      <Phone className="h-3.5 w-3.5" />
                     ) : (
                       <MessageCircle className="h-3.5 w-3.5" />
                     )}

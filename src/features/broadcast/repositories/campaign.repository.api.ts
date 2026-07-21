@@ -28,7 +28,6 @@ class ApiCampaignRepository implements CampaignQueryRepository {
       name: input.name,
       channel_id: input.device_id,
       template_id: input.template_id,
-      segment_ids: input.segment_ids ?? [],
       tag_ids: input.tag_ids ?? [],
       contact_ids: input.contact_ids ?? [],
       variable_mapping: input.variable_mapping

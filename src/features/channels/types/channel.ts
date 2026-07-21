@@ -2,6 +2,8 @@ export type ChannelStatus = "disconnected" | "connecting" | "connected";
 
 export type ChannelConnectionType = "manual" | "embedded_coex";
 
+export type ChannelType = "whatsapp" | "instagram" | (string & {});
+
 export type ChannelProvider = "meta" | (string & {});
 
 export type ChannelOnboardingStatus =
@@ -20,12 +22,13 @@ export interface ChannelOnboarding {
   completed_at?: string;
 }
 
-/** Frontend domain model for workspace WhatsApp channels (API wire: DeviceDTO). */
+/** Frontend domain model for workspace messaging channels (API wire: DeviceDTO / Channel). */
 export interface Channel {
   id: string;
   workspace_id?: string;
   label: string;
   provider: ChannelProvider;
+  channel_type?: ChannelType;
   status: ChannelStatus;
   connection_type?: ChannelConnectionType;
   waba_id?: string;

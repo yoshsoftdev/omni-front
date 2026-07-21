@@ -62,7 +62,7 @@ export function ScheduleDrawer({ campaign, open, onClose, onEdit, onDuplicate, o
               value={
                 <span className="inline-flex items-center gap-1.5">
                   <ColorDot color="#10B981" className="h-2 w-2" />
-                  {campaign.segment_name}
+                  {campaign.audience?.name || campaign.segment_name || "—"}
                 </span>
               }
             />

@@ -5,6 +5,7 @@ import type {
   ChannelOnboardingStatus,
   ChannelProvider,
   ChannelStatus,
+  ChannelType,
 } from "@/features/channels/types/channel";
 import type { DeviceDTO, DeviceOnboardingDTO, OnboardingStatusResponse } from "@/types/device";
 
@@ -26,6 +27,13 @@ function normalizeConnectionType(type?: string): ChannelConnectionType | undefin
 function normalizeProvider(provider?: string): ChannelProvider {
   const value = (provider ?? "meta").trim().toLowerCase();
   return value || "meta";
+}
+
+function normalizeChannelType(channelType?: string): ChannelType | undefined {
+  const value = (channelType ?? "").trim().toLowerCase();
+  if (!value) return undefined;
+  if (value === "whatsapp" || value === "instagram") return value;
+  return value;
 }
 
 function normalizeOnboardingStatus(status?: string): ChannelOnboardingStatus | undefined {
@@ -84,6 +92,7 @@ export function mapApiChannelToChannel(dto: {
   team_id?: string;
   name: string;
   provider?: string;
+  channel_type?: string;
   status?: string;
   connection_type?: string;
   waba_id?: string;
@@ -99,6 +108,7 @@ export function mapApiChannelToChannel(dto: {
     workspace_id: dto.team_id,
     label: dto.name,
     provider: normalizeProvider(dto.provider),
+    channel_type: normalizeChannelType(dto.channel_type),
     status: normalizeStatus(dto.status),
     connection_type: normalizeConnectionType(dto.connection_type),
     waba_id: dto.waba_id,
@@ -121,6 +131,9 @@ export function mapDeviceDtoToChannel(dto: DeviceDTO): Channel {
     workspace_id: dto.workspace_id,
     label: dto.name,
     provider: normalizeProvider(dto.provider),
+    channel_type: normalizeChannelType(
+      (dto as DeviceDTO & { channel_type?: string }).channel_type,
+    ),
     status: normalizeStatus(dto.status),
     connection_type: normalizeConnectionType(dto.connection_type),
     waba_id: dto.waba_id,

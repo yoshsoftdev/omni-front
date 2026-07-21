@@ -9,13 +9,12 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { contactService } from "@/features/contacts/services/contact.service";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
+import { isWhatsAppChannel } from "@/features/channels/utils/is-whatsapp-channel";
 import { TemplateBodyEditor } from "@/features/broadcast/components/create-template/template-body-editor";
 import { TemplateButtonEditor } from "@/features/broadcast/components/create-template/template-button-editor";
 import { TemplateCreateStepper } from "@/features/broadcast/components/create-template/template-create-stepper";
 import { TemplateFooterEditor } from "@/features/broadcast/components/create-template/template-footer-editor";
-import {
-  TemplateHeaderEditorSection,
-} from "@/features/broadcast/components/create-template/template-header-editor";
+import { TemplateHeaderEditorSection } from "@/features/broadcast/components/create-template/template-header-editor";
 import { TemplateInfoCard } from "@/features/broadcast/components/create-template/template-info-card";
 import { VariableDetector } from "@/features/broadcast/components/create-template/variable-detector";
 import { WhatsAppPreview } from "@/features/broadcast/components/create-template/whatsapp-preview";
@@ -36,18 +35,38 @@ const defaultCreateTemplateForm: CreateTemplateForm = {
   headerType: "none",
   body: "",
   footer: "",
+  buttonMode: "none",
   buttons: [],
   deviceId: "",
 };
 
 function ImportantNotes() {
   return (
-    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/30">
-      <div className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">Catatan Penting</div>
-      <ul className="mt-2 list-disc space-y-1 pl-4 text-xs text-emerald-700 dark:text-emerald-400">
-        <li>Template dikirim ke Meta untuk review (status awal: PENDING).</li>
-        <li>Pastikan konten sesuai kategori dan kebijakan WhatsApp Business.</li>
-        <li>Setelah disetujui, template bisa dipakai di campaign broadcast.</li>
+    <div
+      role="note"
+      className="rounded-lg border border-border bg-card p-4 shadow-sm"
+    >
+      <div className="text-sm font-semibold text-foreground">Catatan penting</div>
+      <ul className="mt-3 space-y-2.5 text-sm leading-relaxed text-foreground/90">
+        <li className="flex gap-2">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
+          <span>Template dikirim ke Meta untuk review (status awal: PENDING).</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
+          <span>Pastikan konten sesuai kategori dan kebijakan WhatsApp Business.</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
+          <span>Setelah disetujui, template bisa dipakai di campaign broadcast.</span>
+        </li>
+        <li className="flex gap-2">
+          <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
+          <span>
+            Call to action (Visit website / Call phone) dikonfigurasi di bagian Buttons, bukan
+            Footer.
+          </span>
+        </li>
       </ul>
     </div>
   );
@@ -61,8 +80,11 @@ export function CreateTemplatePage() {
   const team = useAuthStore((state) => state.team);
 
   const { data: channels = [] } = useQuery({
-    queryKey: ["channels", "connected"],
-    queryFn: () => channelQueryService.getConnectedChannels(),
+    queryKey: ["channels", "connected", "whatsapp"],
+    queryFn: async () => {
+      const list = await channelQueryService.getConnectedChannels();
+      return list.filter(isWhatsAppChannel);
+    },
   });
 
   const { data: contacts = [] } = useQuery({
@@ -83,11 +105,11 @@ export function CreateTemplatePage() {
   function updateForm(patch: Partial<CreateTemplateForm>) {
     setForm((prev) => {
       const next = { ...prev, ...patch };
-      if (patch.headerType && patch.headerType !== "none" && !next.headerFileName) {
-        next.headerFileName = undefined;
-      }
       if (patch.headerType === "none") {
+        next.headerText = undefined;
         next.headerFileName = undefined;
+        next.headerObjectId = undefined;
+        next.headerPreviewUrl = undefined;
       }
       return next;
     });
@@ -123,9 +145,10 @@ export function CreateTemplatePage() {
       </Button>
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Buat Template WhatsApp (Meta)</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Buat Template WhatsApp</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Template akan dikirim ke Meta Cloud API untuk proses review.
+          Alur mirip WhatsApp Manager: informasi template, komponen (header/body/footer/buttons),
+          lalu submit ke Meta untuk review.
         </p>
       </div>
 
@@ -138,7 +161,8 @@ export function CreateTemplatePage() {
           <div className="rounded-lg border bg-card p-4 md:p-6">
             <h2 className="text-sm font-semibold">Komponen Template</h2>
             <p className="mt-1 text-xs text-muted-foreground">
-              Gunakan {"{{1}}"}, {"{{2}}"}, dst untuk menambahkan variabel
+              Urutan seperti WhatsApp Manager: Header → Body → Footer → Buttons. Gunakan {"{{1}}"},{" "}
+              {"{{2}}"} untuk variabel di body.
             </p>
 
             <div className="mt-4 space-y-4">
@@ -147,10 +171,12 @@ export function CreateTemplatePage() {
               <TemplateFooterEditor
                 footer={form.footer}
                 onChange={(footer) => updateForm({ footer })}
+                onRemove={() => updateForm({ footer: "" })}
               />
               <TemplateButtonEditor
+                buttonMode={form.buttonMode}
                 buttons={form.buttons}
-                onChange={(buttons) => updateForm({ buttons })}
+                onChange={(patch) => updateForm(patch)}
               />
             </div>
           </div>

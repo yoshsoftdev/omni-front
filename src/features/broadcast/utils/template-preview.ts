@@ -12,7 +12,7 @@ export function templatePreviewHeaderType(headerType: TemplateHeaderType): Whats
   if (headerType === "none") {
     return undefined;
   }
-  return headerType;
+  return headerType as WhatsAppHeaderType;
 }
 
 export function resolveTemplatePreview(template: Template, sampleValues: Record<string, string> = {}): string {

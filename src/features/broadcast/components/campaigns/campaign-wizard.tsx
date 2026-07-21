@@ -17,13 +17,10 @@ import { templateQueryService } from "@/features/broadcast/services/template-que
 import { countTemplateVariables, templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
-import { SegmentPicker } from "@/features/segments/components/segment-picker";
-import { segmentService } from "@/features/segments/services/segment.service";
-import type { Segment } from "@/features/segments/types/segment";
+import { isWhatsAppChannel } from "@/features/channels/utils/is-whatsapp-channel";
 import {
   campaignAudienceSummary,
   campaignEstimatedRecipients,
-  countSegmentRecipients,
   countTagRecipients,
 } from "@/features/broadcast/utils/campaign-audience";
 import { tagService } from "@/features/contacts/services/tag.service";
@@ -31,6 +28,7 @@ import type { ContactTag } from "@/types/contact";
 import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import { useCampaignWizardStore, type WizardStep } from "@/store/campaign-wizard-store";
 import { useToast } from "@/hooks/use-toast";
+import { formatApiErrorMessage } from "@/services/api/errors";
 import { cn } from "@/lib/utils";
 
 const STEPS: { step: WizardStep; label: string }[] = [
@@ -100,11 +98,9 @@ export function CampaignWizard() {
     templateId,
     variableMapping,
     sampleValues,
-    headerMediaUrl,
     headerVariableMapping,
     includeHeader,
     includeFooter,
-    selectedSegmentIds,
     selectedTagIds,
     sendMode,
     scheduleDate,
@@ -117,11 +113,9 @@ export function CampaignWizard() {
     setTemplateId,
     setVariableMapping,
     setSampleValues,
-    setHeaderMediaUrl,
     setHeaderVariableMapping,
     setIncludeHeader,
     setIncludeFooter,
-    setSelectedSegmentIds,
     setSelectedTagIds,
     setSendMode,
     setScheduleDate,
@@ -130,7 +124,6 @@ export function CampaignWizard() {
     reset,
   } = useCampaignWizardStore();
 
-  const [segments, setSegments] = useState<Segment[]>([]);
   const [tags, setTags] = useState<ContactTag[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [channelsLoaded, setChannelsLoaded] = useState(false);
@@ -152,14 +145,13 @@ export function CampaignWizard() {
   });
 
   useEffect(() => {
-    segmentService.list().then(setSegments);
     tagService.list().then(setTags).catch(() => setTags([]));
   }, []);
 
   useEffect(() => {
     channelQueryService
       .getConnectedChannels()
-      .then(setChannels)
+      .then((list) => setChannels(list.filter(isWhatsAppChannel)))
       .finally(() => setChannelsLoaded(true));
   }, []);
 
@@ -227,21 +219,17 @@ export function CampaignWizard() {
     return body;
   }, [fullTemplate, sampleValues]);
 
-  const segmentRecipientCount = useMemo(
-    () => countSegmentRecipients(segments, selectedSegmentIds),
-    [segments, selectedSegmentIds],
-  );
   const tagRecipientCount = useMemo(
     () => countTagRecipients(tags, selectedTagIds),
     [tags, selectedTagIds],
   );
   const estimatedRecipients = useMemo(
-    () => campaignEstimatedRecipients(segments, selectedSegmentIds, tags, selectedTagIds),
-    [segments, selectedSegmentIds, tags, selectedTagIds],
+    () => campaignEstimatedRecipients(tags, selectedTagIds),
+    [tags, selectedTagIds],
   );
   const audienceSummary = useMemo(
-    () => campaignAudienceSummary(segments, selectedSegmentIds, tags, selectedTagIds),
-    [segments, selectedSegmentIds, tags, selectedTagIds],
+    () => campaignAudienceSummary(tags, selectedTagIds),
+    [tags, selectedTagIds],
   );
 
   function validateCurrentStep(): string | null {
@@ -249,7 +237,7 @@ export function CampaignWizard() {
     if (step === 2) {
       if (!channelsLoaded) return "Loading channels...";
       if (channels.length === 0) {
-        return "No connected channels. Connect a WhatsApp channel before creating a campaign.";
+        return "No connected WhatsApp channels. Connect a WhatsApp channel before creating a campaign.";
       }
       if (!channelId) return "Select a channel";
     }
@@ -264,15 +252,9 @@ export function CampaignWizard() {
     }
     if (step === 4) {
       if (!fullTemplate) return "Select a template first";
-      if (hasMediaHeader && includeHeader && !headerMediaUrl.trim()) {
-        return "Header media URL is required for image/video/document templates";
-      }
-      if (hasMediaHeader && includeHeader && !/^https?:\/\//i.test(headerMediaUrl.trim())) {
-        return "Header media URL must start with http:// or https://";
-      }
     }
-    if (step === 5 && selectedSegmentIds.length === 0 && selectedTagIds.length === 0) {
-      return "Select at least one segment or tag";
+    if (step === 5 && selectedTagIds.length === 0) {
+      return "Select at least one tag";
     }
     if (step === 6 && sendMode === "later" && (!scheduleDate || !scheduleTime)) {
       return "Date and time are required for scheduled campaigns";
@@ -303,11 +285,10 @@ export function CampaignWizard() {
         };
         if (hasTemplateHeader && includeHeader) {
           variableMappingPayload.header = {
-            ...(headerMediaUrl.trim() ? { media_link: headerMediaUrl.trim() } : {}),
             ...(headerTextVariableCount > 0 ? { text: headerVariableMapping } : {}),
           };
         }
-        await campaignService.create({
+        const created = await campaignService.create({
           name: campaignName.trim(),
           description: description.trim() || undefined,
           device_id: channelId,
@@ -315,15 +296,26 @@ export function CampaignWizard() {
           variable_mapping: variableMappingPayload,
           sample_values: sampleValues,
           timezone: sendMode === "later" ? timezone : undefined,
-          segment_ids: selectedSegmentIds,
           tag_ids: selectedTagIds,
           scheduled_at: scheduledAt,
         });
-        notify("success", "Campaign created successfully");
+        if (sendMode === "now") {
+          try {
+            await campaignService.send(created.id);
+            notify("success", "Campaign created and queued for send");
+          } catch (sendErr) {
+            notify("error", formatApiErrorMessage(sendErr));
+            reset();
+            router.push(`/broadcast/campaigns/${created.id}`);
+            return;
+          }
+        } else {
+          notify("success", "Campaign scheduled successfully");
+        }
         reset();
         router.push("/broadcast/campaigns");
       } catch (createErr) {
-        setError(createErr instanceof Error ? createErr.message : "Failed to create campaign");
+        setError(formatApiErrorMessage(createErr));
       } finally {
         setIsSubmitting(false);
       }
@@ -336,7 +328,7 @@ export function CampaignWizard() {
     <div className="space-y-6">
       <PageHeader
         title="Create Campaign"
-        description="Set up a new broadcast campaign using a connected channel, approved template, and segment audience."
+        description="Set up a new WhatsApp broadcast campaign using an approved Meta template and tag audience."
         right={
           <Button variant="outline" size="sm" asChild>
             <Link href="/broadcast/campaigns">
@@ -349,7 +341,7 @@ export function CampaignWizard() {
       {error ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
           {error}
-          {error.includes("No connected channels") ? (
+          {error.includes("No connected WhatsApp channels") || error.includes("No connected channels") ? (
             <div className="mt-2">
               <Button variant="outline" size="sm" asChild>
                 <Link href="/devices">Connect WhatsApp Channel</Link>
@@ -404,7 +396,7 @@ export function CampaignWizard() {
                 <p className="text-sm text-muted-foreground">Loading connected channels...</p>
               ) : channels.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  <p>No connected channels found.</p>
+                  <p>No connected WhatsApp channels found.</p>
                   <Button variant="outline" size="sm" className="mt-3" asChild>
                     <Link href="/devices">Connect WhatsApp Channel</Link>
                   </Button>
@@ -463,7 +455,7 @@ export function CampaignWizard() {
                   <div>
                     <h2 className="text-sm font-semibold">Template Components</h2>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Configure header media and choose which parts appear in the preview.
+                      Header media dari template dipakai otomatis. Atur variabel body di bawah jika ada.
                     </p>
                   </div>
 
@@ -487,20 +479,10 @@ export function CampaignWizard() {
                       </div>
 
                       {includeHeader && hasMediaHeader ? (
-                        <div className="space-y-2">
-                          <Label htmlFor="header-media-url">
-                            {headerType === "image" ? "Image" : headerType === "video" ? "Video" : "Document"} URL
-                          </Label>
-                          <Input
-                            id="header-media-url"
-                            value={headerMediaUrl}
-                            onChange={(event) => setHeaderMediaUrl(event.target.value)}
-                            placeholder="https://example.com/banner.jpg"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Public HTTPS URL required by Meta when sending templates with media headers.
-                          </p>
-                        </div>
+                        <p className="text-xs leading-relaxed text-muted-foreground">
+                          Gambar header dari template akan digunakan otomatis saat pengiriman. Anda tidak perlu
+                          mengunggah ulang atau memasukkan URL.
+                        </p>
                       ) : null}
 
                       {includeHeader && headerTextVariableCount > 0 ? (
@@ -626,22 +608,14 @@ export function CampaignWizard() {
             <div className="space-y-4 rounded-lg border bg-card p-5">
               <h2 className="text-sm font-semibold">Select Audience</h2>
               <p className="text-xs text-muted-foreground">
-                You can combine segments and tags. Duplicate contacts are automatically deduplicated on send.
+                Pilih tag kontak WhatsApp. Kontak Instagram-only tidak akan dikirim. Duplikat otomatis
+                di-deduplicate saat send.
               </p>
               <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
                 <p className="font-medium">Estimated recipients: ~{estimatedRecipients.toLocaleString()}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Segments: {segmentRecipientCount.toLocaleString()} contacts
-                  {selectedTagIds.length > 0 ? ` · Tags: ${tagRecipientCount.toLocaleString()} contacts` : ""}
+                  Tags: {tagRecipientCount.toLocaleString()} contacts
                 </p>
-              </div>
-              <div className="space-y-2">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Segments</p>
-                <SegmentPicker
-                  segments={segments}
-                  selectedIds={selectedSegmentIds}
-                  onChange={setSelectedSegmentIds}
-                />
               </div>
               <div className="space-y-2">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Tags</p>
@@ -738,7 +712,8 @@ export function CampaignWizard() {
               onClick={() => void handleNext()}
               disabled={(step === 2 && channelsLoaded && channels.length === 0) || isSubmitting}
             >
-              {step === 7 ? "Create Campaign" : "Next"} <ArrowRight className="ml-1 h-4 w-4" />
+              {step === 7 ? (sendMode === "now" ? "Create & Send" : "Create Campaign") : "Next"}{" "}
+              <ArrowRight className="ml-1 h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -762,7 +737,7 @@ export function CampaignWizard() {
               <p className="font-semibold">Audience Preview</p>
               <p className="mt-1 text-muted-foreground">{audienceSummary}</p>
               <p className="mt-2 text-xs text-muted-foreground">
-                Segments: {segmentRecipientCount.toLocaleString()} · Tags: {tagRecipientCount.toLocaleString()}
+                Tags: {tagRecipientCount.toLocaleString()} contacts
               </p>
               <p className="mt-1 text-xs text-muted-foreground">~{estimatedRecipients.toLocaleString()} recipients total</p>
             </div>

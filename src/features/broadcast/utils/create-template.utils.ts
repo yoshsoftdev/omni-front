@@ -65,9 +65,13 @@ export function getCategoryLabel(category: string): string {
   return labels[category] ?? category;
 }
 
+export function isMediaHeader(type: CreateTemplateForm["headerType"]): type is "image" | "video" | "document" {
+  return type === "image" || type === "video" || type === "document";
+}
+
 export function validateCreateTemplateForm(form: CreateTemplateForm): string | null {
   if (!form.deviceId) {
-    return "Pilih WABA / device terlebih dahulu.";
+    return "Pilih channel WhatsApp (WABA) terlebih dahulu.";
   }
   if (!isValidTemplateName(form.name)) {
     return "Nama template harus huruf kecil, angka, dan underscore (maks. 512 karakter).";
@@ -81,18 +85,44 @@ export function validateCreateTemplateForm(form: CreateTemplateForm): string | n
   if (form.footer.length > 60) {
     return "Footer maksimal 60 karakter.";
   }
-  if (form.headerType === "image" || form.headerType === "video" || form.headerType === "document") {
-    return "Header media belum didukung untuk submit API. Pilih header None.";
+  if (form.headerType === "text" && !form.headerText?.trim()) {
+    return "Header teks wajib diisi.";
   }
-  if (form.buttons.length > 3) {
-    return "Maksimal 3 tombol per template.";
+  if (form.headerType === "text" && (form.headerText?.length ?? 0) > 60) {
+    return "Header teks maksimal 60 karakter.";
   }
+  if (isMediaHeader(form.headerType) && !form.headerObjectId) {
+    return "Unggah media header ke storage terlebih dahulu.";
+  }
+
+  const maxButtons = form.buttonMode === "cta" ? 2 : 3;
+  if (form.buttonMode === "none" && form.buttons.length > 0) {
+    return "Mode tombol None tidak boleh memiliki tombol.";
+  }
+  if (form.buttonMode !== "none" && form.buttons.length === 0) {
+    return "Tambahkan minimal satu tombol, atau pilih None.";
+  }
+  if (form.buttons.length > maxButtons) {
+    return form.buttonMode === "cta"
+      ? "Call to action maksimal 2 tombol."
+      : "Quick reply maksimal 3 tombol.";
+  }
+
   for (const button of form.buttons) {
     if (!button.text.trim()) {
       return "Semua tombol harus memiliki teks.";
     }
+    if (form.buttonMode === "cta" && button.type !== "url" && button.type !== "phone_number") {
+      return "Call to action hanya mendukung URL atau nomor telepon.";
+    }
+    if (form.buttonMode === "quick_reply" && button.type !== "quick_reply") {
+      return "Mode Quick reply hanya mendukung tombol quick reply.";
+    }
     if (button.type === "url" && !button.url?.trim()) {
-      return "URL Button memerlukan URL.";
+      return "Tombol URL memerlukan alamat website.";
+    }
+    if (button.type === "phone_number" && !button.phoneNumber?.trim()) {
+      return "Tombol telepon memerlukan nomor.";
     }
     if (button.type === "copy_code" && !button.code?.trim()) {
       return "Copy Code Button memerlukan kode.";

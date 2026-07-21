@@ -19,7 +19,6 @@ export type CreateCampaignPayload = {
   template_id: string;
   variable_mapping?: Record<string, string>;
   scheduled_at?: string;
-  segment_ids?: string[];
   tag_ids?: string[];
   contact_ids?: string[];
 };

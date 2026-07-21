@@ -1,16 +1,26 @@
 "use client";
 
 import { FileText, Image as ImageIcon, Paperclip, Smile, X, Zap } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { InternalNotePanel } from "@/features/inbox/components/internal-note-panel";
-import { QuickReplySelector } from "@/features/inbox/components/quick-reply-selector";
+import { getFilteredQuickReplies, QuickReplySelector } from "@/features/inbox/components/quick-reply-selector";
 import { formatBytes } from "@/features/inbox/hooks/use-authenticated-media";
 import { storageService } from "@/features/inbox/services/storage.service";
 import type { InboxChannel, QuickReplyItem } from "@/features/inbox/types";
+import {
+  findActiveSlashToken,
+  replaceSlashToken,
+} from "@/features/inbox/utils/quick-reply-slash";
+import {
+  formatQuickReplyToday,
+  resolveQuickReplyVariables,
+  type QuickReplyVariableContext,
+} from "@/features/inbox/utils/quick-reply-variables";
 import { cn } from "@/lib/utils";
 import { formatApiErrorMessage } from "@/services/api/errors";
+import { useAuthStore } from "@/store/auth-store";
 
 type ComposerTab = "reply" | "note";
 
@@ -37,6 +47,7 @@ interface PendingAttachment {
 interface MessageComposerProps {
   channel?: InboxChannel;
   quickReplies: QuickReplyItem[];
+  quickReplyContext?: Pick<QuickReplyVariableContext, "customer_name" | "phone">;
   replyTo?: {
     id: string;
     sender_name?: string;
@@ -52,6 +63,7 @@ interface MessageComposerProps {
 export function MessageComposer({
   channel = "whatsapp",
   quickReplies,
+  quickReplyContext,
   replyTo,
   onCancelReply,
   onSend,
@@ -59,6 +71,8 @@ export function MessageComposer({
   onTypingStart,
   onTypingStop,
 }: MessageComposerProps) {
+  const user = useAuthStore((state) => state.user);
+  const team = useAuthStore((state) => state.team);
   const isInstagramChannel = channel === "instagram";
   const mediaAccept = isInstagramChannel
     ? "image/jpeg,image/png,video/mp4,video/quicktime,video/webm,video/ogg,audio/aac,audio/mp4,audio/mpeg,audio/wav,application/pdf"
@@ -70,14 +84,40 @@ export function MessageComposer({
   const [activeTab, setActiveTab] = useState<ComposerTab>("reply");
   const [content, setContent] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [slashOpen, setSlashOpen] = useState(false);
+  const [slashQuery, setSlashQuery] = useState("");
+  const [slashToken, setSlashToken] = useState<ReturnType<typeof findActiveSlashToken>>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(0);
   const [attachment, setAttachment] = useState<PendingAttachment | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const typingStartTimerRef = useRef<number | null>(null);
   const typingStopTimerRef = useRef<number | null>(null);
   const isTypingRef = useRef(false);
+
+  const variableContext = useMemo<QuickReplyVariableContext>(
+    () => ({
+      customer_name: quickReplyContext?.customer_name ?? "",
+      phone: quickReplyContext?.phone ?? "",
+      agent_name: user?.name ?? "",
+      company_name: team?.name ?? "",
+      today: formatQuickReplyToday(),
+    }),
+    [quickReplyContext?.customer_name, quickReplyContext?.phone, team?.name, user?.name],
+  );
+
+  const filteredSlashItems = useMemo(
+    () => getFilteredQuickReplies(quickReplies, slashQuery),
+    [quickReplies, slashQuery],
+  );
+
+  const resolveTemplate = useCallback(
+    (text: string) => resolveQuickReplyVariables(text, variableContext),
+    [variableContext],
+  );
 
   useEffect(() => {
     return () => {
@@ -86,6 +126,17 @@ export function MessageComposer({
       if (isTypingRef.current) onTypingStop?.();
     };
   }, [onTypingStop]);
+
+  useEffect(() => {
+    if (!slashOpen) {
+      setHighlightedIndex(0);
+      return;
+    }
+    setHighlightedIndex((current) => {
+      if (filteredSlashItems.length === 0) return 0;
+      return Math.min(current, filteredSlashItems.length - 1);
+    });
+  }, [filteredSlashItems.length, slashOpen]);
 
   async function handleFileSelect(file: File) {
     setUploadError(null);
@@ -128,8 +179,23 @@ export function MessageComposer({
     }, 3000);
   }
 
-  function handleContentChange(value: string) {
+  function updateSlashState(value: string, cursor: number) {
+    const token = findActiveSlashToken(value, cursor);
+    if (token) {
+      setSlashOpen(true);
+      setSlashQuery(token.query);
+      setSlashToken(token);
+      setTemplateOpen(false);
+      return;
+    }
+    setSlashOpen(false);
+    setSlashQuery("");
+    setSlashToken(null);
+  }
+
+  function handleContentChange(value: string, cursor = value.length) {
     setContent(value);
+    updateSlashState(value, cursor);
     if (!value.trim()) {
       if (isTypingRef.current) {
         isTypingRef.current = false;
@@ -171,6 +237,9 @@ export function MessageComposer({
     };
 
     setContent("");
+    setSlashOpen(false);
+    setSlashQuery("");
+    setSlashToken(null);
     clearAttachment();
     onCancelReply?.();
     if (isTypingRef.current) {
@@ -181,7 +250,34 @@ export function MessageComposer({
   }
 
   function insertTemplate(text: string) {
-    setContent((prev) => (prev ? `${prev}\n${text}` : text));
+    const resolved = resolveTemplate(text);
+    setContent((prev) => (prev ? `${prev}\n${resolved}` : resolved));
+  }
+
+  function insertSlashReply(text: string) {
+    const resolved = resolveTemplate(text);
+    if (!slashToken) {
+      setContent((prev) => (prev ? `${prev}\n${resolved}` : resolved));
+      setSlashOpen(false);
+      return;
+    }
+    const { nextValue, nextCursor } = replaceSlashToken(content, slashToken, resolved);
+    setContent(nextValue);
+    setSlashOpen(false);
+    setSlashQuery("");
+    setSlashToken(null);
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) return;
+      textarea.focus();
+      textarea.setSelectionRange(nextCursor, nextCursor);
+    });
+  }
+
+  function selectHighlightedSlashReply() {
+    const item = filteredSlashItems[highlightedIndex];
+    if (!item) return;
+    insertSlashReply(item.text);
   }
 
   const canSend = Boolean((content.trim() || attachment?.storageObjectId) && !attachment?.uploading && !attachment?.error);
@@ -260,19 +356,67 @@ export function MessageComposer({
           ) : null}
           {uploadError && !attachment ? <p className="mb-2 text-xs text-destructive">{uploadError}</p> : null}
 
-          <textarea
-            value={content}
-            onChange={(e) => handleContentChange(e.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                void handleSend();
-              }
-            }}
-            placeholder={isInstagramChannel ? "Type your Instagram message..." : "Type your message..."}
-            className="min-h-[72px] w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            rows={3}
-          />
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              value={content}
+              onChange={(event) => handleContentChange(event.target.value, event.target.selectionStart ?? event.target.value.length)}
+              onClick={(event) => updateSlashState(content, event.currentTarget.selectionStart ?? content.length)}
+              onKeyUp={(event) => updateSlashState(content, event.currentTarget.selectionStart ?? content.length)}
+              onKeyDown={(event) => {
+                if (slashOpen) {
+                  if (event.key === "ArrowDown") {
+                    event.preventDefault();
+                    setHighlightedIndex((current) =>
+                      filteredSlashItems.length === 0 ? 0 : (current + 1) % filteredSlashItems.length,
+                    );
+                    return;
+                  }
+                  if (event.key === "ArrowUp") {
+                    event.preventDefault();
+                    setHighlightedIndex((current) =>
+                      filteredSlashItems.length === 0
+                        ? 0
+                        : (current - 1 + filteredSlashItems.length) % filteredSlashItems.length,
+                    );
+                    return;
+                  }
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    setSlashOpen(false);
+                    setSlashQuery("");
+                    setSlashToken(null);
+                    return;
+                  }
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    selectHighlightedSlashReply();
+                    return;
+                  }
+                }
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  handleSend();
+                }
+              }}
+              placeholder={isInstagramChannel ? "Type your Instagram message..." : "Type your message..."}
+              className="min-h-[72px] w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              rows={3}
+            />
+            <QuickReplySelector
+              items={quickReplies}
+              open={slashOpen}
+              mode="slash"
+              filterQuery={slashQuery}
+              highlightedIndex={highlightedIndex}
+              onClose={() => {
+                setSlashOpen(false);
+                setSlashQuery("");
+                setSlashToken(null);
+              }}
+              onSelect={insertSlashReply}
+            />
+          </div>
           <input
             ref={fileInputRef}
             type="file"
@@ -345,7 +489,10 @@ export function MessageComposer({
                 <button
                   type="button"
                   className="flex h-8 items-center gap-1 rounded-md px-2 text-xs hover:bg-muted"
-                  onClick={() => setTemplateOpen((v) => !v)}
+                  onClick={() => {
+                    setTemplateOpen((value) => !value);
+                    setSlashOpen(false);
+                  }}
                 >
                   <Zap className="h-3.5 w-3.5 text-primary" />
                   Template
@@ -353,6 +500,7 @@ export function MessageComposer({
                 <QuickReplySelector
                   items={quickReplies}
                   open={templateOpen}
+                  mode="button"
                   onClose={() => setTemplateOpen(false)}
                   onSelect={insertTemplate}
                 />

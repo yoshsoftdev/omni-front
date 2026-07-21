@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { templateService } from "@/features/broadcast/services/broadcast.service";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
+import { isWhatsAppChannel } from "@/features/channels/utils/is-whatsapp-channel";
 
 const PAGE_SIZE = 8;
 
@@ -67,8 +68,11 @@ export function TemplatesPage() {
   const [syncChannelId, setSyncChannelId] = useState("");
 
   const { data: connectedChannels = [] } = useQuery({
-    queryKey: ["channels", "connected"],
-    queryFn: () => channelQueryService.getConnectedChannels(),
+    queryKey: ["channels", "connected", "whatsapp"],
+    queryFn: async () => {
+      const list = await channelQueryService.getConnectedChannels();
+      return list.filter(isWhatsAppChannel);
+    },
   });
 
   const effectiveSyncChannelId = syncChannelId || connectedChannels[0]?.id || "";
@@ -89,7 +93,7 @@ export function TemplatesPage() {
 
   async function handleSync() {
     if (!effectiveSyncChannelId) {
-      setSyncError("Tidak ada channel terhubung. Hubungkan WABA terlebih dahulu.");
+      setSyncError("Tidak ada channel WhatsApp terhubung. Hubungkan WABA terlebih dahulu.");
       return;
     }
     setSyncing(true);
@@ -107,14 +111,14 @@ export function TemplatesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Templates"
-        description="Kelola template WhatsApp (Meta) Anda"
+        title="Template WhatsApp"
+        description="Kelola message template Meta seperti di WhatsApp Manager — sync, buat, dan pantau status review."
         right={
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" variant="outline" asChild>
               <Link href="/broadcast/templates/create">
                 <Plus className="h-4 w-4" />
-                Create Template
+                Buat Template
               </Link>
             </Button>
             {connectedChannels.length > 1 ? (
@@ -261,7 +265,8 @@ export function TemplatesPage() {
 
       {connectedChannels.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          <Label>Tip:</Label> Hubungkan channel WhatsApp di halaman Devices untuk dapat sync template dari Meta.
+          <Label>Tip:</Label> Hubungkan channel WhatsApp di halaman Devices untuk sync template dari Meta.
+          Channel Instagram tidak mendukung message template.
         </p>
       ) : null}
     </div>

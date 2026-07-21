@@ -19,7 +19,6 @@ export type CampaignWizardDraft = {
   headerVariableMapping: Record<string, string>;
   includeHeader: boolean;
   includeFooter: boolean;
-  selectedSegmentIds: string[];
   selectedTagIds: string[];
   sendMode: "now" | "later";
   scheduleDate: string;
@@ -40,7 +39,6 @@ interface CampaignWizardState extends CampaignWizardDraft {
   setHeaderVariableMapping: (value: Record<string, string>) => void;
   setIncludeHeader: (value: boolean) => void;
   setIncludeFooter: (value: boolean) => void;
-  setSelectedSegmentIds: (value: string[]) => void;
   setSelectedTagIds: (value: string[]) => void;
   setSendMode: (value: "now" | "later") => void;
   setScheduleDate: (value: string) => void;
@@ -64,7 +62,6 @@ const initialState: CampaignWizardDraft & { step: WizardStep } = {
   headerVariableMapping: {},
   includeHeader: true,
   includeFooter: true,
-  selectedSegmentIds: [],
   selectedTagIds: [],
   sendMode: "now",
   scheduleDate: "",
@@ -119,7 +116,6 @@ export const useCampaignWizardStore = create<CampaignWizardState>((set) => ({
   setHeaderVariableMapping: (headerVariableMapping) => set({ headerVariableMapping }),
   setIncludeHeader: (includeHeader) => set({ includeHeader }),
   setIncludeFooter: (includeFooter) => set({ includeFooter }),
-  setSelectedSegmentIds: (selectedSegmentIds) => set({ selectedSegmentIds }),
   setSelectedTagIds: (selectedTagIds) => set({ selectedTagIds }),
   setSendMode: (sendMode) => set({ sendMode }),
   setScheduleDate: (scheduleDate) => set({ scheduleDate }),

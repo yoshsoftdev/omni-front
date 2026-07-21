@@ -10,6 +10,7 @@ import {
   Users,
   UsersRound,
   Settings,
+  MessageSquareQuote,
   LogOut,
   PlugZap,
   CreditCard,
@@ -46,6 +47,7 @@ const navItems: Array<{
   { href: "/automation", label: "Automation", icon: Sparkles },
   { href: "/team/users", label: "Team", icon: UsersRound },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/settings/quick-replies", label: "Quick Replies", icon: MessageSquareQuote },
   { href: "/integrations", label: "Integrations", icon: PlugZap },
   { href: "/billing", label: "Billing", icon: CreditCard },
 ];
@@ -72,7 +74,12 @@ export function Sidebar() {
       <nav className="flex flex-1 flex-col gap-1 p-3">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`) || (item.href === "/team/users" && pathname.startsWith("/team"));
+          // Special-case "Settings" so it doesn't stay selected for nested routes like
+          // "/settings/quick-replies" (otherwise both "Settings" and "Quick Replies" become active).
+          const active =
+            pathname === item.href ||
+            (item.href !== "/settings" && pathname.startsWith(`${item.href}/`)) ||
+            (item.href === "/team/users" && pathname.startsWith("/team"));
 
           if (item.isBroadcastParent) {
             const expanded = pathname.startsWith("/broadcast/");

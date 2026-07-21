@@ -16,6 +16,8 @@ export function WhatsAppPreview({ form, variables, deviceName }: WhatsAppPreview
       deviceName={deviceName}
       languageLabel={getLanguageLabel(form.language)}
       headerType={form.headerType}
+      headerText={form.headerText}
+      headerPreviewUrl={form.headerPreviewUrl}
       body={renderPreviewBody(form.body, variables)}
       footer={form.footer || undefined}
       buttons={form.buttons}

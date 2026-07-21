@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { AssignConversationModal } from "@/features/inbox/components/assign-conversation-modal";
 import { ConversationHeader } from "@/features/inbox/components/conversation-header";
@@ -8,6 +9,7 @@ import { MessageComposer, type ComposerSendInput } from "@/features/inbox/compon
 import { MessageThread } from "@/features/inbox/components/message-bubble";
 import { mapConversationToInbox } from "@/features/inbox/mappers/inbox.mapper";
 import { conversationService } from "@/features/inbox/services/conversation.service";
+import { quickReplyService } from "@/features/settings/services/quick-reply.service";
 import { teamService } from "@/features/team/services/team.service";
 import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features/inbox/types";
 
@@ -41,6 +43,22 @@ export function ConversationDetail({
   const [assignOpen, setAssignOpen] = useState(false);
   const [agents, setAgents] = useState<InboxAgent[]>([]);
   const [replyToMessage, setReplyToMessage] = useState<InboxChatMessage | null>(null);
+
+  const { data: quickReplies = [] } = useQuery({
+    queryKey: ["quick-replies"],
+    queryFn: () => quickReplyService.list(),
+    staleTime: 60_000,
+  });
+
+  const quickReplyItems = useMemo(
+    () =>
+      quickReplies.map((item) => ({
+        id: item.id,
+        category: item.category,
+        text: item.content,
+      })),
+    [quickReplies],
+  );
 
   useEffect(() => {
     teamService
@@ -138,7 +156,11 @@ export function ConversationDetail({
       />
       <MessageComposer
         channel={conversation.channel}
-        quickReplies={[]}
+        quickReplies={quickReplyItems}
+        quickReplyContext={{
+          customer_name: conversation.customer_name || conversation.contact_name,
+          phone: conversation.contact_phone,
+        }}
         replyTo={replyToMessage}
         onCancelReply={() => setReplyToMessage(null)}
         onSend={onSendMessage}

@@ -25,7 +25,8 @@ function countVariables(text: string): number {
 function mapButtonType(type?: string): WhatsAppPreviewButton["type"] {
   const normalized = (type ?? "").toUpperCase();
   if (normalized === "URL") return "url";
-  if (normalized === "COPY_CODE") return "copy_code";
+  if (normalized === "PHONE_NUMBER") return "phone_number";
+  if (normalized === "COPY_CODE" || normalized === "OTP") return "copy_code";
   return "quick_reply";
 }
 
@@ -49,6 +50,7 @@ export function parseTemplateComponents(template: WhatsAppTemplate): ParsedTempl
       if (format === "IMAGE") headerType = "image";
       else if (format === "VIDEO") headerType = "video";
       else if (format === "DOCUMENT") headerType = "document";
+      else if (format === "TEXT") headerType = "text";
     }
     if (type === "BUTTONS" && Array.isArray(component.buttons)) {
       component.buttons.forEach((btn, index) => {

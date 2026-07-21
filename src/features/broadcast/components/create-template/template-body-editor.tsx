@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -30,24 +30,16 @@ export function TemplateBodyEditor({ body, onChange, onRemove }: TemplateBodyEdi
             Gunakan {"{{1}}"}, {"{{2}}"}, dst untuk menambahkan variabel
           </p>
         </div>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <button type="button" className="rounded p-1 hover:bg-accent" aria-label="Move up">
-            <ChevronUp className="h-4 w-4" />
+        {onRemove ? (
+          <button
+            type="button"
+            className="rounded p-1 text-destructive hover:bg-destructive/10"
+            onClick={onRemove}
+            aria-label="Hapus body"
+          >
+            <Trash2 className="h-4 w-4" />
           </button>
-          <button type="button" className="rounded p-1 hover:bg-accent" aria-label="Move down">
-            <ChevronDown className="h-4 w-4" />
-          </button>
-          {onRemove ? (
-            <button
-              type="button"
-              className="rounded p-1 text-destructive hover:bg-destructive/10"
-              onClick={onRemove}
-              aria-label="Remove body"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          ) : null}
-        </div>
+        ) : null}
       </div>
 
       <div className="mt-3 space-y-2">
@@ -62,6 +54,7 @@ export function TemplateBodyEditor({ body, onChange, onRemove }: TemplateBodyEdi
           className="min-h-[160px] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           value={body}
           maxLength={1024}
+          placeholder="Tulis isi pesan template di sini..."
           onChange={(e) => onChange(e.target.value)}
         />
         <div className="flex justify-end">

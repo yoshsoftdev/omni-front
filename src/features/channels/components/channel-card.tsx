@@ -30,8 +30,8 @@ export function ChannelCard({ channel, onChanged }: ChannelCardProps) {
     setPaymentStatus("loading");
     channelPaymentService
       .getStatus(channel.id)
-      .then((status) => {
-        if (!cancelled) setPaymentStatus(status);
+      .then((result) => {
+        if (!cancelled) setPaymentStatus(result.status === "configured" ? "configured" : "missing");
       })
       .catch(() => {
         if (!cancelled) setPaymentStatus("missing");
@@ -82,7 +82,7 @@ export function ChannelCard({ channel, onChanged }: ChannelCardProps) {
             <h3 className="font-semibold">WhatsApp</h3>
             <ChannelStatusBadge status={channel.status} />
             {channel.is_coex ? (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-700">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
                 Coex
               </span>
             ) : null}

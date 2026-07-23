@@ -42,7 +42,7 @@ const navItems: Array<{
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/devices", label: "Onboarding", icon: Smartphone },
+  { href: "/devices", label: "Channels", icon: Smartphone },
   { href: "/broadcast/campaigns", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
   { href: "/automation", label: "Automation", icon: Sparkles },
   { href: "/team/users", label: "Team", icon: UsersRound },

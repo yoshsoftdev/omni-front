@@ -98,6 +98,7 @@ export function mapApiChannelToChannel(dto: {
   waba_id?: string;
   phone_number_id?: string;
   phone_number?: string;
+  business_id?: string;
   is_coex?: boolean;
   last_connected_at?: string;
   created_at?: string;
@@ -114,6 +115,7 @@ export function mapApiChannelToChannel(dto: {
     waba_id: dto.waba_id,
     phone_number_id: dto.phone_number_id,
     phone_number: dto.phone_number,
+    business_id: dto.business_id,
     is_coex: Boolean(dto.is_coex),
     last_connected_at: dto.last_connected_at,
     created_at: dto.created_at,
@@ -139,6 +141,7 @@ export function mapDeviceDtoToChannel(dto: DeviceDTO): Channel {
     waba_id: dto.waba_id,
     phone_number_id: dto.phone_number_id,
     phone_number: dto.phone_number,
+    business_id: (dto as DeviceDTO & { business_id?: string }).business_id,
     is_coex: Boolean(dto.is_coex),
     onboarding: mapOnboardingDtoToOnboarding(dto.onboarding),
     last_connected_at: dto.last_connected_at,

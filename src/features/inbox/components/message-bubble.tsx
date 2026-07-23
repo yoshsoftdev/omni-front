@@ -372,8 +372,8 @@ export function MessageBubble({
           className={cn(
             "w-full rounded-2xl px-3.5 py-2.5 shadow-sm transition-all",
             isOutbound
-              ? "rounded-br-md bg-emerald-100 text-foreground"
-              : "rounded-bl-md border bg-background",
+              ? "rounded-br-md bg-emerald-100 text-neutral-900 dark:text-neutral-900"
+              : "rounded-bl-md border border-border bg-card text-card-foreground",
             highlighted ? "ring-2 ring-amber-400" : "",
           )}
         >
@@ -381,28 +381,34 @@ export function MessageBubble({
           <button
             type="button"
             onClick={() => onJumpToMessage?.(repliedTo.id)}
-            className="mb-2 block w-full rounded-md border-l-2 border-emerald-500 bg-black/5 px-2 py-1 text-left text-xs text-muted-foreground hover:bg-black/10"
+            className={cn(
+              "mb-2 block w-full rounded-md border-l-2 border-emerald-500 bg-black/5 px-2 py-1 text-left text-xs hover:bg-black/10",
+              isOutbound ? "text-neutral-600" : "text-muted-foreground",
+            )}
             title="Jump to replied message"
           >
             <p className="line-clamp-2 whitespace-pre-wrap">{repliedTo.content}</p>
           </button>
         ) : hasUnresolvedReply ? (
           <div
-            className="mb-2 rounded-md border-l-2 border-amber-500 bg-black/5 px-2 py-1 text-left text-xs text-muted-foreground"
+            className={cn(
+              "mb-2 rounded-md border-l-2 border-amber-500 bg-black/5 px-2 py-1 text-left text-xs",
+              isOutbound ? "text-neutral-600" : "text-muted-foreground",
+            )}
             title="Original replied message is not available in loaded app history"
           >
             <p className="line-clamp-2 whitespace-pre-wrap italic">Reply to an earlier message (not available in app history)</p>
           </div>
         ) : null}
         {message.is_deleted ? (
-          <p className="text-sm italic text-muted-foreground">This message was deleted</p>
+          <p className={cn("text-sm italic", isOutbound ? "text-neutral-600" : "text-muted-foreground")}>This message was deleted</p>
         ) : (
           <MediaPreview message={message} />
         )}
         <div
           className={cn(
-            "mt-1 flex items-center gap-2 text-[10px] text-muted-foreground",
-            isOutbound ? "justify-end" : "justify-start",
+            "mt-1 flex items-center gap-2 text-[10px]",
+            isOutbound ? "justify-end text-neutral-600" : "justify-start text-muted-foreground",
           )}
         >
           <span>{formatTime(message.sent_at)}</span>

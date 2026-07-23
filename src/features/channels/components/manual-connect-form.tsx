@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
 
+import { Alert } from "@/components/shared/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,21 +184,18 @@ export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
       </div>
 
       {verified && verifyResult ? (
-        <div className="rounded-md border border-emerald-200 bg-emerald-50/60 px-4 py-3 text-sm dark:border-emerald-900 dark:bg-emerald-950/30">
-          <div className="flex items-start gap-2 text-emerald-800 dark:text-emerald-200">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-            <div>
-              <p className="font-medium">Connection verified</p>
-              <p className="mt-1 text-emerald-700 dark:text-emerald-300">
-                {verifyResult.waba_name ?? "WABA"} · {verifyResult.phone_display ?? "Phone number"} ·{" "}
-                {verifyResult.template_count} template(s) accessible
-              </p>
-            </div>
-          </div>
-        </div>
+        <Alert variant="success">
+          <p className="font-medium">Connection verified</p>
+          <p className="mt-1">
+            {verifyResult.waba_name ?? "WABA"} · {verifyResult.phone_display ?? "Phone number"} ·{" "}
+            {verifyResult.template_count} template(s) accessible
+          </p>
+        </Alert>
       ) : null}
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <Alert variant="error">{error}</Alert>
+      ) : null}
     </form>
   );
 }

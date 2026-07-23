@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { RefreshCw, ShieldAlert } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
+import { Alert } from "@/components/shared/alert";
 import { Button } from "@/components/ui/button";
 import { channelSyncService } from "@/features/channels/services/channel-sync.service";
 import { templateService } from "@/features/broadcast/services/broadcast.service";
@@ -123,22 +124,19 @@ export function ChannelSyncSection({ channelId, canManage }: ChannelSyncSectionP
       </div>
 
       {permissionPrompt ? (
-        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-900 dark:bg-amber-950/20">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="mt-0.5 h-4 w-4 text-amber-700" />
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Additional Meta Permission Required</p>
-              <p className="text-xs text-muted-foreground">
-                To synchronize contacts and available conversations, Meta requires additional permissions.
-                Continue with Meta to grant access.
-              </p>
-              {canManage ? (
-                <Button size="sm" onClick={() => void handleReauthorize()} disabled={loading}>
-                  Continue with Meta
-                </Button>
-              ) : null}
-            </div>
-          </div>
+        <div className="mt-4">
+          <Alert variant="warning">
+            <p className="font-medium">Additional Meta Permission Required</p>
+            <p className="mt-1 text-muted-foreground">
+              To synchronize contacts and available conversations, Meta requires additional permissions.
+              Continue with Meta to grant access.
+            </p>
+            {canManage ? (
+              <Button size="sm" className="mt-2" onClick={() => void handleReauthorize()} disabled={loading}>
+                Continue with Meta
+              </Button>
+            ) : null}
+          </Alert>
         </div>
       ) : null}
 

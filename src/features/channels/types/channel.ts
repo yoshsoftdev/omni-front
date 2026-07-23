@@ -34,6 +34,7 @@ export interface Channel {
   waba_id?: string;
   phone_number_id?: string;
   phone_number?: string;
+  business_id?: string;
   is_coex: boolean;
   onboarding?: ChannelOnboarding;
   last_connected_at?: string;

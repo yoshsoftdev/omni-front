@@ -50,15 +50,15 @@ export function MessageThread({ messages, loading }: MessageThreadProps) {
               className={cn(
                 "rounded-lg px-3 py-2 text-sm",
                 isOutbound
-                  ? "bg-primary text-primary-foreground"
-                  : "border bg-background",
+                  ? "bg-emerald-100 text-neutral-900 dark:text-neutral-900"
+                  : "border border-border bg-card text-card-foreground",
               )}
             >
               <p className="whitespace-pre-wrap">{message.content}</p>
               <p
                 className={cn(
                   "mt-1 text-[10px]",
-                  isOutbound ? "text-primary-foreground/70" : "text-muted-foreground",
+                  isOutbound ? "text-neutral-600" : "text-muted-foreground",
                 )}
               >
                 {new Date(message.sent_at).toLocaleString()}

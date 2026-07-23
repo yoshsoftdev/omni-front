@@ -1,5 +1,5 @@
-import { DevicesPage } from "@/features/devices/components/devices-page";
+import { ChannelsManagementPage } from "@/features/channels/components/channels-management-page";
 
 export default function DevicesRoutePage() {
-  return <DevicesPage />;
+  return <ChannelsManagementPage />;
 }

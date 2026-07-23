@@ -4,44 +4,87 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
+    /* Light mode (primary) — Official Omni Chan palette */
+    --background: 220 14% 97%; /* #F6F7F9 */
+    --foreground: 0 0% 7%; /* #111111 */
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 0 0% 7%;
+    --primary: 0 0% 7%; /* #111111 */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 0 0% 7%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%; /* #6B7280 */
+    --accent: 220 14% 96%;
+    --accent-foreground: 0 0% 7%;
+    --destructive: 0 72% 51%; /* #DC2626 */
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 13% 91%; /* #E5E7EB */
+    --input: 220 13% 91%;
+    --ring: 0 0% 7%;
     --radius: 0.5rem;
+
+    /* Semantic light: dark text on light tint (WCAG AA) */
+    --success: 142 76% 36%; /* #16A34A */
+    --success-foreground: 142 76% 28%;
+    --success-muted: 138 76% 97%;
+    --success-border: 141 69% 85%;
+
+    --warning: 38 92% 50%; /* #F59E0B */
+    --warning-foreground: 32 95% 30%;
+    --warning-muted: 48 96% 95%;
+    --warning-border: 45 93% 80%;
+
+    --error: 0 72% 51%; /* #DC2626 */
+    --error-foreground: 0 72% 40%;
+    --error-muted: 0 86% 97%;
+    --error-border: 0 90% 88%;
+
+    --info: 217 91% 60%; /* #2563EB */
+    --info-foreground: 221 83% 40%;
+    --info-muted: 214 95% 97%;
+    --info-border: 213 97% 87%;
   }
 
+  /* Optional dark mode — enabled only via Settings → Appearance */
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --card: 0 0% 7%;
     --card-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    --primary-foreground: 0 0% 7%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted-foreground: 220 9% 65%;
     --accent: 0 0% 14.9%;
     --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 62.8% 40%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
     --ring: 0 0% 83.1%;
+
+    --success: 142 70% 45%;
+    --success-foreground: 138 76% 80%;
+    --success-muted: 142 40% 12%;
+    --success-border: 142 40% 22%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 45 93% 75%;
+    --warning-muted: 32 40% 12%;
+    --warning-border: 32 40% 22%;
+
+    --error: 0 72% 55%;
+    --error-foreground: 0 90% 80%;
+    --error-muted: 0 40% 12%;
+    --error-border: 0 40% 22%;
+
+    --info: 217 91% 60%;
+    --info-foreground: 213 97% 80%;
+    --info-muted: 217 40% 12%;
+    --info-border: 217 40% 22%;
   }
 
   * {

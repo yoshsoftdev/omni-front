@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, RefreshCw, Search } from "lucide-react";
+import { Plus, RefreshCw, Search, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import {
@@ -23,6 +23,8 @@ import { Label } from "@/components/ui/label";
 import { templateService } from "@/features/broadcast/services/broadcast.service";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import { isWhatsAppChannel } from "@/features/channels/utils/is-whatsapp-channel";
+import { formatApiErrorMessage } from "@/services/api/errors";
+import type { WhatsAppTemplate } from "@/types/broadcast";
 
 const PAGE_SIZE = 8;
 
@@ -66,6 +68,8 @@ export function TemplatesPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncChannelId, setSyncChannelId] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const { data: connectedChannels = [] } = useQuery({
     queryKey: ["channels", "connected", "whatsapp"],
@@ -105,6 +109,28 @@ export function TemplatesPage() {
       setSyncError(err instanceof Error ? err.message : "Gagal sync template");
     } finally {
       setSyncing(false);
+    }
+  }
+
+  async function handleDelete(template: WhatsAppTemplate) {
+    if (!template.id) {
+      setDeleteError("Template tidak memiliki id lokal.");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Hapus template "${template.name}" (${template.language})?\nTemplate akan dihapus dari Meta dan dari aplikasi.`,
+    );
+    if (!confirmed) return;
+
+    setDeletingId(template.id);
+    setDeleteError(null);
+    try {
+      await templateService.delete(template.id);
+      await refetch();
+    } catch (err) {
+      setDeleteError(formatApiErrorMessage(err));
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -150,6 +176,12 @@ export function TemplatesPage() {
       {syncError ? (
         <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
           {syncError}
+        </div>
+      ) : null}
+
+      {deleteError ? (
+        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+          {deleteError}
         </div>
       ) : null}
 
@@ -207,6 +239,7 @@ export function TemplatesPage() {
               <DataTableHeaderCell>Kategori</DataTableHeaderCell>
               <DataTableHeaderCell>Status</DataTableHeaderCell>
               <DataTableHeaderCell>Terakhir Sync</DataTableHeaderCell>
+              <DataTableHeaderCell className="w-[1%] text-right">Aksi</DataTableHeaderCell>
             </DataTableRow>
           </DataTableHead>
           <DataTableBody>
@@ -235,6 +268,19 @@ export function TemplatesPage() {
                   </DataTableCell>
                   <DataTableCell className="text-muted-foreground">
                     {formatLastSync(template.updated_at)}
+                  </DataTableCell>
+                  <DataTableCell className="text-right">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={!template.id || deletingId === template.id}
+                      onClick={() => void handleDelete(template)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {deletingId === template.id ? "Menghapus..." : "Hapus"}
+                    </Button>
                   </DataTableCell>
                 </DataTableRow>
               ))

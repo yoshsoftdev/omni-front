@@ -12,7 +12,6 @@ import { channelQueryService } from "@/features/channels/services/channel-query.
 import { isWhatsAppChannel } from "@/features/channels/utils/is-whatsapp-channel";
 import { TemplateBodyEditor } from "@/features/broadcast/components/create-template/template-body-editor";
 import { TemplateButtonEditor } from "@/features/broadcast/components/create-template/template-button-editor";
-import { TemplateCreateStepper } from "@/features/broadcast/components/create-template/template-create-stepper";
 import { TemplateFooterEditor } from "@/features/broadcast/components/create-template/template-footer-editor";
 import { TemplateHeaderEditorSection } from "@/features/broadcast/components/create-template/template-header-editor";
 import { TemplateInfoCard } from "@/features/broadcast/components/create-template/template-info-card";
@@ -147,12 +146,9 @@ export function CreateTemplatePage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Buat Template WhatsApp</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Alur mirip WhatsApp Manager: informasi template, komponen (header/body/footer/buttons),
-          lalu submit ke Meta untuk review.
+          Isi informasi dan komponen template, lalu submit ke Meta untuk review.
         </p>
       </div>
-
-      <TemplateCreateStepper activeStep={1} />
 
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start">
         <div className="min-w-0 flex-1 space-y-4">

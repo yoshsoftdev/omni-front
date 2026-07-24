@@ -27,6 +27,10 @@ import {
 import { ChannelPaymentCard } from "@/features/channels/components/detail/channel-payment-card";
 import type { ChannelHealthResult } from "@/features/channels/services/channel-health.service";
 import type { ChannelPaymentStatusResult } from "@/features/channels/services/channel-payment.service";
+import {
+  formatBusinessVerificationLabel,
+  isBusinessVerifiedStatus,
+} from "@/features/channels/services/channel-payment.service";
 import type { Channel } from "@/features/channels/types/channel";
 import {
   connectionStatusLabel,
@@ -71,9 +75,15 @@ export function WhatsAppChannelDetail({
 }: WhatsAppChannelDetailProps) {
   const paymentOk = payment?.status === "configured";
   const paymentRestricted = payment?.status === "restricted";
+  const paymentUnavailable = payment?.status === "unavailable";
+  const businessVerified = isBusinessVerifiedStatus(payment?.business_verification_status);
+  const businessVerificationLabel = paymentLoading
+    ? "Checking..."
+    : formatBusinessVerificationLabel(payment?.business_verification_status);
   const isReady =
     channel.status === "connected" &&
     paymentOk &&
+    businessVerified &&
     (health?.healthy ?? channel.status === "connected");
 
   const phoneActive = Boolean(health?.checks?.phone || channel.phone_number);
@@ -82,14 +92,19 @@ export function WhatsAppChannelDetail({
   if (!paymentLoading && payment) {
     if (payment.status === "configured") paymentMetricValue = "Payment OK";
     else if (payment.status === "restricted") paymentMetricValue = "Restricted";
+    else if (payment.status === "unavailable") paymentMetricValue = "Unavailable";
     else paymentMetricValue = "Missing";
   }
 
   let incompleteMessage = "Lengkapi setup channel WhatsApp.";
   if (paymentRestricted) {
     incompleteMessage = payment.message;
+  } else if (paymentUnavailable) {
+    incompleteMessage = payment.message;
   } else if (!paymentOk) {
     incompleteMessage = payment?.message ?? "Metode pembayaran belum dikonfigurasi.";
+  } else if (!businessVerified) {
+    incompleteMessage = "Business verification belum verified di Meta Business Manager.";
   }
 
   return (
@@ -117,8 +132,8 @@ export function WhatsAppChannelDetail({
               },
               {
                 label: "Business",
-                value: detailLoading ? "Checking..." : health?.checks?.waba ? "Verified" : "Unverified",
-                ok: Boolean(health?.checks?.waba),
+                value: businessVerificationLabel,
+                ok: businessVerified,
               },
               {
                 label: "Phone Number",
@@ -152,17 +167,20 @@ export function WhatsAppChannelDetail({
 
           <ChannelInfoGridCard
             title="Business Information"
-            description="WhatsApp Business Account details."
+            description="WABA payment uses WABA ID; business verification comes from Meta business_verification_status on that WABA."
             icon={<Briefcase className="h-4 w-4" />}
             items={[
               { label: "Business Name", value: channel.label },
               {
                 label: "Business Verification",
-                value: health?.checks?.waba ? "Verified" : "—",
-                positive: Boolean(health?.checks?.waba),
+                value: businessVerificationLabel,
+                positive: businessVerified,
               },
-              { label: "WABA ID", value: channel.waba_id ?? "—" },
-              { label: "Business ID", value: channel.business_id ?? "—" },
+              { label: "WABA ID", value: channel.waba_id ?? payment?.requested_waba_id ?? "—" },
+              {
+                label: "Business ID",
+                value: channel.business_id ?? payment?.stored_business_id ?? payment?.owner_business_id ?? "—",
+              },
             ]}
           />
 

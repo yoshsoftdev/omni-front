@@ -106,6 +106,7 @@ export function CampaignWizard() {
     scheduleDate,
     scheduleTime,
     timezone,
+    headerMediaUrl,
     setStep,
     setCampaignName,
     setDescription,
@@ -114,6 +115,7 @@ export function CampaignWizard() {
     setVariableMapping,
     setSampleValues,
     setHeaderVariableMapping,
+    setHeaderMediaUrl,
     setIncludeHeader,
     setIncludeFooter,
     setSelectedTagIds,
@@ -252,6 +254,19 @@ export function CampaignWizard() {
     }
     if (step === 4) {
       if (!fullTemplate) return "Select a template first";
+      if (hasMediaHeader && includeHeader && !headerMediaUrl.trim()) {
+        return "Header media URL is required for this template";
+      }
+      if (hasMediaHeader && includeHeader && headerMediaUrl.trim()) {
+        try {
+          const parsed = new URL(headerMediaUrl.trim());
+          if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+            return "Header media URL must be http(s)";
+          }
+        } catch {
+          return "Header media URL is invalid";
+        }
+      }
     }
     if (step === 5 && selectedTagIds.length === 0) {
       return "Select at least one tag";
@@ -286,6 +301,9 @@ export function CampaignWizard() {
         if (hasTemplateHeader && includeHeader) {
           variableMappingPayload.header = {
             ...(headerTextVariableCount > 0 ? { text: headerVariableMapping } : {}),
+            ...(hasMediaHeader && headerMediaUrl.trim()
+              ? { media_link: headerMediaUrl.trim() }
+              : {}),
           };
         }
         const created = await campaignService.create({
@@ -455,7 +473,7 @@ export function CampaignWizard() {
                   <div>
                     <h2 className="text-sm font-semibold">Template Components</h2>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Header media dari template dipakai otomatis. Atur variabel body di bawah jika ada.
+                      Untuk header media, isi URL gambar publik. Atur variabel body di bawah jika ada.
                     </p>
                   </div>
 
@@ -479,10 +497,20 @@ export function CampaignWizard() {
                       </div>
 
                       {includeHeader && hasMediaHeader ? (
-                        <p className="text-xs leading-relaxed text-muted-foreground">
-                          Gambar header dari template akan digunakan otomatis saat pengiriman. Anda tidak perlu
-                          mengunggah ulang atau memasukkan URL.
-                        </p>
+                        <div className="space-y-2">
+                          <Label htmlFor="header-media-url">Header media URL</Label>
+                          <Input
+                            id="header-media-url"
+                            type="url"
+                            placeholder="https://cdn.example.com/promo.jpg"
+                            value={headerMediaUrl}
+                            onChange={(event) => setHeaderMediaUrl(event.target.value)}
+                          />
+                          <p className="text-xs leading-relaxed text-muted-foreground">
+                            Meta membutuhkan URL publik (atau Cloud API media id) saat mengirim template
+                            ber-header media. Handle contoh di template tidak bisa dipakai ulang.
+                          </p>
+                        </div>
                       ) : null}
 
                       {includeHeader && headerTextVariableCount > 0 ? (

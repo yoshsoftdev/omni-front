@@ -35,11 +35,12 @@ export function ChannelPaymentCard({
   const status = result?.status ?? null;
   const configured = status === "configured";
   const restricted = status === "restricted";
+  const unavailable = status === "unavailable";
 
   return (
     <DetailCard
       title="Payment"
-      description="Checked against Meta WABA primary_funding_id and status."
+      description="Tech Provider: payment dicek via health_status (error 141006). primary_funding_id hanya untuk BSP."
       icon={<CreditCard className="h-4 w-4" />}
       action={
         <div className="flex flex-wrap items-center gap-2">
@@ -66,7 +67,7 @@ export function ChannelPaymentCard({
         </div>
       }
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <InfoCell
           label="Status"
           value={
@@ -76,9 +77,21 @@ export function ChannelPaymentCard({
                 ? "Payment OK"
                 : restricted
                   ? "Restricted"
-                  : "Belum dikonfigurasi"
+                  : unavailable
+                    ? "Unavailable"
+                    : "Belum dikonfigurasi"
           }
-          tone={configured ? "success" : restricted ? "error" : checking ? "neutral" : "warning"}
+          tone={
+            configured
+              ? "success"
+              : restricted
+                ? "error"
+                : checking
+                  ? "neutral"
+                  : unavailable
+                    ? "neutral"
+                    : "warning"
+          }
         />
         <InfoCell
           label="primary_funding_id"
@@ -87,10 +100,32 @@ export function ChannelPaymentCard({
               ? "Checking..."
               : result?.has_primary_funding
                 ? result.primary_funding_id || "Terisi"
-                : "null"
+                : result?.check_source === "health_status"
+                  ? "N/A (pakai health_status)"
+                  : unavailable
+                    ? "Tidak dapat dibaca"
+                    : "null"
           }
         />
+        <InfoCell
+          label="Check source"
+          value={checking ? "Checking..." : result?.check_source || "—"}
+        />
+        <InfoCell
+          label="health can_send"
+          value={checking ? "Checking..." : result?.health_can_send_message || "—"}
+        />
         <InfoCell label="WABA Status" value={checking ? "Checking..." : result?.waba_status || "—"} />
+        <InfoCell
+          label="Business Verification"
+          value={
+            checking
+              ? "Checking..."
+              : result?.business_verification_status
+                ? result.business_verification_status
+                : "—"
+          }
+        />
         <InfoCell
           label="Payment Method"
           value={
@@ -100,7 +135,9 @@ export function ChannelPaymentCard({
                 ? "Configured in Meta"
                 : restricted
                   ? "Akun dibatasi"
-                  : "Not Configured"
+                  : unavailable
+                    ? "Check via Meta Billing"
+                    : "Not Configured"
           }
         />
       </div>
@@ -111,6 +148,10 @@ export function ChannelPaymentCard({
             <Alert variant="success">{result.message}</Alert>
           ) : restricted ? (
             <Alert variant="error" title="Akun dibatasi">
+              {result.message}
+            </Alert>
+          ) : unavailable ? (
+            <Alert variant="info" title="Cek pembayaran via Meta Billing">
               {result.message}
             </Alert>
           ) : (
@@ -137,6 +178,9 @@ export function PaymentStatusBadge({
   }
   if (status === "restricted") {
     return <StatusBadge tone="error">Restricted</StatusBadge>;
+  }
+  if (status === "unavailable") {
+    return <StatusBadge tone="neutral">Payment ?</StatusBadge>;
   }
   return <StatusBadge tone="warning">No payment</StatusBadge>;
 }

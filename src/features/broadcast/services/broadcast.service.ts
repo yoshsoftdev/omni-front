@@ -64,6 +64,10 @@ export const templateService = {
     const response = await apiClient.post<WhatsAppTemplate>("/templates", input);
     return response.data!;
   },
+
+  async delete(id: string) {
+    await apiClient.delete(`/templates/${encodeURIComponent(id)}`);
+  },
 };
 
 export const campaignService = {

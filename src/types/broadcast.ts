@@ -22,6 +22,10 @@ export type TemplateComponentDTO =
       type: "HEADER";
       format?: "TEXT" | "IMAGE" | "VIDEO" | "DOCUMENT";
       text?: string;
+      example?: {
+        header_handle?: string[];
+        storage_object_id?: string[];
+      };
     }
   | {
       type: "BODY";
@@ -51,6 +55,11 @@ export interface TemplateDTO {
   status?: TemplateApiStatus | string;
   preview?: string;
   components: TemplateComponentDTO[];
+  /** Internal fields (e.g. storage_object_id) — never sent to Meta. */
+  metadata?: {
+    storage_object_id?: string | string[];
+    [key: string]: unknown;
+  };
   created_at: string;
   updated_at: string;
 }

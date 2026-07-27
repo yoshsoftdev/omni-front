@@ -22,7 +22,7 @@ export function CampaignCard({ template, selected, onSelect, showPreview = false
   return (
     <div
       className={cn(
-        "rounded-lg border transition-colors",
+        "rounded-lg border bg-white transition-colors dark:bg-card",
         selected ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-primary/40",
       )}
     >

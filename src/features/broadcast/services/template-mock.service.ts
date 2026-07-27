@@ -19,48 +19,22 @@ export type TemplateListResult = {
   totalPages: number;
 };
 
+/** Legacy mock list helper — delegates filtering/paging to TemplateQueryService. */
 export async function fetchTemplateList(filters: TemplateListFilters = {}): Promise<TemplateListResult> {
-  const {
-    search = "",
-    language = "all",
-    category = "all",
-    status = "all",
-    page = 1,
-    pageSize = 8,
-  } = filters;
-
-  await new Promise((resolve) => setTimeout(resolve, 150));
-
-  let items = (await templateQueryService.getTemplates()).map(toTemplateListItem);
-
-  const query = search.trim().toLowerCase();
-  if (query) {
-    items = items.filter(
-      (item) =>
-        item.name.toLowerCase().includes(query) || item.preview.toLowerCase().includes(query),
-    );
-  }
-  if (language !== "all") {
-    items = items.filter((item) => item.language === language);
-  }
-  if (category !== "all") {
-    items = items.filter((item) => item.category === category);
-  }
-  if (status !== "all") {
-    items = items.filter((item) => item.status === status);
-  }
-
-  const total = items.length;
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const safePage = Math.min(Math.max(1, page), totalPages);
-  const start = (safePage - 1) * pageSize;
-
+  const page = await templateQueryService.getTemplatesPage({
+    search: filters.search,
+    language: filters.language,
+    category: filters.category,
+    status: filters.status,
+    page: filters.page ?? 1,
+    pageSize: filters.pageSize ?? 8,
+  });
   return {
-    items: items.slice(start, start + pageSize),
-    total,
-    page: safePage,
-    pageSize,
-    totalPages,
+    items: page.items.map(toTemplateListItem),
+    total: page.pagination.total,
+    page: page.pagination.page,
+    pageSize: page.pagination.page_size,
+    totalPages: page.pagination.total_pages,
   };
 }
 

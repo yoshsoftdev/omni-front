@@ -16,6 +16,7 @@ import {
   DataTableRow,
 } from "@/components/shared/data-table";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
+import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,19 +82,29 @@ export function TemplatesPage() {
 
   const effectiveSyncChannelId = syncChannelId || connectedChannels[0]?.id || "";
 
-  const filters = useMemo(
-    () => ({ search, language, category, status }),
-    [search, language, category, status],
+  const queryParams = useMemo(
+    () => ({
+      search: search.trim() || undefined,
+      language,
+      category,
+      status,
+      page,
+      page_size: PAGE_SIZE,
+    }),
+    [search, language, category, status, page],
   );
 
-  const { data: allTemplates = [], isLoading, refetch, isFetching } = useQuery({
-    queryKey: ["broadcast-templates", filters],
-    queryFn: () => templateService.list(filters),
+  const { data, isLoading, refetch, isFetching } = useQuery({
+    queryKey: ["broadcast-templates", queryParams],
+    queryFn: () => templateService.listPage(queryParams),
   });
 
-  const totalPages = Math.max(1, Math.ceil(allTemplates.length / PAGE_SIZE));
+  const items = data?.items ?? [];
+  const total = data?.pagination.total ?? 0;
+  const totalPages = Math.max(1, data?.pagination.total_pages ?? 1);
   const currentPage = Math.min(page, totalPages);
-  const items = allTemplates.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const start = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const end = Math.min(currentPage * PAGE_SIZE, total);
 
   async function handleSync() {
     if (!effectiveSyncChannelId) {
@@ -288,25 +299,15 @@ export function TemplatesPage() {
           </DataTableBody>
         </DataTable>
 
-        {totalPages > 1 ? (
-          <div className="flex items-center justify-end gap-1 pt-2">
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPage(p)}
-                className={[
-                  "inline-flex h-8 min-w-8 items-center justify-center rounded-md px-2 text-sm",
-                  p === currentPage
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                ].join(" ")}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
-        ) : null}
+        <PaginationFooter
+          start={start}
+          end={end}
+          total={total}
+          totalLabel="templates"
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </div>
 
       {connectedChannels.length === 0 ? (

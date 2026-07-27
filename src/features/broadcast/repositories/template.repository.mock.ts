@@ -1,20 +1,68 @@
 import { MOCK_TEMPLATES } from "@/features/broadcast/mock/template-mock-data";
 import type {
   CreateTemplatePayload,
+  TemplateListPage,
+  TemplateListQuery,
   TemplateRepository,
 } from "@/features/broadcast/repositories/template.repository";
 import type { Template } from "@/features/broadcast/types/template";
 
 /**
  * Mock template repository — sole consumer of template-mock-data.ts.
- * Templates are native domain objects; boundary/mapper are not used here.
- * Future template.repository.api.ts will use template.boundary.ts for DTO conversion.
  */
 class MockTemplateRepository implements TemplateRepository {
   private templates: Template[] = MOCK_TEMPLATES.map((template) => ({ ...template }));
 
-  async list(): Promise<Template[]> {
-    return this.templates.map((template) => ({ ...template }));
+  async listPage(query?: TemplateListQuery): Promise<TemplateListPage> {
+    let items = this.templates.map((template) => ({ ...template }));
+    if (query?.channelId) {
+      items = items.filter((item) => item.device_id === query.channelId || !item.device_id);
+    }
+    if (query?.status && query.status !== "all") {
+      items = items.filter((item) => item.status === query.status);
+    }
+    if (query?.language && query.language !== "all") {
+      const lang = query.language.toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.language.toLowerCase() === lang ||
+          item.language.toLowerCase().startsWith(`${lang}_`) ||
+          (lang === "en" && item.language.toLowerCase().startsWith("en")),
+      );
+    }
+    if (query?.category && query.category !== "all") {
+      items = items.filter(
+        (item) => item.category.toLowerCase() === query.category!.toLowerCase(),
+      );
+    }
+    if (query?.search?.trim()) {
+      const q = query.search.trim().toLowerCase();
+      items = items.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          (item.preview ?? "").toLowerCase().includes(q),
+      );
+    }
+    const pageSize = query?.pageSize ?? 20;
+    const page = query?.page ?? 1;
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    const safePage = Math.min(Math.max(1, page), totalPages);
+    const start = (safePage - 1) * pageSize;
+    return {
+      items: items.slice(start, start + pageSize),
+      pagination: {
+        page: safePage,
+        page_size: pageSize,
+        total,
+        total_pages: totalPages,
+      },
+    };
+  }
+
+  async list(query?: TemplateListQuery): Promise<Template[]> {
+    const page = await this.listPage({ ...query, page: 1, pageSize: query?.pageSize ?? 100 });
+    return page.items;
   }
 
   async getById(id: string): Promise<Template | undefined> {

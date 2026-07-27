@@ -18,6 +18,12 @@ export interface TemplateHeader {
   type: TemplateHeaderType;
   title?: string;
   media_file_name?: string;
+  /**
+   * True when template has storage_object_id (uploaded in-app).
+   * Campaign send resolves Cloud media id via Media Manager — no public URL required.
+   * Meta template header_handle alone is NOT enough for send.
+   */
+  storage_backed?: boolean;
 }
 
 /** Frontend domain model for WhatsApp templates. */

@@ -11,8 +11,20 @@ export type TemplateListParams = {
   category?: string;
   status?: string;
   channel_id?: string;
+  page?: number;
+  page_size?: number;
   /** @deprecated Use channel_id */
   device_id?: string;
+};
+
+export type TemplateListResult = {
+  items: WhatsAppTemplate[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
 };
 
 export type CampaignOverview = {
@@ -36,10 +48,11 @@ export type CampaignReport = Campaign & {
 type TemplateListResponse = {
   items?: WhatsAppTemplate[];
   templates?: WhatsAppTemplate[];
+  pagination?: TemplateListResult["pagination"];
 };
 
 export const templateService = {
-  async list(params?: TemplateListParams) {
+  async listPage(params?: TemplateListParams): Promise<TemplateListResult> {
     const query = new URLSearchParams();
     if (params?.search) query.set("search", params.search);
     if (params?.language && params.language !== "all") query.set("language", params.language);
@@ -47,9 +60,24 @@ export const templateService = {
     if (params?.status && params.status !== "all") query.set("status", params.status);
     const channelId = params?.channel_id ?? params?.device_id;
     if (channelId) query.set("channel_id", channelId);
+    query.set("page", String(params?.page ?? 1));
+    query.set("page_size", String(params?.page_size ?? 20));
     const suffix = query.toString() ? `?${query.toString()}` : "";
     const response = await apiClient.get<TemplateListResponse>(`/templates${suffix}`);
-    return response.data?.items ?? response.data?.templates ?? [];
+    const items = response.data?.items ?? response.data?.templates ?? [];
+    const pagination = response.data?.pagination ?? {
+      page: params?.page ?? 1,
+      page_size: params?.page_size ?? 20,
+      total: items.length,
+      total_pages: 1,
+    };
+    return { items, pagination };
+  },
+
+  /** @deprecated Prefer listPage for server pagination. */
+  async list(params?: TemplateListParams) {
+    const result = await this.listPage(params);
+    return result.items;
   },
 
   async sync(channelId: string) {
@@ -62,6 +90,11 @@ export const templateService = {
 
   async create(input: CreateTemplatePayload) {
     const response = await apiClient.post<WhatsAppTemplate>("/templates", input);
+    return response.data!;
+  },
+
+  async get(id: string) {
+    const response = await apiClient.get<WhatsAppTemplate>(`/templates/${encodeURIComponent(id)}`);
     return response.data!;
   },
 

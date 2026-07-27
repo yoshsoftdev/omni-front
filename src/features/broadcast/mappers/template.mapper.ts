@@ -66,16 +66,48 @@ function buildPreview(body: string, preview?: string): string {
   return `${trimmed.slice(0, 77)}...`;
 }
 
-function parseHeader(component: Extract<TemplateComponentDTO, { type: "HEADER" }>): TemplateHeader {
+function firstStorageObjectID(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === "string" && item.trim()) {
+        return item.trim();
+      }
+    }
+  }
+  return undefined;
+}
+
+function hasStorageBackedHeaderMedia(
+  components: TemplateComponentDTO[],
+  metadata?: TemplateDTO["metadata"],
+): boolean {
+  for (const component of components) {
+    if (component.type !== "HEADER") continue;
+    const format = (component.format ?? "").toUpperCase();
+    if (format !== "IMAGE" && format !== "VIDEO" && format !== "DOCUMENT") continue;
+    if (firstStorageObjectID(component.example?.storage_object_id)) {
+      return true;
+    }
+  }
+  return Boolean(firstStorageObjectID(metadata?.storage_object_id));
+}
+
+function parseHeader(
+  component: Extract<TemplateComponentDTO, { type: "HEADER" }>,
+  storageBacked: boolean,
+): TemplateHeader {
   const format = (component.format ?? "TEXT").toUpperCase();
   if (format === "IMAGE") {
-    return { type: "image", title: component.text };
+    return { type: "image", title: component.text, storage_backed: storageBacked };
   }
   if (format === "VIDEO") {
-    return { type: "video", title: component.text };
+    return { type: "video", title: component.text, storage_backed: storageBacked };
   }
   if (format === "DOCUMENT") {
-    return { type: "document", title: component.text };
+    return { type: "document", title: component.text, storage_backed: storageBacked };
   }
   if (component.text?.trim()) {
     return { type: "none", title: component.text };
@@ -93,14 +125,15 @@ function mapButtons(buttons: TemplateComponentButtonDTO[]): TemplateButton[] {
   }));
 }
 
-function parseComponents(components: TemplateComponentDTO[]): Pick<
-  Template,
-  "header" | "body" | "footer" | "buttons" | "variable_count"
-> {
+function parseComponents(
+  components: TemplateComponentDTO[],
+  metadata?: TemplateDTO["metadata"],
+): Pick<Template, "header" | "body" | "footer" | "buttons" | "variable_count"> {
   let body = "";
   let footer: string | undefined;
   let header: TemplateHeader = { type: "none" };
   const buttons: TemplateButton[] = [];
+  const storageBacked = hasStorageBackedHeaderMedia(components, metadata);
 
   for (const component of components) {
     if (component.type === "BODY") {
@@ -112,7 +145,7 @@ function parseComponents(components: TemplateComponentDTO[]): Pick<
       continue;
     }
     if (component.type === "HEADER") {
-      header = parseHeader(component);
+      header = parseHeader(component, storageBacked);
       continue;
     }
     if (component.type === "BUTTONS") {
@@ -130,7 +163,7 @@ function parseComponents(components: TemplateComponentDTO[]): Pick<
 }
 
 export function mapTemplateDtoToTemplate(dto: TemplateDTO): Template {
-  const parsed = parseComponents(dto.components);
+  const parsed = parseComponents(dto.components ?? [], dto.metadata);
 
   return {
     id: dto.id,

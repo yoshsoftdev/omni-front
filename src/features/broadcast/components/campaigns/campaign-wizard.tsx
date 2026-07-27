@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
+import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +16,7 @@ import { CampaignCard } from "@/features/broadcast/components/campaigns/campaign
 import { CampaignChannelCard } from "@/features/broadcast/components/campaigns/campaign-channel-card";
 import { WhatsAppMessagePreview } from "@/features/broadcast/components/shared/whatsapp-message-preview";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
+import type { Template } from "@/features/broadcast/types/template";
 import { countTemplateVariables, templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
@@ -39,6 +42,14 @@ const STEPS: { step: WizardStep; label: string }[] = [
   { step: 5, label: "Select Audience" },
   { step: 6, label: "Schedule" },
   { step: 7, label: "Review" },
+];
+
+const TEMPLATE_PAGE_SIZE = 8;
+
+const templateLanguageOptions = [
+  { value: "all", label: "Semua Bahasa" },
+  { value: "id", label: "Indonesia" },
+  { value: "en", label: "English" },
 ];
 
 const formControlClass =
@@ -129,22 +140,53 @@ export function CampaignWizard() {
   const [tags, setTags] = useState<ContactTag[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [channelsLoaded, setChannelsLoaded] = useState(false);
+  const [templateSearch, setTemplateSearch] = useState("");
+  const [templateLanguage, setTemplateLanguage] = useState("all");
+  const [templatePage, setTemplatePage] = useState(1);
+
+  const templateQueryParams = useMemo(
+    () => ({
+      channelId,
+      status: "APPROVED" as const,
+      search: templateSearch.trim() || undefined,
+      language: templateLanguage,
+      page: templatePage,
+      pageSize: TEMPLATE_PAGE_SIZE,
+    }),
+    [channelId, templateSearch, templateLanguage, templatePage],
+  );
 
   const {
-    data: templates = [],
+    data: templatesPage,
     isLoading: templatesLoading,
     isError: templatesError,
     error: templatesLoadError,
   } = useQuery({
-    queryKey: ["broadcast-templates", "campaign-wizard", channelId],
-    queryFn: () =>
-      templateQueryService.getTemplates({
-        channelId,
-        status: "APPROVED",
-      }),
+    queryKey: ["broadcast-templates", "campaign-wizard", templateQueryParams],
+    queryFn: () => templateQueryService.getTemplatesPage(templateQueryParams),
     enabled: Boolean(channelId),
     retry: false,
   });
+
+  const templates = templatesPage?.items ?? [];
+  const templateTotal = templatesPage?.pagination.total ?? 0;
+  const templateTotalPages = Math.max(1, templatesPage?.pagination.total_pages ?? 1);
+  const templateCurrentPage = Math.min(templatePage, templateTotalPages);
+  const templateStart = templateTotal === 0 ? 0 : (templateCurrentPage - 1) * TEMPLATE_PAGE_SIZE + 1;
+  const templateEnd = Math.min(templateCurrentPage * TEMPLATE_PAGE_SIZE, templateTotal);
+
+  const { data: selectedTemplateById } = useQuery({
+    queryKey: ["broadcast-template", templateId],
+    queryFn: () => templateQueryService.getTemplateById(templateId!),
+    enabled: Boolean(templateId) && !templates.some((t) => t.id === templateId),
+    retry: false,
+  });
+
+  useEffect(() => {
+    setTemplateSearch("");
+    setTemplateLanguage("all");
+    setTemplatePage(1);
+  }, [channelId]);
 
   useEffect(() => {
     tagService.list().then(setTags).catch(() => setTags([]));
@@ -171,12 +213,14 @@ export function CampaignWizard() {
     notify("error", message);
   }, [templatesError, templatesLoadError, notify, router]);
 
-  const selectedTemplate = templates.find((t) => t.id === templateId);
+  const selectedTemplate =
+    templates.find((t) => t.id === templateId) ?? selectedTemplateById ?? undefined;
   const fullTemplate = selectedTemplate;
   const variableCount = fullTemplate?.variable_count ?? 0;
   const headerType = fullTemplate?.header?.type ?? "none";
   const headerTextVariableCount = countTemplateVariables(fullTemplate?.header?.title);
   const hasMediaHeader = headerType === "image" || headerType === "video" || headerType === "document";
+  const hasStoredHeaderMedia = Boolean(fullTemplate?.header.storage_backed);
   const hasTemplateHeader = headerType !== "none";
   const hasTemplateFooter = Boolean(fullTemplate?.footer?.trim());
 
@@ -254,8 +298,8 @@ export function CampaignWizard() {
     }
     if (step === 4) {
       if (!fullTemplate) return "Select a template first";
-      if (hasMediaHeader && includeHeader && !headerMediaUrl.trim()) {
-        return "Header media URL is required for this template";
+      if (hasMediaHeader && includeHeader && !hasStoredHeaderMedia && !headerMediaUrl.trim()) {
+        return "Header media URL is required for this template (no stored media from template upload)";
       }
       if (hasMediaHeader && includeHeader && headerMediaUrl.trim()) {
         try {
@@ -437,31 +481,81 @@ export function CampaignWizard() {
               <h2 className="text-sm font-semibold">Select Template</h2>
               {!channelId ? (
                 <p className="text-sm text-muted-foreground">Select a channel first to view available templates.</p>
-              ) : templatesLoading ? (
-                <p className="text-sm text-muted-foreground">Loading templates...</p>
-              ) : templatesError ? (
-                <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center text-sm text-destructive">
-                  <p>Could not load templates. Your session may have expired.</p>
-                  <Button variant="outline" size="sm" className="mt-3" asChild>
-                    <Link href="/login">Sign in again</Link>
-                  </Button>
-                </div>
-              ) : templates.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-                  <p>No templates synced for {channelName || "this channel"}.</p>
-                  <Button variant="outline" size="sm" className="mt-3" asChild>
-                    <Link href="/broadcast/templates">Sync Templates</Link>
-                  </Button>
-                </div>
               ) : (
-                templates.map((template) => (
-                  <CampaignCard
-                    key={template.id}
-                    template={template}
-                    selected={templateId === template.id}
-                    onSelect={() => setTemplateId(template.id)}
-                  />
-                ))
+                <>
+                  <div className="space-y-3 rounded-lg border bg-card p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="relative w-full lg:max-w-sm">
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Cari template..."
+                          value={templateSearch}
+                          onChange={(e) => {
+                            setTemplateSearch(e.target.value);
+                            setTemplatePage(1);
+                          }}
+                          className="pl-9"
+                        />
+                      </div>
+                      <FilterBar>
+                        <FilterSelect
+                          label="Bahasa"
+                          value={templateLanguage}
+                          onChange={(v) => {
+                            setTemplateLanguage(v);
+                            setTemplatePage(1);
+                          }}
+                          options={templateLanguageOptions}
+                          className="bg-white dark:bg-card"
+                        />
+                      </FilterBar>
+                    </div>
+                  </div>
+
+                  {templatesLoading ? (
+                    <p className="text-sm text-muted-foreground">Loading templates...</p>
+                  ) : templatesError ? (
+                    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center text-sm text-destructive">
+                      <p>Could not load templates. Your session may have expired.</p>
+                      <Button variant="outline" size="sm" className="mt-3" asChild>
+                        <Link href="/login">Sign in again</Link>
+                      </Button>
+                    </div>
+                  ) : templates.length === 0 ? (
+                    <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                      <p>
+                        {templateSearch.trim() || templateLanguage !== "all"
+                          ? "Tidak ada template yang cocok dengan pencarian."
+                          : `No templates synced for ${channelName || "this channel"}.`}
+                      </p>
+                      {!templateSearch.trim() && templateLanguage === "all" ? (
+                        <Button variant="outline" size="sm" className="mt-3" asChild>
+                          <Link href="/broadcast/templates">Sync Templates</Link>
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {templates.map((template: Template) => (
+                        <CampaignCard
+                          key={template.id}
+                          template={template}
+                          selected={templateId === template.id}
+                          onSelect={() => setTemplateId(template.id)}
+                        />
+                      ))}
+                      <PaginationFooter
+                        start={templateStart}
+                        end={templateEnd}
+                        total={templateTotal}
+                        totalLabel="templates"
+                        currentPage={templateCurrentPage}
+                        totalPages={templateTotalPages}
+                        onPageChange={setTemplatePage}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : null}
@@ -473,7 +567,11 @@ export function CampaignWizard() {
                   <div>
                     <h2 className="text-sm font-semibold">Template Components</h2>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Untuk header media, isi URL gambar publik. Atur variabel body di bawah jika ada.
+                      {hasMediaHeader && hasStoredHeaderMedia
+                        ? "Header media sudah tersimpan dari upload template. Atur variabel body di bawah jika ada."
+                        : hasMediaHeader
+                          ? "Template ini belum punya media tersimpan — isi URL gambar publik. Atur variabel body di bawah jika ada."
+                          : "Atur variabel body di bawah jika ada."}
                     </p>
                   </div>
 
@@ -498,7 +596,20 @@ export function CampaignWizard() {
 
                       {includeHeader && hasMediaHeader ? (
                         <div className="space-y-2">
-                          <Label htmlFor="header-media-url">Header media URL</Label>
+                          {hasStoredHeaderMedia ? (
+                            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                              Media header memakai file yang diunggah saat membuat template
+                              (<code className="mx-1 rounded bg-muted px-1">storage_object_id</code>
+                              → Cloud media id via Media Manager). Handle Meta untuk review template
+                              (<code className="mx-1 rounded bg-muted px-1">header_handle</code>)
+                              tidak bisa dipakai ulang untuk kirim broadcast.
+                            </div>
+                          ) : null}
+                          <Label htmlFor="header-media-url">
+                            {hasStoredHeaderMedia
+                              ? "Override URL (opsional)"
+                              : "Header media URL"}
+                          </Label>
                           <Input
                             id="header-media-url"
                             type="url"
@@ -507,8 +618,9 @@ export function CampaignWizard() {
                             onChange={(event) => setHeaderMediaUrl(event.target.value)}
                           />
                           <p className="text-xs leading-relaxed text-muted-foreground">
-                            Meta membutuhkan URL publik (atau Cloud API media id) saat mengirim template
-                            ber-header media. Handle contoh di template tidak bisa dipakai ulang.
+                            {hasStoredHeaderMedia
+                              ? "Kosongkan untuk memakai media tersimpan. Isi URL hanya jika ingin mengganti."
+                              : "Template sync dari Meta hanya punya header_handle (untuk review), bukan media id kirim. Unggah ulang lewat Buat Template, atau isi URL publik di sini."}
                           </p>
                         </div>
                       ) : null}

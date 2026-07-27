@@ -6,10 +6,26 @@ export type CreateTemplatePayload = Omit<Template, "id" | "created_at" | "update
 export type TemplateListQuery = {
   channelId?: string;
   status?: string;
+  search?: string;
+  language?: string;
+  category?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type TemplateListPage = {
+  items: Template[];
+  pagination: {
+    page: number;
+    page_size: number;
+    total: number;
+    total_pages: number;
+  };
 };
 
 export interface TemplateRepository {
   list(query?: TemplateListQuery): Promise<Template[]>;
+  listPage(query?: TemplateListQuery): Promise<TemplateListPage>;
   getById(id: string): Promise<Template | undefined>;
   getByName(name: string): Promise<Template | undefined>;
   create(input: CreateTemplatePayload): Promise<Template>;

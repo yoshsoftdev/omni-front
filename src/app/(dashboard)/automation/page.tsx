@@ -1,11 +1,5 @@
-import { PagePlaceholder } from "@/components/layout/page-placeholder";
+import { AutomationLandingPage } from "@/features/automation/components/automation-landing-page";
 
 export default function AutomationPage() {
-  return (
-    <PagePlaceholder
-      title="Automation"
-      description="Automation workflows will be implemented after Broadcast campaign UI is reviewed."
-    />
-  );
+  return <AutomationLandingPage showSummary />;
 }
-

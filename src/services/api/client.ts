@@ -42,6 +42,11 @@ class ApiClient {
       if (text.startsWith("<!DOCTYPE") || text.startsWith("<html")) {
         throw new Error(`Server returned HTML instead of JSON (${response.status}). Check API URL and route.`);
       }
+      if (/^Cannot (GET|POST|PUT|PATCH|DELETE) /i.test(text)) {
+        throw new Error(
+          `${text}. Dashboard APIs must hit backend (BACKEND_URL / port 8066), not webhook-service (8060).`,
+        );
+      }
       throw new Error(text || "Unexpected server response");
     }
     return (await response.json()) as ApiResponse<T>;

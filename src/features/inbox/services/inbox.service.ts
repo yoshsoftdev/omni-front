@@ -28,6 +28,7 @@ export function inboxFilterKey(params: InboxListParams): string {
 export function inboxTabToParams(
   tab: InboxTab,
   options: {
+    /** Channel account id (`channels.id` / device id). Not a platform type. */
     channelId?: string;
     assignedTo?: string;
     search?: string;
@@ -37,7 +38,7 @@ export function inboxTabToParams(
   const params: InboxListParams = {
     limit: 50,
     search: options.search?.trim() || undefined,
-    channel_type: options.channelId && options.channelId !== "all" ? options.channelId : undefined,
+    channel_id: options.channelId && options.channelId !== "all" ? options.channelId : undefined,
   };
 
   switch (tab) {

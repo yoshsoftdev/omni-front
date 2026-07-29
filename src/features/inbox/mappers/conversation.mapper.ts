@@ -17,6 +17,7 @@ type ApiConversation = Conversation & {
   UnreadCount?: number;
   LastMessagePreview?: string;
   LastMessageAt?: string;
+  LastCustomerMessageAt?: string;
   PriorityScore?: number;
   WaitingSince?: string;
   CreatedAt?: string;
@@ -61,6 +62,7 @@ export function normalizeConversation(raw: ApiConversation): Conversation {
     assignee_email: raw.assignee_email,
     last_message_at: raw.last_message_at ?? raw.LastMessageAt,
     last_message_preview: raw.last_message_preview ?? raw.LastMessagePreview,
+    last_customer_message_at: raw.last_customer_message_at ?? raw.LastCustomerMessageAt,
     unread_count: raw.unread_count ?? raw.UnreadCount ?? 0,
     priority_score: raw.priority_score ?? raw.PriorityScore ?? 0,
     waiting_since: raw.waiting_since ?? raw.WaitingSince,

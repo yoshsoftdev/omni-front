@@ -56,6 +56,8 @@ export interface InboxConversation {
   contact_phone: string;
   contact_avatar_url?: string;
   channel: InboxChannel;
+  /** Channel account id (`Conversation.device_id`). */
+  channel_id?: string;
   provider_profile_id?: string;
   linked_providers?: ProviderKind[];
   is_source_of_truth?: boolean;
@@ -65,10 +67,21 @@ export interface InboxConversation {
   assignee_name?: string;
   last_message_at?: string;
   last_message_preview?: string;
+  /** Last inbound customer message — used for Meta 24h free-text window. */
+  last_customer_message_at?: string;
   unread_count: number;
   priority_score?: number;
   waiting_since?: string;
   tags: InboxTag[];
+}
+
+/** Channel account row in the inbox channel sidebar. */
+export interface InboxChannelNavItem {
+  id: string;
+  label: string;
+  channel_type?: string;
+  status: "disconnected" | "connecting" | "connected";
+  unread_count: number;
 }
 
 export type MessageSendStatus = "sending" | "sent" | "delivered" | "read" | "failed";

@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, CheckCheck, CornerUpLeft, Download, ExternalLink, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video, Volume2 } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, forwardRef } from "react";
+import { useEffect, useRef, useState, forwardRef } from "react";
 
 import { AuthenticatedAudio } from "@/features/inbox/components/authenticated-audio";
 import {
@@ -9,8 +9,8 @@ import {
   formatBytes,
   useAuthenticatedMediaUrl,
 } from "@/features/inbox/hooks/use-authenticated-media";
-import type { InboxChatMessage } from "@/features/inbox/types";
-import { normalizeWamidForMatch } from "@/features/inbox/utils/wamid";
+import type { InboxChannel, InboxChatMessage } from "@/features/inbox/types";
+import { bubbleClass } from "@/features/inbox/utils/channel-bubble";
 import { cn } from "@/lib/utils";
 
 function formatTime(iso: string) {
@@ -254,6 +254,8 @@ function MediaPreview({ message }: { message: InboxChatMessage }) {
 
 interface MessageBubbleProps {
   message: InboxChatMessage;
+  /** Conversation channel, used to tint outbound bubbles. */
+  channel?: InboxChannel;
   repliedTo?: {
     id: string;
     content: string;
@@ -321,6 +323,7 @@ const MessageActions = forwardRef<
 
 export function MessageBubble({
   message,
+  channel,
   repliedTo,
   highlighted = false,
   onJumpToMessage,
@@ -333,6 +336,11 @@ export function MessageBubble({
   const [actionsOpen, setActionsOpen] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
   const hasUnresolvedReply = Boolean(message.reply_to_wamid && !repliedTo);
+  const senderLabel = !isOutbound
+    ? null
+    : isFromWABusinessApp
+      ? "via WA Business App"
+      : message.sender_name?.trim() || null;
 
   useEffect(() => {
     if (!actionsOpen) return;
@@ -370,10 +378,9 @@ export function MessageBubble({
       <div className={cn("flex w-fit max-w-[85%] flex-col", isOutbound ? "items-end" : "items-start")}>
         <div
           className={cn(
-            "w-full rounded-2xl px-3.5 py-2.5 shadow-sm transition-all",
-            isOutbound
-              ? "rounded-br-md bg-emerald-100 text-neutral-900 dark:text-neutral-900"
-              : "rounded-bl-md border border-border bg-card text-card-foreground",
+            "w-full rounded-2xl border px-3.5 py-2.5 shadow-sm transition-all",
+            isOutbound ? "rounded-br-md" : "rounded-bl-md",
+            bubbleClass(channel, isOutbound),
             highlighted ? "ring-2 ring-amber-400" : "",
           )}
         >
@@ -381,36 +388,36 @@ export function MessageBubble({
           <button
             type="button"
             onClick={() => onJumpToMessage?.(repliedTo.id)}
-            className={cn(
-              "mb-2 block w-full rounded-md border-l-2 border-emerald-500 bg-black/5 px-2 py-1 text-left text-xs hover:bg-black/10",
-              isOutbound ? "text-neutral-600" : "text-muted-foreground",
-            )}
+            className="mb-2 block w-full rounded-md border-l-2 border-[#111111] bg-black/5 px-2 py-1 text-left text-xs text-[#6B7280] hover:bg-black/10 dark:border-foreground"
             title="Jump to replied message"
           >
             <p className="line-clamp-2 whitespace-pre-wrap">{repliedTo.content}</p>
           </button>
         ) : hasUnresolvedReply ? (
           <div
-            className={cn(
-              "mb-2 rounded-md border-l-2 border-amber-500 bg-black/5 px-2 py-1 text-left text-xs",
-              isOutbound ? "text-neutral-600" : "text-muted-foreground",
-            )}
+            className="mb-2 rounded-md border-l-2 border-amber-500 bg-black/5 px-2 py-1 text-left text-xs text-[#6B7280]"
             title="Original replied message is not available in loaded app history"
           >
             <p className="line-clamp-2 whitespace-pre-wrap italic">Reply to an earlier message (not available in app history)</p>
           </div>
         ) : null}
         {message.is_deleted ? (
-          <p className={cn("text-sm italic", isOutbound ? "text-neutral-600" : "text-muted-foreground")}>This message was deleted</p>
+          <p className="text-sm italic text-[#6B7280]">This message was deleted</p>
         ) : (
           <MediaPreview message={message} />
         )}
+
         <div
           className={cn(
-            "mt-1 flex items-center gap-2 text-[10px]",
-            isOutbound ? "justify-end text-neutral-600" : "justify-start text-muted-foreground",
+            "mt-1.5 flex items-center gap-2 text-[10px] text-[#6B7280]",
+            isOutbound ? "justify-end" : "justify-start",
           )}
         >
+          {senderLabel ? (
+            <span className="max-w-[10rem] truncate font-medium text-[#6B7280]" title={senderLabel}>
+              {senderLabel}
+            </span>
+          ) : null}
           <span>{formatTime(message.sent_at)}</span>
           {isOutbound ? (
             message.send_status === "failed" ? (
@@ -436,16 +443,6 @@ export function MessageBubble({
           <p className="mt-1 text-[10px] text-destructive">{message.send_error}</p>
         ) : null}
         </div>
-        {isOutbound && message.sender_name && !isFromWABusinessApp ? (
-          <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
-            — {message.sender_name}
-          </p>
-        ) : null}
-        {isOutbound && isFromWABusinessApp ? (
-          <p className="mt-0.5 text-right text-[10px] text-muted-foreground">
-            via WA Business App
-          </p>
-        ) : null}
       </div>
       {!isOutbound ? (
         <MessageActions
@@ -468,77 +465,4 @@ export function MessageBubble({
   );
 }
 
-interface MessageThreadProps {
-  messages: InboxChatMessage[];
-  onReply?: (message: InboxChatMessage) => void;
-  onDelete?: (message: InboxChatMessage) => void;
-  onRetry?: (clientMessageId: string) => void;
-}
 
-export function MessageThread({ messages, onReply, onDelete, onRetry }: MessageThreadProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
-  let lastLabel = "";
-  const byWAMID = new Map<string, { id: string; content: string }>();
-  for (const msg of messages) {
-    const key = normalizeWamidForMatch(msg.wamid);
-    if (key) {
-      byWAMID.set(key, { id: msg.id, content: msg.content });
-    }
-  }
-
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.scrollTop = container.scrollHeight;
-  }, [messages]);
-
-  function jumpToMessage(id: string) {
-    const el = document.querySelector<HTMLElement>(`[data-message-id="${id}"]`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "center" });
-    setHighlightedMessageId(id);
-    window.setTimeout(() => setHighlightedMessageId((prev) => (prev === id ? null : prev)), 1800);
-  }
-
-  return (
-    <div ref={containerRef} className="flex-1 space-y-3 overflow-y-auto bg-muted/20 p-4">
-      {messages.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground">No messages yet.</p>
-      ) : (
-        messages.map((message) => {
-          const showLabel = message.date_label && message.date_label !== lastLabel;
-          if (message.date_label) lastLabel = message.date_label;
-          const repliedTo =
-            (message.reply_to_message_id
-              ? messages.find((m) => m.id === message.reply_to_message_id)
-              : undefined) ??
-            (message.reply_to_wamid
-              ? byWAMID.get(normalizeWamidForMatch(message.reply_to_wamid))
-              : undefined);
-
-          return (
-            <div key={message.id} data-message-id={message.id}>
-              {showLabel ? (
-                <div className="mb-3 flex justify-center">
-                  <span className="rounded-full bg-muted px-3 py-0.5 text-[11px] text-muted-foreground">
-                    {message.date_label}
-                  </span>
-                </div>
-              ) : null}
-              <MessageBubble
-                message={message}
-                repliedTo={repliedTo}
-                highlighted={highlightedMessageId === message.id}
-                onJumpToMessage={jumpToMessage}
-                onReply={onReply}
-                onDelete={onDelete}
-                onRetry={onRetry}
-              />
-            </div>
-          );
-        })
-      )}
-    </div>
-  );
-}

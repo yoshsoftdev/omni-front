@@ -6,23 +6,33 @@ import { useQuery } from "@tanstack/react-query";
 import { AUTOMATION_AGENT_PICK_ID, AssignConversationModal } from "@/features/inbox/components/assign-conversation-modal";
 import { ConversationHeader } from "@/features/inbox/components/conversation-header";
 import { MessageComposer, type ComposerSendInput } from "@/features/inbox/components/message-composer";
-import { MessageThread } from "@/features/inbox/components/message-bubble";
+import { MessageList } from "@/features/inbox/components/messages/message-list";
+import { useInboxAgents } from "@/features/inbox/hooks/use-inbox-agents";
+import { useFreeTextWindow } from "@/features/inbox/hooks/use-free-text-window";
 import { mapConversationToInbox } from "@/features/inbox/mappers/inbox.mapper";
 import { conversationService } from "@/features/inbox/services/conversation.service";
 import { quickReplyService } from "@/features/settings/services/quick-reply.service";
 import { webhookService } from "@/features/automation/services/webhook.service";
-import { teamService } from "@/features/team/services/team.service";
-import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features/inbox/types";
+import type {
+  InboxActivityEvent,
+  InboxChatMessage,
+  InboxConversation,
+} from "@/features/inbox/types";
 
 interface ConversationDetailProps {
   conversation: InboxConversation | null;
+  channelLabel?: string;
   messages: InboxChatMessage[];
+  activities?: InboxActivityEvent[];
   presenceLabel?: string | null;
   onSendMessage: (input: ComposerSendInput) => void;
   onDeleteMessage: (messageId: string) => Promise<void>;
   onRetryMessage: (clientMessageId: string) => void;
   onConversationUpdate: (conversation: InboxConversation) => void;
   onSaveNote: (content: string) => void;
+  onAddTag?: () => void;
+  onBack?: () => void;
+  onOpenContext?: () => void;
   onNotify: (message: string, type?: "success" | "error") => void;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
@@ -30,19 +40,24 @@ interface ConversationDetailProps {
 
 export function ConversationDetail({
   conversation,
+  channelLabel,
   messages,
+  activities = [],
   presenceLabel,
   onSendMessage,
   onDeleteMessage,
   onRetryMessage,
   onConversationUpdate,
   onSaveNote,
+  onAddTag,
+  onBack,
+  onOpenContext,
   onNotify,
   onTypingStart,
   onTypingStop,
 }: ConversationDetailProps) {
   const [assignOpen, setAssignOpen] = useState(false);
-  const [agents, setAgents] = useState<InboxAgent[]>([]);
+  const { agents } = useInboxAgents();
   const [replyToMessage, setReplyToMessage] = useState<InboxChatMessage | null>(null);
   const [automationAgentEnabled, setAutomationAgentEnabled] = useState(false);
 
@@ -61,22 +76,6 @@ export function ConversationDetail({
       })),
     [quickReplies],
   );
-
-  useEffect(() => {
-    teamService
-      .listMembers()
-      .then((members) =>
-        setAgents(
-          members.map((member) => ({
-            id: member.user_id,
-            name: member.name,
-            email: member.email,
-            presence: member.status === "active" ? "online" : "offline",
-          })),
-        ),
-      )
-      .catch(() => setAgents([]));
-  }, []);
 
   useEffect(() => {
     webhookService
@@ -149,10 +148,16 @@ export function ConversationDetail({
     [conversation, onConversationUpdate, onNotify],
   );
 
+  const freeTextWindow = useFreeTextWindow(
+    conversation?.channel,
+    conversation?.last_customer_message_at,
+    messages,
+  );
+
   if (!conversation) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center bg-muted/10 text-sm text-muted-foreground">
-        Select a conversation to view messages.
+      <div className="flex h-full flex-1 items-center justify-center bg-[#F6F7F9] text-sm text-[#6B7280] dark:bg-muted/10">
+        Select a conversation to open the workspace.
       </div>
     );
   }
@@ -161,19 +166,26 @@ export function ConversationDetail({
     <div className="flex h-full min-w-0 flex-1 flex-col bg-background">
       <ConversationHeader
         conversation={conversation}
+        channelLabel={channelLabel}
         presenceLabel={presenceLabel}
         onAssignClick={() => setAssignOpen(true)}
+        onTagClick={onAddTag}
         onMoreAction={handleMoreAction}
+        onBack={onBack}
+        onOpenContext={onOpenContext}
       />
-      <MessageThread
+      <MessageList
         key={conversation.id}
         messages={messages}
+        channel={conversation.channel}
+        activities={activities}
         onReply={setReplyToMessage}
         onDelete={handleDelete}
         onRetry={onRetryMessage}
       />
       <MessageComposer
         channel={conversation.channel}
+        channelLabel={channelLabel}
         quickReplies={quickReplyItems}
         quickReplyContext={{
           customer_name: conversation.customer_name || conversation.contact_name,
@@ -185,6 +197,7 @@ export function ConversationDetail({
         onSaveNote={onSaveNote}
         onTypingStart={onTypingStart}
         onTypingStop={onTypingStop}
+        freeTextAllowed={freeTextWindow.allowed}
       />
 
       <AssignConversationModal

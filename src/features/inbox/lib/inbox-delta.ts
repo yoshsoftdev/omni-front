@@ -11,6 +11,7 @@ export interface ConversationDelta {
   last_message_at?: string;
   priority_score?: number;
   waiting_since?: string;
+  last_customer_message_at?: string;
   unread_count?: number;
   status?: string;
   assigned_to?: string | null;
@@ -19,6 +20,8 @@ export interface ConversationDelta {
   contact_name?: string;
   contact_phone?: string;
   channel_type?: string;
+  channel_id?: string;
+  device_id?: string;
   provider?: string;
   provider_profile_id?: string;
   linked_providers?: string[];
@@ -90,6 +93,7 @@ export function mergeDelta(
     contact_name: contactName,
     contact_phone: contactPhone,
     channel: delta.provider ?? delta.channel_type ?? base.channel,
+    channel_id: delta.channel_id ?? delta.device_id ?? base.channel_id,
     provider_profile_id: delta.provider_profile_id ?? base.provider_profile_id,
     linked_providers: (delta.linked_providers as InboxConversation["linked_providers"]) ?? base.linked_providers,
     is_source_of_truth: delta.is_source_of_truth ?? base.is_source_of_truth,
@@ -99,6 +103,9 @@ export function mergeDelta(
     assignee_name: assigneeName,
     last_message_preview: delta.last_message ?? delta.last_message_preview ?? base.last_message_preview,
     last_message_at: delta.last_message_at ?? base.last_message_at,
+    last_customer_message_at:
+      delta.last_customer_message_at ??
+      (delta.waiting_since ? (delta.last_message_at ?? base.last_customer_message_at) : base.last_customer_message_at),
     unread_count: delta.unread_count ?? base.unread_count,
     priority_score: delta.priority_score ?? base.priority_score,
     waiting_since: delta.waiting_since ?? base.waiting_since,

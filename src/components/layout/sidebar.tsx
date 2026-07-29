@@ -17,6 +17,7 @@ import {
   Sparkles,
   ChevronDown,
   Smartphone,
+  Clock3,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ const navItems: Array<{
   { href: "/team/users", label: "Team", icon: UsersRound },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/settings/quick-replies", label: "Quick Replies", icon: MessageSquareQuote },
+  { href: "/settings/window-recontact", label: "Window Recontact", icon: Clock3 },
   { href: "/integrations", label: "Integrations", icon: PlugZap },
   { href: "/billing", label: "Billing", icon: CreditCard },
 ];

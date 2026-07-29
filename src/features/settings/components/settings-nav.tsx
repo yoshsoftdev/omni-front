@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 const SETTINGS_NAV = [
   { href: "/settings/appearance", label: "Appearance" },
   { href: "/settings/quick-replies", label: "Quick Replies" },
+  { href: "/settings/window-recontact", label: "Window Recontact" },
 ];
 
 export function SettingsNav() {

@@ -2,17 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-function formatWaitingLabel(waitingSince?: string, now = Date.now()): string {
-  if (!waitingSince) return "";
-  const start = new Date(waitingSince).getTime();
-  if (Number.isNaN(start)) return "";
-  const minutes = Math.max(0, Math.floor((now - start) / 60_000));
-  if (minutes >= 15) return "15m";
-  if (minutes >= 5) return "5m";
-  if (minutes >= 2) return "2m";
-  if (minutes >= 1) return "1m";
-  return "1m";
-}
+import { formatWaitingClock, formatWaitingLabel } from "@/features/inbox/utils/format-waiting";
 
 export function useWaitingLabel(waitingSince?: string): string {
   const [label, setLabel] = useState(() => formatWaitingLabel(waitingSince));
@@ -22,11 +12,27 @@ export function useWaitingLabel(waitingSince?: string): string {
     if (!waitingSince) return;
     const timer = window.setInterval(() => {
       setLabel(formatWaitingLabel(waitingSince));
-    }, 60_000);
+    }, 30_000);
     return () => window.clearInterval(timer);
   }, [waitingSince]);
 
   return label;
 }
 
-export { formatWaitingLabel };
+/** Live HH:MM:SS (or Dd HH:MM) waiting clock for the conversation header. */
+export function useWaitingClock(waitingSince?: string): string {
+  const [label, setLabel] = useState(() => formatWaitingClock(waitingSince));
+
+  useEffect(() => {
+    setLabel(formatWaitingClock(waitingSince));
+    if (!waitingSince) return;
+    const timer = window.setInterval(() => {
+      setLabel(formatWaitingClock(waitingSince));
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, [waitingSince]);
+
+  return label;
+}
+
+export { formatWaitingLabel, formatWaitingClock } from "@/features/inbox/utils/format-waiting";

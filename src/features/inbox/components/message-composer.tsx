@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { InternalNotePanel } from "@/features/inbox/components/internal-note-panel";
 import { getFilteredQuickReplies, QuickReplySelector } from "@/features/inbox/components/quick-reply-selector";
+import { ChannelPlatformBadge } from "@/features/inbox/components/shared/channel-platform-badge";
 import { formatBytes } from "@/features/inbox/hooks/use-authenticated-media";
 import { storageService } from "@/features/inbox/services/storage.service";
 import type { InboxChannel, QuickReplyItem } from "@/features/inbox/types";
@@ -46,6 +47,8 @@ interface PendingAttachment {
 
 interface MessageComposerProps {
   channel?: InboxChannel;
+  /** Channel account display name shown in composer chrome. */
+  channelLabel?: string;
   quickReplies: QuickReplyItem[];
   quickReplyContext?: Pick<QuickReplyVariableContext, "customer_name" | "phone">;
   replyTo?: {
@@ -58,10 +61,16 @@ interface MessageComposerProps {
   onSaveNote: (content: string) => void;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
+  /**
+   * When false, free-text / media Send is disabled (Meta 24h customer-care window closed).
+   * Defaults to true for channels without a messaging window.
+   */
+  freeTextAllowed?: boolean;
 }
 
 export function MessageComposer({
   channel = "whatsapp",
+  channelLabel,
   quickReplies,
   quickReplyContext,
   replyTo,
@@ -70,6 +79,7 @@ export function MessageComposer({
   onSaveNote,
   onTypingStart,
   onTypingStop,
+  freeTextAllowed = true,
 }: MessageComposerProps) {
   const user = useAuthStore((state) => state.user);
   const team = useAuthStore((state) => state.team);
@@ -216,6 +226,7 @@ export function MessageComposer({
   }
 
   function handleSend() {
+    if (!freeTextAllowed) return;
     const text = content.trim();
     if (attachment?.uploading) return;
     if (!text && !attachment?.storageObjectId) return;
@@ -280,52 +291,91 @@ export function MessageComposer({
     insertSlashReply(item.text);
   }
 
-  const canSend = Boolean((content.trim() || attachment?.storageObjectId) && !attachment?.uploading && !attachment?.error);
+  const canSend = Boolean(
+    freeTextAllowed &&
+      (content.trim() || attachment?.storageObjectId) &&
+      !attachment?.uploading &&
+      !attachment?.error,
+  );
+  const channelName = channelLabel?.trim();
+  const windowClosed = !freeTextAllowed;
 
   return (
-    <div className="border-t bg-card">
-      <div className="flex gap-1 border-b px-2">
-        <button
-          type="button"
-          onClick={() => setActiveTab("reply")}
-          className={cn(
-            "px-3 py-2.5 text-sm font-medium transition-colors",
-            activeTab === "reply"
-              ? "border-b-2 border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Reply
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab("note")}
-          className={cn(
-            "px-3 py-2.5 text-sm font-medium transition-colors",
-            activeTab === "note"
-              ? "border-b-2 border-primary text-primary"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Internal Note
-        </button>
+    <div className="sticky bottom-0 z-10 border-t border-[#E5E7EB] bg-white dark:border-border dark:bg-card">
+      <div className="flex items-center justify-between gap-2 border-b border-[#E5E7EB] px-3 py-1.5 dark:border-border">
+        <div className="flex gap-1" role="tablist" aria-label="Composer mode">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "reply"}
+            onClick={() => setActiveTab("reply")}
+            className={cn(
+              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              activeTab === "reply"
+                ? "bg-[#111111] text-white dark:bg-foreground dark:text-background"
+                : "text-[#6B7280] hover:bg-[#F6F7F9] dark:hover:bg-muted",
+            )}
+          >
+            Reply
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "note"}
+            onClick={() => setActiveTab("note")}
+            className={cn(
+              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              activeTab === "note"
+                ? "bg-[#111111] text-white dark:bg-foreground dark:text-background"
+                : "text-[#6B7280] hover:bg-[#F6F7F9] dark:hover:bg-muted",
+            )}
+          >
+            Internal Note
+          </button>
+        </div>
+        {activeTab === "reply" ? (
+          <div
+            className="inline-flex max-w-[55%] items-center gap-1.5 truncate rounded-full border border-[#E5E7EB] bg-[#F6F7F9] px-2 py-1 text-[11px] text-[#6B7280] dark:border-border dark:bg-muted"
+            title={channelName ? `Replying via ${channelName}` : undefined}
+          >
+            <span className="shrink-0">Replying via</span>
+            <ChannelPlatformBadge channelType={channel} className="h-5 border-0 bg-transparent px-0" />
+            <span className="truncate font-medium text-[#111111] dark:text-foreground">
+              {channelName || "channel"}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {activeTab === "reply" ? (
         <div className="p-3">
           {replyTo ? (
-            <div className="mb-3 rounded-md border bg-muted/30 p-2.5">
+            <div className="mb-3 rounded-md border border-[#E5E7EB] bg-[#F6F7F9] p-2.5 dark:border-border dark:bg-muted/30">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-muted-foreground">
+                  <p className="text-[11px] font-medium text-[#6B7280]">
                     Replying to {replyTo.sender_name?.trim() || "message"}
                   </p>
                   <p className="line-clamp-2 whitespace-pre-wrap text-xs">{replyTo.content || "(no text)"}</p>
                 </div>
-                <button type="button" onClick={onCancelReply} className="rounded-md p-1 hover:bg-muted">
+                <button
+                  type="button"
+                  onClick={onCancelReply}
+                  className="rounded-md p-1 hover:bg-muted"
+                  aria-label="Cancel reply"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>
+            </div>
+          ) : null}
+          {windowClosed ? (
+            <div
+              role="status"
+              className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+            >
+              The 24-hour messaging window has ended. Free-text replies are unavailable until the
+              customer messages again.
             </div>
           ) : null}
           {attachment ? (
@@ -333,6 +383,8 @@ export function MessageComposer({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
                   {attachment.previewUrl ? (
+                    // Local blob preview — next/image is not appropriate here.
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img src={attachment.previewUrl} alt={attachment.file.name} className="h-16 w-16 rounded-md object-cover" />
                   ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-md bg-muted">
@@ -400,7 +452,8 @@ export function MessageComposer({
                 }
               }}
               placeholder={isInstagramChannel ? "Type your Instagram message..." : "Type your message..."}
-              className="min-h-[72px] w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label="Message"
+              className="min-h-[72px] w-full resize-none rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] dark:border-border dark:bg-background"
               rows={3}
             />
             <QuickReplySelector
@@ -456,6 +509,7 @@ export function MessageComposer({
                 <button
                   type="button"
                   className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                  aria-label="Attach file"
                   title="Attach file"
                   onClick={() => fileInputRef.current?.click()}
                 >
@@ -464,6 +518,7 @@ export function MessageComposer({
                 <button
                   type="button"
                   className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                  aria-label="Attach image"
                   title="Image"
                   onClick={() => imageInputRef.current?.click()}
                 >
@@ -472,6 +527,7 @@ export function MessageComposer({
                 <button
                   type="button"
                   className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                  aria-label="Attach document"
                   title="Document"
                   onClick={() => documentInputRef.current?.click()}
                 >
@@ -481,6 +537,7 @@ export function MessageComposer({
               <button
                 type="button"
                 className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-muted"
+                aria-label="Emoji (coming soon)"
                 title="Emoji"
               >
                 <Smile className="h-4 w-4 text-muted-foreground" />
@@ -489,6 +546,8 @@ export function MessageComposer({
                 <button
                   type="button"
                   className="flex h-8 items-center gap-1 rounded-md px-2 text-xs hover:bg-muted"
+                  aria-label="Insert template"
+                  aria-expanded={templateOpen}
                   onClick={() => {
                     setTemplateOpen((value) => !value);
                     setSlashOpen(false);
@@ -506,7 +565,16 @@ export function MessageComposer({
                 />
               </div>
             </div>
-            <Button size="sm" onClick={handleSend} disabled={!canSend}>
+            <Button
+              size="sm"
+              onClick={handleSend}
+              disabled={!canSend}
+              title={
+                windowClosed
+                  ? "Free-text replies are unavailable outside the 24-hour messaging window"
+                  : undefined
+              }
+            >
               Send
             </Button>
           </div>

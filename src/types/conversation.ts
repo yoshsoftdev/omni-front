@@ -20,6 +20,8 @@ export interface Conversation {
   assignee_email?: string;
   last_message_at?: string;
   last_message_preview?: string;
+  /** Last inbound customer message — used for Meta 24h free-text window. */
+  last_customer_message_at?: string;
   unread_count: number;
   priority_score?: number;
   waiting_since?: string;

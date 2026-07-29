@@ -1,20 +1,27 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { PageHeader } from "@/components/layout/page-header";
 import { CONTACTS_UPDATED_EVENT, contactService } from "@/features/contacts/services/contact.service";
+import { ChannelSidebar } from "@/features/inbox/components/channel-sidebar/channel-sidebar";
 import { ContactSidebar } from "@/features/inbox/components/contact-sidebar";
 import { ConversationDetail } from "@/features/inbox/components/conversation-detail";
 import type { ComposerSendInput } from "@/features/inbox/components/message-composer";
 import { ConversationList } from "@/features/inbox/components/conversation-list";
+import {
+  InboxLayout,
+  type InboxMobilePane,
+} from "@/features/inbox/components/layout/inbox-layout";
+import { useInboxAgents } from "@/features/inbox/hooks/use-inbox-agents";
+import { useInboxChannels } from "@/features/inbox/hooks/use-inbox-channels";
 import { useInboxList } from "@/features/inbox/hooks/use-inbox-list";
 import { useConversationPresence } from "@/features/inbox/hooks/use-conversation-presence";
 import { useInboxRealtime } from "@/features/inbox/hooks/use-inbox-realtime";
 import { useInboxRealtimeCache } from "@/features/inbox/hooks/use-inbox-realtime-cache";
+import { useInboxSelection } from "@/features/inbox/hooks/use-inbox-selection";
 import { useInboxUnreadCount } from "@/features/inbox/hooks/use-inbox-unread-count";
+import { useIsNarrowViewport } from "@/features/inbox/hooks/use-is-narrow-viewport";
 import {
   applyMessageStatusUpdate,
   markMessageFailed,
@@ -29,6 +36,7 @@ import { conversationService } from "@/features/inbox/services/conversation.serv
 import { messageService } from "@/features/inbox/services/message.service";
 import { computeInboxTabCounts } from "@/features/inbox/utils/conversation-filters";
 import { applyMessageDateLabels } from "@/features/inbox/utils/message-date";
+import { withResolvedAssignee } from "@/features/inbox/utils/resolve-assignee";
 import { generateUUID } from "@/lib/uuid";
 import type {
   InboxActivityEvent,
@@ -81,9 +89,15 @@ const CHANNEL_NOTIFY_PREFIX: Partial<Record<InboxChannel, string>> = {
 };
 
 export function InboxPage() {
-  const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const contactParam = searchParams.get("contact");
+  const {
+    channelId,
+    selectedId,
+    contactParam,
+    setChannelId,
+    setSelectedId,
+    replaceParams,
+  } = useInboxSelection();
   const agentName = useAuthStore((state) => state.user?.name ?? "");
   const currentUserId = useAuthStore((state) => state.user?.id ?? "");
   const { notify, Toast } = useToast();
@@ -93,13 +107,14 @@ export function InboxPage() {
   const [contacts, setContacts] = useState<Record<string, InboxContact>>({});
   const [activitiesByConversation, setActivitiesByConversation] = useState<Record<string, InboxActivityEvent[]>>({});
   const [workspaceNotes, setWorkspaceNotes] = useState<Record<string, InboxWorkspaceNote[]>>({});
+  const [unreadByChannelId, setUnreadByChannelId] = useState<Record<string, number>>({});
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<InboxTab>("open");
-  const [channelFilter, setChannelFilter] = useState("all");
   const [agentFilter, setAgentFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [mobilePane, setMobilePane] = useState<InboxMobilePane>("list");
+  const isNarrow = useIsNarrowViewport(768);
   const pendingMessagesRef = useRef<
     Record<string, { conversationId: string; input: ComposerSendInput; preview: string }>
   >({});
@@ -130,13 +145,16 @@ export function InboxPage() {
     applyListDelta,
   } = useInboxList({
     tab: activeTab,
-    channelFilter,
+    channelFilter: channelId,
     agentFilter,
     search: debouncedSearch,
     currentUserId,
   });
 
   useInboxRealtimeCache(filterKey);
+
+  const { channels, loading: channelsLoading } = useInboxChannels(unreadByChannelId);
+  const { agents, agentNameById } = useInboxAgents();
 
   useEffect(() => {
     void loadContacts();
@@ -153,8 +171,10 @@ export function InboxPage() {
   useEffect(() => {
     if (selectedId || !contactParam || conversations.length === 0) return;
     const preferred = conversations.find((item) => item.contact_id === contactParam);
-    if (preferred) setSelectedId(preferred.id);
-  }, [conversations, contactParam, selectedId]);
+    if (preferred) {
+      replaceParams({ c: preferred.id, contact: null });
+    }
+  }, [conversations, contactParam, selectedId, replaceParams]);
 
   const toInboxMessage = useCallback(
     (message: Message) => mapMessageToInbox(message, agentName),
@@ -219,20 +239,22 @@ export function InboxPage() {
   const resolvedConversations = useMemo(
     () =>
       conversations.map((conversation) => {
-        const contact = contacts[conversation.contact_id];
-        if (!contact) return conversation;
-        const resolvedName = contact.contact_name || contact.name || conversation.contact_name;
-        const resolvedPhone = contact.phone || conversation.contact_phone;
-        if (resolvedName === conversation.contact_name && resolvedPhone === conversation.contact_phone) {
-          return conversation;
+        // The inbox list only carries `assigned_to`, so the agent name comes from the directory.
+        const withAssignee = withResolvedAssignee(conversation, agentNameById);
+        const contact = contacts[withAssignee.contact_id];
+        if (!contact) return withAssignee;
+        const resolvedName = contact.contact_name || contact.name || withAssignee.contact_name;
+        const resolvedPhone = contact.phone || withAssignee.contact_phone;
+        if (resolvedName === withAssignee.contact_name && resolvedPhone === withAssignee.contact_phone) {
+          return withAssignee;
         }
         return {
-          ...conversation,
+          ...withAssignee,
           contact_name: resolvedName,
           contact_phone: resolvedPhone,
         };
       }),
-    [conversations, contacts],
+    [conversations, contacts, agentNameById],
   );
 
   const tabCounts = useMemo(
@@ -240,23 +262,27 @@ export function InboxPage() {
     [resolvedConversations, currentUserId],
   );
 
-  const channelUnreadCounts = useMemo(() => {
-    const counts: Record<string, number> = {
-      all: totalUnreadCount,
-      whatsapp: 0,
-      instagram: 0,
-      messenger: 0,
-      email: 0,
-    };
-    for (const conversation of resolvedConversations) {
-      const unread = conversation.unread_count ?? 0;
-      if (unread <= 0) continue;
-      counts[conversation.channel] = (counts[conversation.channel] ?? 0) + unread;
+  useEffect(() => {
+    if (channelId === "all") {
+      const next: Record<string, number> = {};
+      for (const conversation of resolvedConversations) {
+        const id = conversation.channel_id;
+        const unread = conversation.unread_count ?? 0;
+        if (!id || unread <= 0) continue;
+        next[id] = (next[id] ?? 0) + unread;
+      }
+      setUnreadByChannelId(next);
+      return;
     }
-    return counts;
-  }, [resolvedConversations, totalUnreadCount]);
+    const sum = resolvedConversations.reduce((total, conversation) => total + (conversation.unread_count ?? 0), 0);
+    setUnreadByChannelId((prev) => ({ ...prev, [channelId]: sum }));
+  }, [resolvedConversations, channelId]);
 
   const selectedConversation = resolvedConversations.find((c) => c.id === selectedId) ?? null;
+  const selectedChannelLabel = useMemo(() => {
+    if (!selectedConversation?.channel_id) return undefined;
+    return channels.find((channel) => channel.id === selectedConversation.channel_id)?.label;
+  }, [channels, selectedConversation?.channel_id]);
   const {
     typingLabel,
     viewerLabel,
@@ -279,27 +305,74 @@ export function InboxPage() {
     applyListDelta({ conversation_id: selectedId, unread_count: 0 });
   }, [selectedId, selectedUnreadCount, markConversationAsRead, applyListDelta]);
 
-  const agents = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const conv of resolvedConversations) {
-      if (conv.assigned_to && conv.assignee_name) {
-        map.set(conv.assigned_to, conv.assignee_name);
-      }
-    }
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
-  }, [resolvedConversations]);
+  const agentFilterOptions = useMemo(
+    () => agents.map((agent) => ({ id: agent.id, name: agent.name })),
+    [agents],
+  );
 
   const handleSelect = useCallback(
     (id: string) => {
       const conversation = resolvedConversations.find((item) => item.id === id);
       setSelectedId(id);
+      setMobilePane("workspace");
       if ((conversation?.unread_count ?? 0) > 0) {
         applyListDelta({ conversation_id: id, unread_count: 0 });
         void markConversationAsRead(id);
       }
     },
-    [resolvedConversations, markConversationAsRead, applyListDelta],
+    [resolvedConversations, markConversationAsRead, applyListDelta, setSelectedId],
   );
+
+  const handleBackToList = useCallback(() => {
+    setSelectedId(null);
+    setMobilePane("list");
+  }, [setSelectedId]);
+
+  const handleOpenContext = useCallback(() => {
+    setMobilePane("context");
+  }, []);
+
+  const handleCloseContext = useCallback(() => {
+    setMobilePane(selectedId ? "workspace" : "list");
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setMobilePane("list");
+      return;
+    }
+    setMobilePane((prev) => (prev === "list" ? "workspace" : prev));
+  }, [selectedId]);
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName?.toLowerCase();
+      const isTypingTarget =
+        tag === "input" || tag === "textarea" || tag === "select" || target?.isContentEditable;
+
+      if (event.key === "/" && !isTypingTarget) {
+        event.preventDefault();
+        document.getElementById("inbox-search")?.focus();
+        return;
+      }
+
+      if (event.key === "Escape") {
+        if (mobilePane === "context") {
+          event.preventDefault();
+          handleCloseContext();
+          return;
+        }
+        if (isNarrow && mobilePane === "workspace" && selectedId) {
+          event.preventDefault();
+          handleBackToList();
+        }
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleBackToList, handleCloseContext, isNarrow, mobilePane, selectedId]);
 
   const handleConversationUpdate = useCallback(
     (updated: InboxConversation) => {
@@ -319,7 +392,7 @@ export function InboxPage() {
   );
 
   const dispatchSend = useCallback(
-    async (conversationId: string, clientMessageId: string, input: ComposerSendInput, _preview: string) => {
+    async (conversationId: string, clientMessageId: string, input: ComposerSendInput) => {
       try {
         const sent = await messageService.send(conversationId, {
           content: input.content,
@@ -402,7 +475,7 @@ export function InboxPage() {
         unread_count: 0,
       });
 
-      void dispatchSend(selectedId, clientMessageId, input, preview);
+      void dispatchSend(selectedId, clientMessageId, input);
     },
     [selectedConversation, selectedId, agentName, applyListDelta, dispatchSend],
   );
@@ -417,7 +490,7 @@ export function InboxPage() {
           sortMessagesAsc(markMessageSending(prev[pending.conversationId] ?? [], clientMessageId)),
         ),
       }));
-      void dispatchSend(pending.conversationId, clientMessageId, pending.input, pending.preview);
+      void dispatchSend(pending.conversationId, clientMessageId, pending.input);
     },
     [dispatchSend],
   );
@@ -592,28 +665,32 @@ export function InboxPage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="shrink-0 border-b bg-background px-4 py-4 md:px-6">
-        <PageHeader
-          title="Inbox"
-          description="Manage all customer conversations in one place."
-        />
-      </div>
-
-      <div className="flex min-h-0 flex-1">
-        {error ? (
-          <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">{error}</div>
-        ) : (
-          <>
+      {error ? (
+        <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">{error}</div>
+      ) : (
+        <InboxLayout
+          mobilePane={mobilePane}
+          onCloseContext={handleCloseContext}
+          channelSidebar={
+            <ChannelSidebar
+              channels={channels}
+              activeChannelId={channelId}
+              allUnreadCount={totalUnreadCount}
+              loading={channelsLoading}
+              onSelect={setChannelId}
+            />
+          }
+          conversationList={
             <ConversationList
               conversations={resolvedConversations}
               selectedId={selectedId}
               activeTab={activeTab}
               tabCounts={tabCounts}
-              channelFilter={channelFilter}
-              channelUnreadCounts={channelUnreadCounts}
+              activeChannelId={channelId}
+              channels={channels}
               agentFilter={agentFilter}
               search={search}
-              agents={agents}
+              agents={agentFilterOptions}
               loading={loading}
               hasMore={hasMore}
               isFetchingNextPage={isFetchingNextPage}
@@ -624,30 +701,39 @@ export function InboxPage() {
                   setAgentFilter("all");
                 }
               }}
-              onChannelFilterChange={setChannelFilter}
+              onChannelSelect={setChannelId}
               onAgentFilterChange={setAgentFilter}
               onSearchChange={setSearch}
               onSelect={handleSelect}
               onRefresh={() => void refresh()}
               onLoadMore={fetchNextPage}
             />
-
+          }
+          workspace={
             <ConversationDetail
               conversation={selectedConversation}
+              channelLabel={selectedChannelLabel}
               messages={selectedMessages}
+              activities={selectedActivities}
               presenceLabel={typingLabel ?? viewerLabel}
               onSendMessage={handleSendMessage}
               onDeleteMessage={handleDeleteMessage}
               onRetryMessage={handleRetryMessage}
               onConversationUpdate={handleConversationUpdate}
               onSaveNote={handleSaveNote}
+              onAddTag={handleAddTag}
+              onBack={isNarrow ? handleBackToList : undefined}
+              onOpenContext={handleOpenContext}
               onNotify={(message, type = "success") => notify(type, message)}
               onTypingStart={notifyTypingStart}
               onTypingStop={notifyTypingStop}
             />
-
+          }
+          contextSidebar={
             <ContactSidebar
               contact={selectedContact}
+              conversation={selectedConversation}
+              channelLabel={selectedChannelLabel}
               activities={selectedActivities}
               notes={selectedNotes}
               onSendMessage={() => notify("success", "Focus moved to message composer")}
@@ -655,9 +741,9 @@ export function InboxPage() {
               onToggleSubscription={() => void handleToggleSubscription()}
               onSaveContact={handleSaveContact}
             />
-          </>
-        )}
-      </div>
+          }
+        />
+      )}
 
       <Toast />
     </div>

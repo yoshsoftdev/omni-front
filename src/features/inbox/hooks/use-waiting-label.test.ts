@@ -9,10 +9,15 @@ describe("formatWaitingLabel", () => {
     expect(formatWaitingLabel(undefined, now)).toBe("");
   });
 
-  it("uses visual buckets", () => {
-    expect(formatWaitingLabel("2026-01-01T12:09:30Z", now)).toBe("1m");
+  it("formats sub-minute waits without rounding up", () => {
+    expect(formatWaitingLabel("2026-01-01T12:09:30Z", now)).toBe("<1m");
+  });
+
+  it("formats minutes, hours and days", () => {
     expect(formatWaitingLabel("2026-01-01T12:08:00Z", now)).toBe("2m");
-    expect(formatWaitingLabel("2026-01-01T12:05:00Z", now)).toBe("5m");
     expect(formatWaitingLabel("2026-01-01T11:55:00Z", now)).toBe("15m");
+    expect(formatWaitingLabel("2026-01-01T09:55:00Z", now)).toBe("2h 15m");
+    expect(formatWaitingLabel("2026-01-01T10:10:00Z", now)).toBe("2h");
+    expect(formatWaitingLabel("2025-12-30T12:10:00Z", now)).toBe("2d");
   });
 });

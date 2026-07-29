@@ -25,6 +25,7 @@ type EditorState = {
   name: string;
   url: string;
   channelId: string;
+  onlyUnassigned: boolean;
   rotateSecret: boolean;
 };
 
@@ -72,6 +73,9 @@ export function WebhooksPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deliveries, setDeliveries] = useState<Record<string, ForwardDelivery[]>>({});
   const [loadingDeliveries, setLoadingDeliveries] = useState<string | null>(null);
+  const [inboxAutomationEnabled, setInboxAutomationEnabled] = useState(false);
+  const [hasRegisteredWebhook, setHasRegisteredWebhook] = useState(false);
+  const [savingInboxAutomation, setSavingInboxAutomation] = useState(false);
 
   const loadWebhooks = useCallback(async () => {
     setLoading(true);
@@ -82,6 +86,16 @@ export function WebhooksPage() {
       notify("error", formatApiErrorMessage(err));
     } finally {
       setLoading(false);
+    }
+  }, [notify]);
+
+  const loadInboxAutomationSettings = useCallback(async () => {
+    try {
+      const settings = await webhookService.getInboxAutomationSettings();
+      setInboxAutomationEnabled(Boolean(settings.enabled));
+      setHasRegisteredWebhook(Boolean(settings.hasWebhook));
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
     }
   }, [notify]);
 
@@ -98,7 +112,22 @@ export function WebhooksPage() {
   useEffect(() => {
     void loadWebhooks();
     void loadChannels();
-  }, [loadWebhooks, loadChannels]);
+    void loadInboxAutomationSettings();
+  }, [loadWebhooks, loadChannels, loadInboxAutomationSettings]);
+
+  async function handleToggleInboxAutomation(enabled: boolean) {
+    setSavingInboxAutomation(true);
+    try {
+      const settings = await webhookService.updateInboxAutomationSettings(enabled);
+      setInboxAutomationEnabled(Boolean(settings.enabled));
+      setHasRegisteredWebhook(Boolean(settings.hasWebhook));
+      notify("success", enabled ? "Automation Agent enabled" : "Automation Agent disabled");
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    } finally {
+      setSavingInboxAutomation(false);
+    }
+  }
 
   const activeCount = useMemo(
     () => webhooks.filter((item) => item.status === "active").length,
@@ -111,6 +140,7 @@ export function WebhooksPage() {
       name: "",
       url: "",
       channelId: "",
+      onlyUnassigned: false,
       rotateSecret: true,
     });
   }
@@ -122,6 +152,7 @@ export function WebhooksPage() {
       name: item.name,
       url: item.url,
       channelId: item.channelId ?? "",
+      onlyUnassigned: Boolean(item.onlyUnassigned),
       rotateSecret: false,
     });
   }
@@ -146,6 +177,7 @@ export function WebhooksPage() {
           url: editor.url.trim(),
           events: ["message.received"],
           channelId,
+          onlyUnassigned: editor.onlyUnassigned,
         });
         setEditor(null);
         notify("success", "Webhook registered");
@@ -158,6 +190,7 @@ export function WebhooksPage() {
           url: editor.url.trim(),
           rotateSecret: editor.rotateSecret,
           channelId: channelId || undefined,
+          onlyUnassigned: editor.onlyUnassigned,
           clearChannel: !channelId,
         });
         setEditor(null);
@@ -237,7 +270,8 @@ export function WebhooksPage() {
       <Alert variant="info" title="Inbound message forwarding">
         Setiap kali customer mengirim pesan ke Omni Chan, kami POST event{" "}
         <code className="font-mono text-[11px]">message.received</code> ke URL yang Anda daftarkan.
-        Ini bukan callback invoke API Automation.
+        Ini bukan callback invoke API Automation. Jika conversation sudah di-assign ke agent manusia,
+        pesan tidak akan diteruskan ke webhook.
       </Alert>
 
       <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
@@ -262,6 +296,40 @@ export function WebhooksPage() {
             {EXAMPLE_PAYLOAD}
           </pre>
         </div>
+      </div>
+
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-medium text-foreground">Automation Agent (Inbox)</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Aktifkan agar tim Inbox bisa memilih &quot;Assign to Automation Agent&quot;.
+        </p>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className="text-sm">Enable Automation Agent in Inbox</p>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={inboxAutomationEnabled}
+            disabled={!hasRegisteredWebhook || savingInboxAutomation}
+            onClick={() => void handleToggleInboxAutomation(!inboxAutomationEnabled)}
+            className={[
+              "relative inline-flex h-6 w-11 items-center rounded-full border transition-colors",
+              inboxAutomationEnabled ? "border-primary bg-primary" : "border-border bg-muted",
+              !hasRegisteredWebhook || savingInboxAutomation ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+            ].join(" ")}
+          >
+            <span
+              className={[
+                "inline-block h-5 w-5 transform rounded-full bg-white transition-transform",
+                inboxAutomationEnabled ? "translate-x-5" : "translate-x-0.5",
+              ].join(" ")}
+            />
+          </button>
+        </div>
+        {!hasRegisteredWebhook ? (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Register minimal satu webhook terlebih dulu.
+          </p>
+        ) : null}
       </div>
 
       <div className="rounded-lg border bg-card">
@@ -333,6 +401,9 @@ export function WebhooksPage() {
                                 {event}
                               </StatusBadge>
                             ))}
+                            {item.onlyUnassigned ? (
+                              <StatusBadge tone="warning">Only open + unassigned</StatusBadge>
+                            ) : null}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -481,6 +552,16 @@ export function WebhooksPage() {
               Event: <code className="font-mono text-xs">message.received</code> (pesan masuk saja)
             </div>
 
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={editor.onlyUnassigned}
+                onChange={(e) =>
+                  setEditor((prev) => (prev ? { ...prev, onlyUnassigned: e.target.checked } : prev))
+                }
+              />
+              Forward hanya jika conversation status open dan belum di-assign agent
+            </label>
             {editor.mode === "edit" ? (
               <label className="flex items-center gap-2 text-sm">
                 <input

@@ -22,6 +22,26 @@ const CONVERSATION_EVENTS = new Set([
 function parseDelta(data: Record<string, unknown>): ConversationDelta | null {
   const conversationId = String(data.conversation_id ?? data.id ?? data.ID ?? "").trim();
   if (!conversationId) return null;
+  const hasAssignedTo = "assigned_to" in data || "AssignedTo" in data;
+  const assignedToRaw = data.assigned_to ?? data.AssignedTo;
+  const assignedTo =
+    !hasAssignedTo
+      ? undefined
+      : typeof assignedToRaw === "string"
+        ? assignedToRaw
+        : assignedToRaw === null
+          ? null
+          : undefined;
+  const hasAssigneeName = "assignee_name" in data || "AssigneeName" in data;
+  const assigneeNameRaw = data.assignee_name ?? data.AssigneeName;
+  const assigneeName =
+    !hasAssigneeName
+      ? undefined
+      : typeof assigneeNameRaw === "string"
+        ? assigneeNameRaw
+        : assigneeNameRaw === null
+          ? null
+          : undefined;
 
   return {
     conversation_id: conversationId,
@@ -32,7 +52,8 @@ function parseDelta(data: Record<string, unknown>): ConversationDelta | null {
     waiting_since: typeof data.waiting_since === "string" ? data.waiting_since : undefined,
     unread_count: typeof data.unread_count === "number" ? data.unread_count : undefined,
     status: typeof data.status === "string" ? data.status : undefined,
-    assigned_to: typeof data.assigned_to === "string" ? data.assigned_to : undefined,
+    assigned_to: assignedTo,
+    assignee_name: assigneeName,
     contact_id: typeof data.contact_id === "string" ? data.contact_id : undefined,
     contact_name: typeof data.contact_name === "string" ? data.contact_name : undefined,
     contact_phone: typeof data.contact_phone === "string" ? data.contact_phone : undefined,

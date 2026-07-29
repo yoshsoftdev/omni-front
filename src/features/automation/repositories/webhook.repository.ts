@@ -3,6 +3,7 @@ import type {
   CreateForwardWebhookInput,
   ForwardDelivery,
   ForwardWebhook,
+  InboxAutomationSettings,
   UpdateForwardWebhookInput,
 } from "@/features/automation/types/webhook";
 
@@ -14,6 +15,8 @@ export interface ForwardWebhookRepository {
   disable(id: string): Promise<ForwardWebhook>;
   remove(id: string): Promise<void>;
   listDeliveries(id: string, page?: number, pageSize?: number): Promise<ForwardDelivery[]>;
+  getInboxAutomationSettings(): Promise<InboxAutomationSettings>;
+  updateInboxAutomationSettings(enabled: boolean): Promise<InboxAutomationSettings>;
 }
 
 export function getWebhookRepository(): ForwardWebhookRepository {

@@ -40,7 +40,6 @@ function resolveMessageSource(message: Message, agentName?: string): "agent_app"
 
 function mapConversationStatus(status: ConversationStatus): InboxConversationStatus {
   if (status === "resolved" || status === "closed") return "closed";
-  if (status === "pending") return "unassigned";
   return "open";
 }
 

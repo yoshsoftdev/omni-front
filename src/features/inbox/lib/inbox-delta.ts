@@ -13,7 +13,8 @@ export interface ConversationDelta {
   waiting_since?: string;
   unread_count?: number;
   status?: string;
-  assigned_to?: string;
+  assigned_to?: string | null;
+  assignee_name?: string | null;
   contact_id?: string;
   contact_name?: string;
   contact_phone?: string;
@@ -32,8 +33,17 @@ function deltaId(delta: ConversationDelta): string {
 function mapStatus(status?: string): InboxConversation["status"] {
   if (!status) return "open";
   if (status === "closed" || status === "resolved") return "closed";
-  if (status === "pending") return "unassigned";
-  if (status === "assigned") return "assigned";
+  // Backend may still emit legacy "assigned"; treat as open and derive badge from assigned_to.
+  if (status === "pending" || status === "assigned" || status === "unassigned") return "open";
+  return "open";
+}
+
+function resolveDisplayStatus(
+  mappedStatus: InboxConversation["status"],
+): InboxConversation["status"] {
+  // Keep frontend conversation status as open/closed only.
+  // Assignment is metadata, not a status badge.
+  if (mappedStatus === "closed") return "closed";
   return "open";
 }
 
@@ -63,6 +73,16 @@ export function mergeDelta(
       ? (delta.contact_phone || base.contact_phone)
       : base.contact_phone;
 
+  const assignedTo =
+    delta.assigned_to !== undefined ? delta.assigned_to ?? undefined : base.assigned_to;
+  const assigneeName =
+    delta.assignee_name !== undefined
+      ? delta.assignee_name ?? undefined
+      : delta.assigned_to === null
+        ? undefined
+        : base.assignee_name;
+  const mappedStatus = delta.status ? mapStatus(delta.status) : base.status;
+
   return {
     ...base,
     id: id || base.id,
@@ -74,8 +94,9 @@ export function mergeDelta(
     linked_providers: (delta.linked_providers as InboxConversation["linked_providers"]) ?? base.linked_providers,
     is_source_of_truth: delta.is_source_of_truth ?? base.is_source_of_truth,
     linked_account_count: delta.linked_account_count ?? base.linked_account_count,
-    status: delta.status ? mapStatus(delta.status) : base.status,
-    assigned_to: delta.assigned_to !== undefined ? delta.assigned_to : base.assigned_to,
+    status: resolveDisplayStatus(mappedStatus),
+    assigned_to: assignedTo,
+    assignee_name: assigneeName,
     last_message_preview: delta.last_message ?? delta.last_message_preview ?? base.last_message_preview,
     last_message_at: delta.last_message_at ?? base.last_message_at,
     unread_count: delta.unread_count ?? base.unread_count,

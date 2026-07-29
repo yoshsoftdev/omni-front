@@ -4,6 +4,7 @@ import type {
   CreateForwardWebhookInput,
   ForwardDelivery,
   ForwardWebhook,
+  InboxAutomationSettings,
   UpdateForwardWebhookInput,
 } from "@/features/automation/types/webhook";
 
@@ -57,6 +58,16 @@ class ApiForwardWebhookRepository implements ForwardWebhookRepository {
     );
     const payload = res.data as PagePayload<ForwardDelivery>;
     return payload.items ?? [];
+  }
+
+  async getInboxAutomationSettings(): Promise<InboxAutomationSettings> {
+    const res = await apiClient.get<InboxAutomationSettings>("/automation/settings");
+    return res.data as InboxAutomationSettings;
+  }
+
+  async updateInboxAutomationSettings(enabled: boolean): Promise<InboxAutomationSettings> {
+    const res = await apiClient.patch<InboxAutomationSettings>("/automation/settings", { enabled });
+    return res.data as InboxAutomationSettings;
   }
 }
 

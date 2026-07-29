@@ -14,4 +14,6 @@ export const webhookService = {
   disable: (id: string) => repository.disable(id),
   remove: (id: string) => repository.remove(id),
   listDeliveries: (id: string) => repository.listDeliveries(id),
+  getInboxAutomationSettings: () => repository.getInboxAutomationSettings(),
+  updateInboxAutomationSettings: (enabled: boolean) => repository.updateInboxAutomationSettings(enabled),
 };

@@ -306,7 +306,8 @@ export function InboxPage() {
       applyListDelta({
         conversation_id: updated.id,
         status: updated.status,
-        assigned_to: updated.assigned_to,
+        assigned_to: updated.assigned_to ?? null,
+        assignee_name: updated.assignee_name ?? null,
         unread_count: updated.unread_count,
         last_message: updated.last_message_preview,
         last_message_at: updated.last_message_at,

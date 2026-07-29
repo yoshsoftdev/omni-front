@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { AssignConversationModal } from "@/features/inbox/components/assign-conversation-modal";
+import { AUTOMATION_AGENT_PICK_ID, AssignConversationModal } from "@/features/inbox/components/assign-conversation-modal";
 import { ConversationHeader } from "@/features/inbox/components/conversation-header";
 import { MessageComposer, type ComposerSendInput } from "@/features/inbox/components/message-composer";
 import { MessageThread } from "@/features/inbox/components/message-bubble";
 import { mapConversationToInbox } from "@/features/inbox/mappers/inbox.mapper";
 import { conversationService } from "@/features/inbox/services/conversation.service";
 import { quickReplyService } from "@/features/settings/services/quick-reply.service";
+import { webhookService } from "@/features/automation/services/webhook.service";
 import { teamService } from "@/features/team/services/team.service";
 import type { InboxAgent, InboxChatMessage, InboxConversation } from "@/features/inbox/types";
 
@@ -43,6 +44,7 @@ export function ConversationDetail({
   const [assignOpen, setAssignOpen] = useState(false);
   const [agents, setAgents] = useState<InboxAgent[]>([]);
   const [replyToMessage, setReplyToMessage] = useState<InboxChatMessage | null>(null);
+  const [automationAgentEnabled, setAutomationAgentEnabled] = useState(false);
 
   const { data: quickReplies = [] } = useQuery({
     queryKey: ["quick-replies"],
@@ -76,18 +78,34 @@ export function ConversationDetail({
       .catch(() => setAgents([]));
   }, []);
 
+  useEffect(() => {
+    webhookService
+      .getInboxAutomationSettings()
+      .then((settings) => setAutomationAgentEnabled(Boolean(settings.enabled && settings.hasWebhook)))
+      .catch(() => setAutomationAgentEnabled(false));
+  }, []);
+
   const handleAssign = useCallback(
     async (agentId: string) => {
       if (!conversation) return;
       try {
-        const updated = await conversationService.assign(conversation.id, agentId);
+        const isAutomation = agentId === AUTOMATION_AGENT_PICK_ID;
+        const updated = await conversationService.assign(conversation.id, isAutomation ? null : agentId);
         const agent = agents.find((a) => a.id === agentId);
+        const mapped = mapConversationToInbox(updated);
         onConversationUpdate({
-          ...mapConversationToInbox(updated),
-          assignee_name: agent?.name ?? updated.assignee_name,
+          ...mapped,
+          // Automation keeps conversation OPEN + unassigned to human agent.
+          status: isAutomation ? "open" : mapped.status,
+          assigned_to: isAutomation ? undefined : mapped.assigned_to,
+          assignee_name: isAutomation ? "Automation Agent" : agent?.name ?? updated.assignee_name,
         });
         setAssignOpen(false);
-        onNotify(agent ? `Assigned to ${agent.name}` : "Conversation assigned");
+        if (isAutomation) {
+          onNotify("Routed to Automation Agent (status Open)");
+        } else {
+          onNotify(agent ? `Assigned to ${agent.name}` : "Conversation assigned");
+        }
       } catch (err) {
         onNotify(err instanceof Error ? err.message : "Failed to assign conversation", "error");
       }
@@ -172,6 +190,7 @@ export function ConversationDetail({
       <AssignConversationModal
         open={assignOpen}
         agents={agents}
+        enableAutomationAgent={automationAgentEnabled}
         selectedAgentId={conversation.assigned_to}
         onClose={() => setAssignOpen(false)}
         onAssign={handleAssign}

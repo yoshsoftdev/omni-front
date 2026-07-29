@@ -35,14 +35,21 @@ export function ConversationHeader({
   onAssignClick,
   onMoreAction,
 }: ConversationHeaderProps) {
-  const displayStatus: InboxConversationStatus =
-    conversation.status === "closed"
-      ? "closed"
-      : conversation.assigned_to
-        ? "assigned"
-        : conversation.status === "open"
-          ? "open"
-          : conversation.status;
+  // Conversation status badge is Open/Closed only.
+  // Assignment is shown separately below (human / automation / unassigned).
+  const isClosed = conversation.status === "closed";
+  const isAutomationAgent = conversation.assignee_name?.trim() === "Automation Agent";
+  const humanAssigneeName = conversation.assignee_name?.trim();
+  const hasHumanAssignee =
+    Boolean(conversation.assigned_to?.trim()) && !isAutomationAgent;
+  const displayStatus: InboxConversationStatus = isClosed ? "closed" : "open";
+  const assigneeLine = isClosed
+    ? null
+    : isAutomationAgent
+      ? "Handled by: Automation Agent"
+      : hasHumanAssignee
+        ? `Assigned to: ${humanAssigneeName || "Agent"}`
+        : "Unassigned";
 
   return (
     <div className="border-b bg-card">
@@ -71,6 +78,9 @@ export function ConversationHeader({
           <p className="mt-0.5 text-xs text-muted-foreground">
             {providerLabel(conversation.channel as ProviderKind)} conversation
           </p>
+          {assigneeLine ? (
+            <p className="mt-0.5 text-xs text-muted-foreground">{assigneeLine}</p>
+          ) : null}
           <TagBadgeList tags={conversation.tags} className="mt-1.5" />
         </div>
       </div>

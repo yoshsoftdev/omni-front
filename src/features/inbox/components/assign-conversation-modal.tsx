@@ -18,14 +18,18 @@ interface AssignConversationModalProps {
   open: boolean;
   agents: InboxAgent[];
   selectedAgentId?: string;
+  enableAutomationAgent?: boolean;
   onClose: () => void;
   onAssign: (agentId: string) => void;
 }
+
+export const AUTOMATION_AGENT_PICK_ID = "__automation_agent__";
 
 export function AssignConversationModal({
   open,
   agents,
   selectedAgentId,
+  enableAutomationAgent = false,
   onClose,
   onAssign,
 }: AssignConversationModalProps) {
@@ -66,6 +70,28 @@ export function AssignConversationModal({
           </div>
 
           <div className="max-h-64 space-y-1 overflow-y-auto">
+            {enableAutomationAgent ? (
+              <label
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 hover:bg-accent/50",
+                  pickedId === AUTOMATION_AGENT_PICK_ID && "border-primary bg-primary/5",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="agent"
+                  value={AUTOMATION_AGENT_PICK_ID}
+                  checked={pickedId === AUTOMATION_AGENT_PICK_ID}
+                  onChange={() => setPickedId(AUTOMATION_AGENT_PICK_ID)}
+                  className="accent-primary"
+                />
+                <ContactAvatar name="Automation Agent" size="sm" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">Automation Agent</p>
+                  <div className="text-xs text-muted-foreground">Webhook automation handler</div>
+                </div>
+              </label>
+            ) : null}
             {filtered.map((agent) => (
               <label
                 key={agent.id}

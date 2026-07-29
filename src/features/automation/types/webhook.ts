@@ -11,6 +11,8 @@ export interface ForwardWebhook {
   status: ForwardWebhookStatus;
   events: ForwardWebhookEvent[];
   channelId?: string | null;
+  onlyUnassigned: boolean;
+  assignAutomationOnReopen: boolean;
   createdAt: string;
   updatedAt: string;
   lastUsedAt: string | null;
@@ -22,6 +24,8 @@ export interface CreateForwardWebhookInput {
   secret?: string;
   events?: ForwardWebhookEvent[];
   channelId?: string | null;
+  onlyUnassigned?: boolean;
+  assignAutomationOnReopen?: boolean;
 }
 
 export interface UpdateForwardWebhookInput {
@@ -30,6 +34,8 @@ export interface UpdateForwardWebhookInput {
   status?: ForwardWebhookStatus;
   events?: ForwardWebhookEvent[];
   channelId?: string | null;
+  onlyUnassigned?: boolean;
+  assignAutomationOnReopen?: boolean;
   clearChannel?: boolean;
   rotateSecret?: boolean;
   secret?: string;
@@ -48,4 +54,9 @@ export interface ForwardDelivery {
   statusCode: number;
   errorMessage?: string | null;
   attemptedAt: string;
+}
+
+export interface InboxAutomationSettings {
+  enabled: boolean;
+  hasWebhook: boolean;
 }

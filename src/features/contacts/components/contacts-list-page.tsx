@@ -217,6 +217,19 @@ export function ContactsListPage() {
           }}
           onNotify={notify}
           onRefresh={loadPage}
+          onOpenLinkedContact={(linkedContactId) => {
+            void contactService.getById(linkedContactId).then((peer) => {
+              setSelectedContact(peer);
+              setContacts((prev) => {
+                if (prev.some((c) => c.id === peer.id)) {
+                  return prev.map((c) => (c.id === peer.id ? peer : c));
+                }
+                return prev;
+              });
+            }).catch((err) => {
+              notify("error", err instanceof Error ? err.message : "Failed to open linked contact");
+            });
+          }}
         />
       ) : null}
 

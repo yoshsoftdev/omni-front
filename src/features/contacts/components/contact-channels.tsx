@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Link2, MessageSquare, Split, Unlink } from "lucide-react";
+import { MessageSquare, Split } from "lucide-react";
 
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { ProviderBadge, SourceOfTruthBadge } from "@/components/shared/provider-badge";
@@ -73,14 +73,10 @@ function providerDetails(profile: ProviderProfile): ProviderDetail[] {
 }
 
 export function ContactChannels({
-  contactId,
   profiles,
-  onLink,
   onRefresh,
 }: {
-  contactId: string;
   profiles: ProviderProfile[];
-  onLink: () => void;
   onRefresh: () => Promise<void>;
 }) {
   const router = useRouter();
@@ -99,32 +95,22 @@ export function ContactChannels({
     await onRefresh();
   }
 
-  async function unlinkContact(profile: ProviderProfile) {
-    const confirmed = window.confirm(
-      `Unlink this ${profile.provider} channel from the current contact? Channel ownership and conversation history will remain unchanged.`,
-    );
-    if (!confirmed) return;
-    await contactService.unlinkContact(contactId, profile.contact_id);
-    await onRefresh();
-  }
-
   function connectionLabel(profile: ProviderProfile) {
     return profile.status === "active" ? "Connected" : "Not Connected";
   }
 
   return (
     <section>
-      <div className="flex items-center justify-between">
-        <h4 className="text-sm font-semibold">Linked Accounts</h4>
-        <Button variant="outline" size="sm" onClick={onLink}>
-          <Link2 className="mr-1.5 h-3.5 w-3.5" />
-          Link Contact
-        </Button>
+      <div>
+        <h4 className="text-sm font-semibold">Channels</h4>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Provider accounts owned by this contact.
+        </p>
       </div>
       <div className="mt-3 space-y-2">
         {profiles.length === 0 ? (
           <p className="rounded-lg border border-dashed p-4 text-center text-xs text-muted-foreground">
-            No linked accounts.
+            No channels.
           </p>
         ) : profiles.map((profile) => (
           <div key={profile.id} className="rounded-lg border p-3">
@@ -170,9 +156,7 @@ export function ContactChannels({
                   Open Conversation
                 </Button>
               ) : null}
-              {profile.contact_id === contactId
-                && profile.provider === "whatsapp"
-                && !profile.is_source_of_truth ? (
+              {profile.provider === "whatsapp" && !profile.is_source_of_truth ? (
                 <Button
                   size="sm"
                   variant="outline"
@@ -181,27 +165,15 @@ export function ContactChannels({
                   Set Main Account
                 </Button>
               ) : null}
-              {profile.contact_id === contactId ? (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive"
-                  onClick={() => void separateChannel(profile)}
-                >
-                  <Split className="mr-1.5 h-3.5 w-3.5" />
-                  Separate Contact
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive"
-                  onClick={() => void unlinkContact(profile)}
-                >
-                  <Unlink className="mr-1.5 h-3.5 w-3.5" />
-                  Unlink Contact
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive"
+                onClick={() => void separateChannel(profile)}
+              >
+                <Split className="mr-1.5 h-3.5 w-3.5" />
+                Separate Contact
+              </Button>
             </div>
           </div>
         ))}

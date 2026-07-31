@@ -58,7 +58,7 @@ export function LinkContactDialog({
       <div className="w-full max-w-lg rounded-xl border bg-card p-5 shadow-xl">
         <h3 className="font-semibold">Link Contact</h3>
         <p className="mt-1 text-xs text-muted-foreground">
-          Search by phone, display name, or username. Both contacts remain independent.
+          Create a shortcut between two contacts. No channels, conversations, or CRM fields are moved or merged.
         </p>
         <div className="relative mt-4">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -107,7 +107,7 @@ export function LinkContactDialog({
               </div>
             </div>
             <p className="mt-3 text-xs text-muted-foreground">
-              Provider profiles, conversations, messages, and CRM fields will not move.
+              This only records that the contacts are related. Each contact keeps its own data and channels.
             </p>
           </div>
         ) : null}

@@ -20,6 +20,7 @@ import {
 } from "@/features/contacts/components/contact-form-modal";
 import { ContactTimeline } from "@/features/contacts/components/contact-timeline";
 import { LinkContactDialog } from "@/features/contacts/components/link-contact-dialog";
+import { LinkedContactsSection } from "@/features/contacts/components/linked-contacts-section";
 import { contactFieldService, contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
 import type {
@@ -66,6 +67,7 @@ export function ContactDetailDrawer({
   onUpdate,
   onNotify,
   onRefresh,
+  onOpenLinkedContact,
 }: {
   contact: Contact;
   tags: ContactTag[];
@@ -74,6 +76,7 @@ export function ContactDetailDrawer({
   onUpdate: (contact: Contact) => void;
   onNotify: (type: "success" | "error", message: string) => void;
   onRefresh?: () => Promise<void>;
+  onOpenLinkedContact?: (linkedContactId: string) => void;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState("overview");
@@ -312,7 +315,7 @@ export function ContactDetailDrawer({
                   <span>Not Available</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <span className="text-muted-foreground">Linked Accounts</span>
+                  <span className="text-muted-foreground">Linked Contacts</span>
                   <span>{linkedAccountCount}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
@@ -330,9 +333,21 @@ export function ContactDetailDrawer({
           {tab === "profile" ? (
             <div className="space-y-5">
               <ContactChannels
-                contactId={detail.id}
                 profiles={ownProfiles}
+                onRefresh={refreshDetail}
+              />
+
+              <LinkedContactsSection
+                contactId={detail.id}
+                linkedContacts={detail.linked_contacts ?? []}
                 onLink={() => setLinkOpen(true)}
+                onOpenContact={(linkedContactId) => {
+                  if (onOpenLinkedContact) {
+                    onOpenLinkedContact(linkedContactId);
+                    return;
+                  }
+                  router.push(`/contacts?contact=${linkedContactId}`);
+                }}
                 onRefresh={refreshDetail}
               />
 

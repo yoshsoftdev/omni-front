@@ -95,8 +95,8 @@ export async function installApiMock(page: Page): Promise<ApiMock> {
 
 export const test = base.extend<{ api: ApiMock }>({
   api: async ({ page }, provide) => {
-    // Block the realtime socket: e2e covers HTTP flows only.
-    await page.route("**/ws**", (route) => route.abort());
+    // Realtime socket: e2e covers HTTP flows only, so close it in the browser.
+    await page.routeWebSocket(/\/ws(\?|$)/, (ws) => ws.close());
     const api = await installApiMock(page);
     await provide(api);
   },
@@ -112,3 +112,32 @@ export const TEST_SESSION = {
   access_token: "e2e-access-token",
   refresh_token: "e2e-refresh-token",
 };
+
+/** Start the page already signed in (same persisted store the app writes). */
+export async function signIn(page: Page) {
+  await page.addInitScript((s) => {
+    localStorage.setItem(
+      "omni-chan-auth",
+      JSON.stringify({
+        state: {
+          tokens: { accessToken: s.access_token, refreshToken: s.refresh_token },
+          user: s.user,
+          team: s.team,
+          role: s.role,
+        },
+        version: 0,
+      }),
+    );
+  }, TEST_SESSION);
+}
+
+/** Responses for calls every dashboard page makes (badges, nav). */
+export function mockShell(api: ApiMock) {
+  api.ok("GET", "/dashboard", { unread_conversations: 0 });
+  api.ok("GET", "/channels", { items: [] });
+}
+
+/** Calls of one method+path, in order. */
+export function callsTo(api: ApiMock, method: string, path: string): ApiCall[] {
+  return api.calls.filter((c) => c.method === method && c.path === path);
+}

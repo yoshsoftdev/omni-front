@@ -25,7 +25,6 @@ import {
   buildExampleRequestBody,
 } from "@/features/automation/utils/variable-defaults";
 import { WhatsAppMessagePreview } from "@/features/broadcast/components/shared/whatsapp-message-preview";
-import { MOCK_TEMPLATES } from "@/features/broadcast/mock/template-mock-data";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
 import type { Template } from "@/features/broadcast/types/template";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
@@ -123,14 +122,8 @@ export function CreateEndpointWizard() {
 
   const templatesQuery = useQuery({
     queryKey: ["automation-templates"],
-    queryFn: async () => {
-      try {
-        const items = await templateQueryService.getTemplates();
-        return items.length > 0 ? items : MOCK_TEMPLATES;
-      } catch {
-        return MOCK_TEMPLATES;
-      }
-    },
+    // Real templates only: an endpoint bound to a placeholder template fails on every invoke.
+    queryFn: () => templateQueryService.getTemplates(),
   });
   const channelsQuery = useQuery({
     queryKey: ["automation-send-text-channels"],
@@ -415,6 +408,13 @@ export function CreateEndpointWizard() {
                   className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm"
                 />
               </div>
+              {templatesQuery.isError ? (
+                <p className="text-sm text-destructive">Could not load templates. Try again later.</p>
+              ) : !templatesQuery.isLoading && approvedTemplates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No approved templates. Sync templates in Broadcast → Templates first.
+                </p>
+              ) : null}
               <div className="grid gap-3 sm:grid-cols-2">
                 {pagedTemplates.map((template) => {
                   const selected = template.id === templateId;

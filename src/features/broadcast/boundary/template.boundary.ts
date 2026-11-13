@@ -2,7 +2,6 @@
  * Official Template domain boundary.
  *
  * All TemplateDTO data must pass through this module before reaching UI layers.
- * Mock data uses native Template objects from template-mock-data.ts.
  * API integration (future) must use parseTemplateDto / serializeTemplate here.
  */
 import {

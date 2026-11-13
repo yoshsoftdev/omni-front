@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
+import { mapConversationToInbox, mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
+import type { Conversation } from "@/types/conversation";
 import type { Message } from "@/types/message";
 
 describe("mapMessageToInbox", () => {
@@ -34,5 +35,21 @@ describe("mapMessageToInbox", () => {
     const mapped = mapMessageToInbox(message);
     expect(mapped.type).toBe("other");
     expect(mapped.content).toContain("Shared a post");
+  });
+});
+
+describe("mapConversationToInbox channel", () => {
+  const base = { id: "c1", contact_id: "k1" } as Conversation;
+
+  it.each([
+    ["whatsapp", "whatsapp"],
+    ["meta_whatsapp", "whatsapp"],
+    ["META", "whatsapp"],
+    ["ig", "instagram"],
+    ["instagram", "instagram"],
+    [undefined, "unknown"],
+  ])("maps channel_type %s to %s", (channelType, expected) => {
+    const mapped = mapConversationToInbox({ ...base, channel_type: channelType } as Conversation);
+    expect(mapped.channel).toBe(expected);
   });
 });

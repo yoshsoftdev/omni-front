@@ -92,10 +92,10 @@ export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold">Manual WhatsApp Connection</h2>
-          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold uppercase text-muted-foreground">
             Advanced
           </span>
-          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold uppercase text-muted-foreground">
             Developer
           </span>
         </div>

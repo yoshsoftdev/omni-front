@@ -121,7 +121,7 @@ export function WorkspaceReadinessDashboard() {
               <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-full border-4 border-primary/15 bg-primary/5">
                 <div className="text-center">
                   <div className="text-3xl font-semibold text-primary">{readiness.score}%</div>
-                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Ready</div>
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground">Ready</div>
                 </div>
               </div>
               <div className="min-w-0 flex-1 space-y-3">
@@ -135,7 +135,7 @@ export function WorkspaceReadinessDashboard() {
                     style={{ width: `${readiness.score}%` }}
                   />
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground">
+                <div className="flex justify-between text-xs text-muted-foreground">
                   <span>0%</span>
                   <span>25%</span>
                   <span>50%</span>
@@ -198,11 +198,11 @@ export function WorkspaceReadinessDashboard() {
                     key={check.id}
                     className={cn(
                       "flex items-start gap-3 rounded-lg border px-4 py-3",
-                      check.completed ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20" : "bg-muted/20",
+                      check.completed ? "border-success-border bg-success-muted" : "bg-muted/20",
                     )}
                   >
                     {check.completed ? (
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-success-foreground" />
                     ) : (
                       <Circle className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
                     )}

@@ -31,7 +31,7 @@ export function StatsCard({
           <div
             className={cn(
               "flex items-center gap-0.5 text-xs font-medium",
-              isUp ? "text-emerald-600" : "text-rose-600",
+              isUp ? "text-success-foreground" : "text-error-foreground",
             )}
           >
             {isUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}

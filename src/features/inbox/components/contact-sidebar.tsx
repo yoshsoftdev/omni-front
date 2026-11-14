@@ -51,7 +51,7 @@ export function ContactSidebar({
 
   if (!contact && !conversation) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-card p-6 text-sm text-[#6B7280]">
+      <div className="flex h-full w-full items-center justify-center bg-card p-6 text-sm text-muted-foreground">
         Select a conversation to view context.
       </div>
     );
@@ -68,17 +68,17 @@ export function ContactSidebar({
 
   return (
     <div className="flex h-full w-full flex-col bg-card">
-      <div className="flex border-b border-[#E5E7EB] dark:border-border">
+      <div className="flex border-b border-border">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
             className={cn(
-              "flex-1 py-2.5 text-[11px] font-medium",
+              "flex-1 py-2.5 text-xs font-medium",
               activeTab === tab.id
-                ? "border-b-2 border-[#111111] text-[#111111] dark:border-foreground dark:text-foreground"
-                : "text-[#6B7280] hover:text-[#111111] dark:hover:text-foreground",
+                ? "border-b-2 border-primary text-foreground dark:border-foreground"
+                : "text-muted-foreground hover:text-foreground dark:hover:text-foreground",
             )}
           >
             {tab.label}
@@ -96,12 +96,12 @@ export function ContactSidebar({
                 onToggleSubscription={onToggleSubscription}
                 onSaveContact={onSaveContact}
               />
-              <div className="border-t border-[#E5E7EB] p-5 dark:border-border">
+              <div className="border-t border-border p-5">
                 <TagList tags={tagSource} onAddTag={onAddTag} />
               </div>
             </div>
           ) : (
-            <p className="p-5 text-sm text-[#6B7280]">No contact details available.</p>
+            <p className="p-5 text-sm text-muted-foreground">No contact details available.</p>
           )
         ) : null}
 
@@ -113,7 +113,7 @@ export function ContactSidebar({
                 <TagList tags={tagSource} onAddTag={onAddTag} />
               </>
             ) : (
-              <p className="text-sm text-[#6B7280]">No conversation selected.</p>
+              <p className="text-sm text-muted-foreground">No conversation selected.</p>
             )}
           </div>
         ) : null}

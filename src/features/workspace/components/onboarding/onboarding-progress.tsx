@@ -47,11 +47,11 @@ export function OnboardingProgress({
               )}
             >
               {done ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success-foreground" />
               ) : (
                 <span
                   className={cn(
-                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[10px]",
+                    "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-xs",
                     active ? "border-primary text-primary" : "border-muted-foreground/40 text-muted-foreground",
                   )}
                 >

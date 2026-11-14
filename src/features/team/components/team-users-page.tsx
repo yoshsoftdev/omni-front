@@ -244,7 +244,7 @@ export function TeamUsersPage() {
           <div
             className={[
               "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-lg",
-              toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700",
+              toast.type === "success" ? "border-success-border bg-success-muted text-success-foreground" : "border-error-border bg-error-muted text-error-foreground",
             ].join(" ")}
           >
             {toast.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
@@ -431,14 +431,14 @@ export function TeamUsersPage() {
                     <RoleBadge role={item.slug} />
                     <span className="text-sm font-medium">{item.title}</span>
                     {!item.is_system ? (
-                      <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">Custom</span>
+                      <span className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">Custom</span>
                     ) : null}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">{item.description}</p>
                   {item.bullets.length > 0 ? (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {item.bullets.map((b) => (
-                        <span key={b} className="rounded bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                        <span key={b} className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
                           {b}
                         </span>
                       ))}
@@ -477,7 +477,7 @@ export function TeamUsersPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-red-200 text-red-600"
+                    className="border-error-border text-error-foreground"
                     onClick={() => setDeleteRoleOpen(true)}
                   >
                     <Trash2 className="mr-1.5 h-3.5 w-3.5" />
@@ -524,14 +524,14 @@ export function TeamUsersPage() {
                               className={[
                                 "inline-flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
                                 allowed
-                                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                  ? "border-success-border bg-success-muted text-success-foreground"
                                   : "border-muted bg-background text-muted-foreground",
                               ].join(" ")}
                             >
                               {allowed ? "✓" : "—"}
                             </button>
                           ) : (
-                            <span className={allowed ? "text-emerald-600" : "text-muted-foreground"}>
+                            <span className={allowed ? "text-success-foreground" : "text-muted-foreground"}>
                               {allowed ? "✓" : "—"}
                             </span>
                           )}
@@ -584,8 +584,8 @@ export function TeamUsersPage() {
                   <div className="font-medium">{editingMember.name}</div>
                   <div className="text-xs text-muted-foreground">{editingMember.email}</div>
                 </div>
-                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-700">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-success-muted px-2 py-0.5 text-xs text-success-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
                   Active
                 </span>
               </div>
@@ -626,7 +626,7 @@ export function TeamUsersPage() {
                       )}
                       {label}
                     </span>
-                    <span className="text-emerald-600">●</span>
+                    <span className="text-success-foreground">●</span>
                   </div>
                 ))}
               </div>
@@ -651,7 +651,7 @@ export function TeamUsersPage() {
               </Button>
               <Button
                 variant="outline"
-                className="w-full border-red-200 text-red-600"
+                className="w-full border-error-border text-error-foreground"
                 onClick={() => setConfirmDeactivateOpen(true)}
               >
                 Deactivate Member
@@ -746,7 +746,7 @@ export function TeamUsersPage() {
               <Button variant="outline" onClick={() => setDeleteRoleOpen(false)}>
                 Cancel
               </Button>
-              <Button className="bg-red-600 hover:bg-red-700" onClick={deleteRole}>
+              <Button className="bg-error hover:bg-error/90" onClick={deleteRole}>
                 Delete
               </Button>
             </div>

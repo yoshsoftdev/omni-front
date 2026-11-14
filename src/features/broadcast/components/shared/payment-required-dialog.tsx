@@ -23,7 +23,7 @@ export function PaymentRequiredDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-muted text-warning-foreground">
             <CreditCard className="h-5 w-5" />
           </div>
           <div>

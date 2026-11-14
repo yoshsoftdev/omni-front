@@ -19,10 +19,10 @@ import { cn } from "@/lib/utils";
 
 function ChannelIcon({ channel, className }: { channel: InboxChannel; className?: string }) {
   const props = { className: className ?? "h-3.5 w-3.5" };
-  if (channel === "whatsapp") return <MessageCircle {...props} className={cn(props.className, "text-emerald-700")} />;
+  if (channel === "whatsapp") return <MessageCircle {...props} className={cn(props.className, "text-success-foreground")} />;
   if (channel === "instagram") return <Instagram {...props} className={cn(props.className, "text-fuchsia-700")} />;
-  if (channel === "messenger") return <Send {...props} className={cn(props.className, "text-blue-700")} />;
-  return <Mail {...props} className={cn(props.className, "text-[#6B7280]")} />;
+  if (channel === "messenger") return <Send {...props} className={cn(props.className, "text-info-foreground")} />;
+  return <Mail {...props} className={cn(props.className, "text-muted-foreground")} />;
 }
 
 interface ConversationHeaderProps {
@@ -56,14 +56,14 @@ export function ConversationHeader({
   const channelName = channelLabel?.trim();
 
   return (
-    <header className="sticky top-0 z-10 shrink-0 border-b border-[#E5E7EB] bg-white dark:border-border dark:bg-card">
+    <header className="sticky top-0 z-10 shrink-0 border-b border-border bg-card">
       <div className="flex items-start justify-between gap-3 px-3 py-3 md:px-4">
         <div className="flex min-w-0 items-start gap-2 md:gap-3">
           {onBack ? (
             <button
               type="button"
               onClick={onBack}
-              className="mt-1 rounded-md p-1.5 text-[#6B7280] hover:bg-[#F6F7F9] md:hidden dark:hover:bg-muted"
+              className="mt-1 rounded-md p-1.5 text-muted-foreground hover:bg-background md:hidden dark:hover:bg-muted"
               aria-label="Back to conversation list"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -77,14 +77,14 @@ export function ConversationHeader({
           </div>
 
           <div className="min-w-0 space-y-2">
-            <h2 className="truncate text-base font-semibold text-[#111111] dark:text-foreground">
+            <h2 className="truncate text-base font-semibold text-foreground">
               {customerName}
             </h2>
 
             <div className="flex flex-wrap items-center gap-1.5">
               <ConversationStatusChip status={conversation.status} />
               <AssigneeChip name={conversation.assignee_name} />
-              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-[#F6F7F9] px-2 py-0.5 text-[11px] font-medium text-[#111111] dark:border-border dark:bg-muted dark:text-foreground">
+              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground dark:bg-muted">
                 <ChannelPlatformBadge channelType={conversation.channel} className="h-5 border-0 bg-transparent px-0" />
                 <span className="truncate">{channelName || "Channel"}</span>
               </span>
@@ -147,7 +147,7 @@ export function ConversationHeader({
       </div>
 
       {presenceLabel ? (
-        <div className="border-t border-[#E5E7EB] bg-[#F6F7F9] px-4 py-2 text-xs text-[#6B7280] dark:border-border dark:bg-muted/40">
+        <div className="border-t border-border bg-background px-4 py-2 text-xs text-muted-foreground dark:bg-muted/40">
           {presenceLabel}
         </div>
       ) : null}

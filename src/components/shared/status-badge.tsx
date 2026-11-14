@@ -70,7 +70,7 @@ export function StatusBadge({ tone, status, children, className, icon }: StatusB
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium capitalize",
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium capitalize",
         tones[resolvedTone],
         className,
       )}

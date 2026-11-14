@@ -58,16 +58,16 @@ export function MessageList({
       role="log"
       aria-live="polite"
       aria-relevant="additions"
-      className="inbox-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto bg-[#F6F7F9] p-4 dark:bg-muted/20"
+      className="inbox-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto bg-background p-4 dark:bg-muted/20"
     >
       {timeline.length === 0 ? (
-        <p className="text-center text-sm text-[#6B7280]">No messages yet.</p>
+        <p className="text-center text-sm text-muted-foreground">No messages yet.</p>
       ) : (
         timeline.map((item) => {
           if (item.kind === "date") {
             return (
               <div key={item.id} className="flex justify-center py-1">
-                <span className="rounded-full border border-[#E5E7EB] bg-white px-3 py-0.5 text-[11px] text-[#6B7280] dark:border-border dark:bg-card">
+                <span className="rounded-full border border-border bg-card px-3 py-0.5 text-xs text-muted-foreground">
                   {item.label}
                 </span>
               </div>

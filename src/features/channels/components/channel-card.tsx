@@ -83,7 +83,7 @@ export function ChannelCard({ channel, onChanged }: ChannelCardProps) {
             <h3 className="font-semibold">WhatsApp</h3>
             <ChannelStatusBadge status={channel.status} />
             {channel.is_coex ? (
-              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold uppercase text-muted-foreground">
                 Coex
               </span>
             ) : null}

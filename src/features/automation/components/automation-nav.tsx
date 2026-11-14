@@ -27,7 +27,7 @@ export function AutomationNav() {
               className="cursor-not-allowed pb-3 text-sm text-muted-foreground/60"
             >
               {tab.label}
-              <span className="ml-1 text-[10px] uppercase tracking-wide">Soon</span>
+              <span className="ml-1 text-xs uppercase tracking-wide">Soon</span>
             </span>
           );
         }

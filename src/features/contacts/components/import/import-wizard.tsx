@@ -202,11 +202,11 @@ export function ImportWizard({ onNotify }: { onNotify: (type: "success" | "error
             </div>
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="text-xs text-muted-foreground">Valid Rows</div>
-              <div className="mt-1 text-2xl font-semibold text-emerald-600">{validation.valid}</div>
+              <div className="mt-1 text-2xl font-semibold text-success-foreground">{validation.valid}</div>
             </div>
             <div className="rounded-xl border bg-card p-4 shadow-sm">
               <div className="text-xs text-muted-foreground">Invalid Rows</div>
-              <div className="mt-1 text-2xl font-semibold text-red-600">{validation.invalid}</div>
+              <div className="mt-1 text-2xl font-semibold text-error-foreground">{validation.invalid}</div>
             </div>
           </div>
           <div className="flex justify-between">

@@ -30,7 +30,7 @@ export function EmbeddedSignupLaunchCard({ onStart, disabled }: EmbeddedSignupLa
         <Benefit icon={Clock} title="Coexistence ready" text="Keep using WhatsApp Business App alongside Cloud API." />
       </div>
 
-      <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+      <div className="rounded-md border border-warning-border bg-warning-muted px-4 py-3 text-sm text-warning-foreground">
         <p className="font-medium">Security note</p>
         <p className="mt-1 text-xs">
           You will authorize Omni-Chan to manage templates and send messages on behalf of your business.

@@ -24,7 +24,7 @@ export function OnboardingChecklist({
         {items.map((item) => (
           <li key={item.id} className="flex items-start gap-2 text-sm">
             {item.completed ? (
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success-foreground" />
             ) : (
               <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             )}

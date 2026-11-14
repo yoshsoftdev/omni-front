@@ -21,21 +21,21 @@ export function NotesPanel({ notes }: NotesPanelProps) {
           <section key={category.key} aria-labelledby={`notes-${category.key}`}>
             <h4
               id={`notes-${category.key}`}
-              className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#6B7280]"
+              className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
             >
               {category.label}
             </h4>
             {categoryNotes.length === 0 ? (
-              <p className="text-xs text-[#6B7280]">No notes yet.</p>
+              <p className="text-xs text-muted-foreground">No notes yet.</p>
             ) : (
               <div className="space-y-2">
                 {categoryNotes.map((note) => (
                   <div
                     key={note.id}
-                    className="rounded-lg border border-[#E5E7EB] bg-[#F6F7F9] p-3 dark:border-border dark:bg-muted/30"
+                    className="rounded-lg border border-border bg-background p-3 dark:bg-muted/30"
                   >
-                    <p className="text-sm text-[#111111] dark:text-foreground">{note.content}</p>
-                    <p className="mt-1.5 text-[11px] text-[#6B7280]">
+                    <p className="text-sm text-foreground">{note.content}</p>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       {note.author} · {new Date(note.created_at).toLocaleDateString()}
                     </p>
                   </div>

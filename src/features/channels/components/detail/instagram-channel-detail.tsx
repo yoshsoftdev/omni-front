@@ -172,7 +172,7 @@ export function InstagramChannelDetail({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{wa.label}</p>
-                      <p className="truncate text-[11px] text-muted-foreground">
+                      <p className="truncate text-xs text-muted-foreground">
                         {formatSecondaryIdentifier(wa, "whatsapp")}
                       </p>
                     </div>

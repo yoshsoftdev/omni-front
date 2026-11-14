@@ -95,9 +95,9 @@ export function UserTable({
                       className={[
                         "h-2 w-2 rounded-full",
                         (user.status ?? "active") === "active"
-                          ? "bg-emerald-500"
+                          ? "bg-success"
                           : (user.status ?? "active") === "invited"
-                            ? "bg-blue-500"
+                            ? "bg-info"
                             : "bg-slate-400",
                       ].join(" ")}
                     />

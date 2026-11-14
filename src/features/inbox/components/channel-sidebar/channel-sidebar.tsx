@@ -18,7 +18,7 @@ function UnreadBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   const label = count > 99 ? "99+" : String(count);
   return (
-    <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-[#111111] px-1.5 py-0.5 text-[10px] font-semibold text-white dark:bg-foreground dark:text-background">
+    <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-xs font-semibold text-primary-foreground">
       {label}
     </span>
   );
@@ -35,11 +35,11 @@ export function ChannelSidebar({
 
   return (
     <nav className="flex h-full flex-col" aria-label="Inbox channels">
-      <div className="border-b border-[#E5E7EB] px-3 py-3 dark:border-border">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6B7280]">Inbox</p>
+      <div className="border-b border-border px-3 py-3">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Inbox</p>
       </div>
 
-      <div className="border-b border-[#E5E7EB] p-2 dark:border-border">
+      <div className="border-b border-border p-2">
         <button
           type="button"
           onClick={() => onSelect("all")}
@@ -47,8 +47,8 @@ export function ChannelSidebar({
           className={cn(
             "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
             isAll
-              ? "bg-[#111111] text-white dark:bg-foreground dark:text-background"
-              : "text-[#111111] hover:bg-[#F6F7F9] dark:text-foreground dark:hover:bg-muted",
+              ? "bg-primary text-primary-foreground"
+              : "text-foreground hover:bg-background dark:hover:bg-muted",
           )}
         >
           <span className="font-medium">All Inbox</span>
@@ -57,20 +57,20 @@ export function ChannelSidebar({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2">
-        <p className="px-2.5 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-wide text-[#6B7280]">
+        <p className="px-2.5 pb-2 pt-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Channels
         </p>
 
         {loading && channels.length === 0 ? (
           <div className="space-y-2 px-1">
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="h-9 animate-pulse rounded-lg bg-[#F6F7F9] dark:bg-muted" />
+              <div key={index} className="h-9 animate-pulse rounded-lg bg-background dark:bg-muted" />
             ))}
           </div>
         ) : channels.length === 0 ? (
-          <div className="space-y-2 px-2.5 py-3 text-xs text-[#6B7280]">
+          <div className="space-y-2 px-2.5 py-3 text-xs text-muted-foreground">
             <p>No channels connected.</p>
-            <Link href="/devices" className="font-medium text-[#2563EB] underline-offset-2 hover:underline">
+            <Link href="/devices" className="font-medium text-info-foreground underline-offset-2 hover:underline">
               Connect a channel
             </Link>
           </div>
@@ -87,8 +87,8 @@ export function ChannelSidebar({
                     className={cn(
                       "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors",
                       active
-                        ? "bg-[#111111] text-white dark:bg-foreground dark:text-background"
-                        : "text-[#111111] hover:bg-[#F6F7F9] dark:text-foreground dark:hover:bg-muted",
+                        ? "bg-primary text-primary-foreground"
+                        : "text-foreground hover:bg-background dark:hover:bg-muted",
                       channel.status !== "connected" && !active && "opacity-70",
                     )}
                   >

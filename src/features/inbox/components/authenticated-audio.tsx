@@ -91,7 +91,7 @@ export function AuthenticatedAudio({ objectId, filename }: AuthenticatedAudioPro
         <button
           type="button"
           onClick={() => void togglePlayback()}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success text-white shadow-sm transition-colors hover:bg-success/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success focus-visible:ring-offset-2"
           aria-label={playing ? "Pause audio" : "Play audio"}
         >
           {playing ? <Pause className="h-4 w-4 fill-current" /> : <Play className="ml-0.5 h-4 w-4 fill-current" />}
@@ -101,7 +101,7 @@ export function AuthenticatedAudio({ objectId, filename }: AuthenticatedAudioPro
           <div className="relative flex h-5 items-center">
             <div className="absolute inset-x-0 h-1 rounded-full bg-black/15">
               <div
-                className="h-full rounded-full bg-emerald-600"
+                className="h-full rounded-full bg-success"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -120,7 +120,7 @@ export function AuthenticatedAudio({ objectId, filename }: AuthenticatedAudioPro
               aria-label="Audio progress"
             />
           </div>
-          <div className="flex items-center justify-between text-[10px] tabular-nums text-muted-foreground">
+          <div className="flex items-center justify-between text-xs tabular-nums text-muted-foreground">
             <span>{formatAudioDuration(currentTime)}</span>
             <span>{formatAudioDuration(duration)}</span>
           </div>
@@ -129,7 +129,7 @@ export function AuthenticatedAudio({ objectId, filename }: AuthenticatedAudioPro
         <button
           type="button"
           onClick={() => void downloadAuthenticatedMedia(objectId, filename)}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-black/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-black/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-success"
           aria-label={`Download ${filename}`}
           title="Download audio"
         >
@@ -137,7 +137,7 @@ export function AuthenticatedAudio({ objectId, filename }: AuthenticatedAudioPro
         </button>
       </div>
 
-      <div className="mt-1 flex items-center gap-1.5 truncate text-[10px] text-muted-foreground">
+      <div className="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
         <Volume2 className="h-3 w-3 shrink-0" />
         <span className="truncate">{filename || "Voice note"}</span>
       </div>

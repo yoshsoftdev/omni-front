@@ -9,8 +9,8 @@ const labels: Record<DeviceStatus, string> = {
 
 const styles: Record<DeviceStatus, string> = {
   disconnected: "bg-muted text-muted-foreground",
-  connecting: "bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200",
-  connected: "bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-green-200",
+  connecting: "bg-info-muted text-info-foreground",
+  connected: "bg-success-muted text-success-foreground",
 };
 
 export function DeviceStatusBadge({ status }: { status: DeviceStatus }) {

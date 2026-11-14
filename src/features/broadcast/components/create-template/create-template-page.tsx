@@ -184,7 +184,6 @@ export function CreateTemplatePage() {
             </Button>
             <Button
               type="button"
-              className="bg-[#0F9D8A] hover:bg-[#0F9D8A]/90"
               onClick={handleSubmit}
               disabled={submitting}
             >

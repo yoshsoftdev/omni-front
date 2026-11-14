@@ -18,7 +18,7 @@ export function useToast() {
         <div
           className={[
             "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-lg",
-            toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700",
+            toast.type === "success" ? "border-success-border bg-success-muted text-success-foreground" : "border-error-border bg-error-muted text-error-foreground",
           ].join(" ")}
         >
           {toast.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}

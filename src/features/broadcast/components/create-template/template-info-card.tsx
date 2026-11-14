@@ -91,7 +91,7 @@ export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
               Gagal memuat channel. Muat ulang halaman untuk mencoba lagi.
             </p>
           ) : channelsStatus === "ready" && channels.length === 0 ? (
-            <p className="text-xs text-amber-700 dark:text-amber-400">
+            <p className="text-xs text-warning-foreground">
               Tidak ada channel WhatsApp terhubung. Hubungkan WABA di halaman Devices.
             </p>
           ) : null}

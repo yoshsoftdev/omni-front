@@ -118,7 +118,7 @@ export function DevicesPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <section className="space-y-4 rounded-lg border bg-card p-5">
           <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-success-muted text-success-foreground">
               <MessageCircle className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
@@ -126,7 +126,7 @@ export function DevicesPage() {
               <p className="text-sm text-muted-foreground">Embedded Signup (Coexistence)</p>
               <p className="mt-2 text-sm">
                 Status:{" "}
-                <span className={whatsappConnected ? "font-medium text-emerald-700" : "font-medium text-muted-foreground"}>
+                <span className={whatsappConnected ? "font-medium text-success-foreground" : "font-medium text-muted-foreground"}>
                   {loading ? "Checking..." : whatsappConnected ? "Connected" : "Not Connected"}
                 </span>
               </p>
@@ -152,7 +152,7 @@ export function DevicesPage() {
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="text-sm font-semibold">Advanced</p>
-                          <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase text-slate-700">
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold uppercase text-muted-foreground">
                             Developer
                           </span>
                         </div>

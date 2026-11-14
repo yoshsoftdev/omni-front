@@ -15,7 +15,7 @@ export function TagBadge({
     <span
       className={cn(
         "inline-flex rounded-full font-medium text-white",
-        size === "sm" ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-xs",
+        size === "sm" ? "px-2 py-0.5 text-xs" : "px-2.5 py-0.5 text-xs",
         className,
       )}
       style={{ backgroundColor: color }}

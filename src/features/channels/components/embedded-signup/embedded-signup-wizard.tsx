@@ -242,16 +242,16 @@ export function EmbeddedSignupWizard() {
                   className={cn(
                     "flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left transition-colors",
                     item.ready
-                      ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20"
+                      ? "border-success-border bg-success-muted"
                       : "hover:border-primary/30",
                   )}
                 >
                   <span
                     className={cn(
-                      "mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                      "mt-0.5 rounded-full px-2 py-0.5 text-xs font-semibold uppercase",
                       item.ready
-                        ? "bg-emerald-100 text-emerald-700"
-                        : "bg-amber-100 text-amber-700",
+                        ? "bg-success-muted text-success-foreground"
+                        : "bg-warning-muted text-warning-foreground",
                     )}
                   >
                     {item.ready ? "Ready" : "Missing"}

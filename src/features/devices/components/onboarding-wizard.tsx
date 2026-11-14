@@ -131,7 +131,7 @@ export function OnboardingWizard({ deviceId, deviceName }: OnboardingWizardProps
             ) : null}
 
             {isCompleted ? (
-              <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-200">
+              <div className="flex items-center gap-2 rounded-md border border-success-border bg-success-muted px-3 py-2 text-sm text-success-foreground">
                 <CheckCircle2 className="h-4 w-4" />
                 Onboarding selesai. Kontak dan chat history siap digunakan.
               </div>
@@ -180,7 +180,7 @@ function StepItem({
       <div
         className={[
           "flex h-9 w-9 items-center justify-center rounded-full border",
-          done ? "border-emerald-500 bg-emerald-50 text-emerald-700" : "",
+          done ? "border-success bg-success-muted text-success-foreground" : "",
           active && !done ? "border-primary bg-primary/10 text-primary" : "",
           !done && !active ? "border-border text-muted-foreground" : "",
         ].join(" ")}

@@ -4,11 +4,11 @@ import { cn } from "@/lib/utils";
 import type { ProviderKind } from "@/types/contact";
 
 const styles: Record<string, string> = {
-  whatsapp: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40",
+  whatsapp: "border-success-border bg-success-muted text-success-foreground",
   instagram: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 dark:bg-fuchsia-950/40",
-  messenger: "border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950/40",
-  telegram: "border-sky-200 bg-sky-50 text-sky-700 dark:bg-sky-950/40",
-  email: "border-slate-200 bg-slate-50 text-slate-700 dark:bg-slate-900",
+  messenger: "border-info-border bg-info-muted text-info-foreground",
+  telegram: "border-info-border bg-info-muted text-info-foreground",
+  email: "border-border bg-muted text-muted-foreground",
 };
 
 export function providerLabel(provider: ProviderKind) {
@@ -36,7 +36,7 @@ export function ProviderBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
         styles[provider] ?? styles.email,
         compact && "h-6 w-6 justify-center p-0",
         className,
@@ -51,7 +51,7 @@ export function ProviderBadge({
 
 export function SourceOfTruthBadge() {
   return (
-    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/40">
+    <span className="inline-flex rounded-full border border-warning-border bg-warning-muted px-2 py-0.5 text-xs font-medium text-warning-foreground">
       Main Account
     </span>
   );

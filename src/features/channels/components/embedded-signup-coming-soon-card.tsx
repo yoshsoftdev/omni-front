@@ -13,7 +13,7 @@ export function EmbeddedSignupComingSoonCard() {
         </div>
         <div>
           <h2 className="text-lg font-semibold">Embedded Signup (Coexistence)</h2>
-          <p className="mt-1 text-sm font-medium text-amber-700 dark:text-amber-300">Coming Soon</p>
+          <p className="mt-1 text-sm font-medium text-warning-foreground">Coming Soon</p>
           <p className="mt-2 text-sm text-muted-foreground">
             Waiting for Meta App Review. Use Manual WhatsApp Connection below until Embedded Signup is approved.
           </p>

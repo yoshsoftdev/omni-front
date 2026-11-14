@@ -38,17 +38,17 @@ export function SystemEvent({ event, className }: SystemEventProps) {
       className={cn("flex items-center gap-3 py-1", className)}
       aria-label={`${event.description}${time ? `, ${time}` : ""}`}
     >
-      <div className="h-px flex-1 bg-[#E5E7EB] dark:bg-border" />
-      <div className="inline-flex max-w-[min(100%,28rem)] items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-1.5 text-center shadow-sm dark:border-border dark:bg-card">
-        <span className="shrink-0 text-[#6B7280]" aria-hidden>
+      <div className="h-px flex-1 bg-border" />
+      <div className="inline-flex max-w-[min(100%,28rem)] items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-center shadow-sm">
+        <span className="shrink-0 text-muted-foreground" aria-hidden>
           {EVENT_ICON[event.type] ?? <MessageCircle className="h-3.5 w-3.5" />}
         </span>
-        <span className="min-w-0 text-xs font-medium text-[#111111] dark:text-foreground">
+        <span className="min-w-0 text-xs font-medium text-foreground">
           {event.description}
         </span>
-        {time ? <span className="shrink-0 text-[10px] tabular-nums text-[#6B7280]">{time}</span> : null}
+        {time ? <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{time}</span> : null}
       </div>
-      <div className="h-px flex-1 bg-[#E5E7EB] dark:bg-border" />
+      <div className="h-px flex-1 bg-border" />
     </div>
   );
 }

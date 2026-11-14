@@ -15,10 +15,10 @@ function SubscriptionBadge({ status }: { status: InboxContact["subscription_stat
   return (
     <span
       className={cn(
-        "rounded-full border px-2.5 py-0.5 text-[10px] font-medium",
+        "rounded-full border px-2.5 py-0.5 text-xs font-medium",
         subscribed
-          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-          : "border-[#E5E7EB] bg-[#F6F7F9] text-[#6B7280]",
+          ? "border-success-border bg-success-muted text-success-foreground"
+          : "border-border bg-background text-muted-foreground",
       )}
     >
       {subscribed ? "Subscribed" : "Unsubscribed"}
@@ -76,24 +76,24 @@ export function ContactSection({
 
   return (
     <>
-      <div className="border-b border-[#E5E7EB] px-5 py-5 text-center dark:border-border">
+      <div className="border-b border-border px-5 py-5 text-center">
         <ContactAvatar
           name={contact.contact_name || contact.name}
           src={contact.avatar_url}
           size="lg"
           className="mx-auto h-16 w-16 text-base"
         />
-        <h3 className="mt-3 text-base font-semibold text-[#111111] dark:text-foreground">
+        <h3 className="mt-3 text-base font-semibold text-foreground">
           {contact.contact_name || contact.name}
         </h3>
         {contact.customer_name && contact.customer_name !== contact.contact_name ? (
-          <p className="text-xs text-[#6B7280]">Customer: {contact.customer_name}</p>
+          <p className="text-xs text-muted-foreground">Customer: {contact.customer_name}</p>
         ) : null}
-        <p className="text-sm text-[#6B7280]">{contact.phone}</p>
-        {contact.email ? <p className="text-xs text-[#6B7280]">{contact.email}</p> : null}
+        <p className="text-sm text-muted-foreground">{contact.phone}</p>
+        {contact.email ? <p className="text-xs text-muted-foreground">{contact.email}</p> : null}
         <div className="mt-2 flex justify-center">
           {isUnsaved ? (
-            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-medium text-amber-700">
+            <span className="rounded-full border border-warning-border bg-warning-muted px-2.5 py-0.5 text-xs font-medium text-warning-foreground">
               Not in contacts
             </span>
           ) : (
@@ -123,25 +123,25 @@ export function ContactSection({
         <div>
           <h4
             id="contact-heading"
-            className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#6B7280]"
+            className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
           >
             Contact
           </h4>
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-2">
-              <dt className="text-[#6B7280]">Source</dt>
+              <dt className="text-muted-foreground">Source</dt>
               <dd className="font-medium">{contact.source}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-[#6B7280]">Added On</dt>
+              <dt className="text-muted-foreground">Added On</dt>
               <dd className="font-medium">{formatDate(contact.added_on)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-[#6B7280]">Last Activity</dt>
+              <dt className="text-muted-foreground">Last Activity</dt>
               <dd className="font-medium">{formatDate(contact.last_activity)}</dd>
             </div>
             <div className="flex justify-between gap-2">
-              <dt className="text-[#6B7280]">Language</dt>
+              <dt className="text-muted-foreground">Language</dt>
               <dd className="font-medium">{contact.language}</dd>
             </div>
           </dl>
@@ -149,25 +149,25 @@ export function ContactSection({
 
         {(contact.customer_type || contact.city || contact.notes) && (
           <div>
-            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
+            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Custom Fields
             </h4>
             <dl className="space-y-2 text-sm">
               {contact.customer_type ? (
                 <div className="flex justify-between gap-2">
-                  <dt className="text-[#6B7280]">Customer Type</dt>
+                  <dt className="text-muted-foreground">Customer Type</dt>
                   <dd className="font-medium">{contact.customer_type}</dd>
                 </div>
               ) : null}
               {contact.city ? (
                 <div className="flex justify-between gap-2">
-                  <dt className="text-[#6B7280]">City</dt>
+                  <dt className="text-muted-foreground">City</dt>
                   <dd className="font-medium">{contact.city}</dd>
                 </div>
               ) : null}
               {contact.notes ? (
                 <div>
-                  <dt className="text-[#6B7280]">Notes</dt>
+                  <dt className="text-muted-foreground">Notes</dt>
                   <dd className="mt-1 font-medium">{contact.notes}</dd>
                 </div>
               ) : null}
@@ -176,20 +176,20 @@ export function ContactSection({
         )}
 
         <div>
-          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
+          <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Statistics
           </h4>
           <div className="grid grid-cols-1 gap-2">
-            <div className="rounded-lg border border-[#E5E7EB] bg-[#F6F7F9] px-3 py-2.5 dark:border-border dark:bg-muted/30">
-              <p className="text-xs text-[#6B7280]">Conversations</p>
+            <div className="rounded-lg border border-border bg-background px-3 py-2.5 dark:bg-muted/30">
+              <p className="text-xs text-muted-foreground">Conversations</p>
               <p className="text-lg font-semibold">{contact.conversations_count}</p>
             </div>
-            <div className="rounded-lg border border-[#E5E7EB] bg-[#F6F7F9] px-3 py-2.5 dark:border-border dark:bg-muted/30">
-              <p className="text-xs text-[#6B7280]">Campaigns Received</p>
+            <div className="rounded-lg border border-border bg-background px-3 py-2.5 dark:bg-muted/30">
+              <p className="text-xs text-muted-foreground">Campaigns Received</p>
               <p className="text-lg font-semibold">{contact.campaigns_received}</p>
             </div>
-            <div className="rounded-lg border border-[#E5E7EB] bg-[#F6F7F9] px-3 py-2.5 dark:border-border dark:bg-muted/30">
-              <p className="text-xs text-[#6B7280]">Campaigns Clicked</p>
+            <div className="rounded-lg border border-border bg-background px-3 py-2.5 dark:bg-muted/30">
+              <p className="text-xs text-muted-foreground">Campaigns Clicked</p>
               <p className="text-lg font-semibold">{contact.campaigns_clicked}</p>
             </div>
           </div>

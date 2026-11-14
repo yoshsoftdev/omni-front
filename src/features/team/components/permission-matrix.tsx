@@ -76,14 +76,14 @@ export function PermissionMatrix({
                         className={cn(
                           "inline-flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
                           allowed
-                            ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                            ? "border-success-border bg-success-muted text-success-foreground"
                             : "border-muted bg-background text-muted-foreground",
                         )}
                       >
                         {allowed ? "✓" : "—"}
                       </button>
                     ) : (
-                      <span className={allowed ? "text-emerald-600" : "text-muted-foreground"}>
+                      <span className={allowed ? "text-success-foreground" : "text-muted-foreground"}>
                         {allowed ? "✓" : "—"}
                       </span>
                     )}

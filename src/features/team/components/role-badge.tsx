@@ -3,9 +3,9 @@ import type { TeamRole } from "@/types/team";
 
 const ROLE_STYLES: Record<TeamRole, string> = {
   owner: "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200",
-  admin: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
-  supervisor: "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200",
-  agent: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200",
+  admin: "bg-info-muted text-info-foreground",
+  supervisor: "bg-warning-muted text-warning-foreground",
+  agent: "bg-success-muted text-success-foreground",
 };
 
 export function RoleBadge({ role, className }: { role: TeamRole | string; className?: string }) {

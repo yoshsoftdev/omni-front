@@ -144,7 +144,7 @@ export function Sidebar() {
               {item.href === "/inbox" && inboxUnreadBadge ? (
                 <span
                   className={cn(
-                    "ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-[10px] font-medium",
+                    "ml-auto inline-flex h-6 min-w-6 items-center justify-center rounded-full px-2 text-xs font-medium",
                     active
                       ? "bg-primary-foreground text-primary"
                       : "bg-primary text-primary-foreground",

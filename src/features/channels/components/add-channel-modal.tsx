@@ -338,7 +338,7 @@ export function AddChannelModal({ open, onClose, onConnected, canManage }: AddCh
           {step === 4 ? (
             <div className="space-y-4 text-center">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                <CheckCircle2 className="h-6 w-6 text-success-foreground" />
               </div>
               <div>
                 <h3 className="text-sm font-semibold">

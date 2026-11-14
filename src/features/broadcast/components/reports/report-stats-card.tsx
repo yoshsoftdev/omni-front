@@ -25,7 +25,7 @@ export function ReportStatsCard({
         {suffix ? <span className="text-sm text-muted-foreground">{suffix}</span> : null}
       </div>
       {change ? (
-        <div className={cn("mt-2 flex items-center gap-1 text-xs", positive !== false ? "text-emerald-600" : "text-rose-600")}>
+        <div className={cn("mt-2 flex items-center gap-1 text-xs", positive !== false ? "text-success-foreground" : "text-error-foreground")}>
           {positive !== false ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {change}
         </div>

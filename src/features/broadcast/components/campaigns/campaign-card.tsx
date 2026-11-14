@@ -6,9 +6,9 @@ import { templatePreviewHeaderType } from "@/features/broadcast/utils/template-p
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
-  APPROVED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
-  REJECTED: "bg-rose-50 text-rose-700 border-rose-200",
+  APPROVED: "bg-success-muted text-success-foreground border-success-border",
+  PENDING: "bg-warning-muted text-warning-foreground border-warning-border",
+  REJECTED: "bg-error-muted text-error-foreground border-error-border",
 };
 
 interface CampaignCardProps {
@@ -22,7 +22,7 @@ export function CampaignCard({ template, selected, onSelect, showPreview = false
   return (
     <div
       className={cn(
-        "rounded-lg border bg-white transition-colors dark:bg-card",
+        "rounded-lg border bg-card transition-colors",
         selected ? "border-primary ring-1 ring-primary/20" : "border-border hover:border-primary/40",
       )}
     >
@@ -31,7 +31,7 @@ export function CampaignCard({ template, selected, onSelect, showPreview = false
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium">{template.name}</span>
-            <span className={cn("rounded-full border px-2 py-0.5 text-[10px] font-medium", STATUS_STYLES[template.status])}>
+            <span className={cn("rounded-full border px-2 py-0.5 text-xs font-medium", STATUS_STYLES[template.status])}>
               {template.status}
             </span>
           </div>

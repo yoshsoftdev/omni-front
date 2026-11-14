@@ -43,7 +43,7 @@ export function EmbeddedSignupProgress({ state, error }: EmbeddedSignupProgressP
               )}
             >
               {done ? (
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success-foreground" />
               ) : active ? (
                 <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
               ) : (

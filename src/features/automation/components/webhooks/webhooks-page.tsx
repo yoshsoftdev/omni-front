@@ -269,7 +269,7 @@ export function WebhooksPage() {
 
       <Alert variant="info" title="Inbound message forwarding">
         Setiap kali customer mengirim pesan ke Omni Chan, kami POST event{" "}
-        <code className="font-mono text-[11px]">message.received</code> ke URL yang Anda daftarkan.
+        <code className="font-mono text-xs">message.received</code> ke URL yang Anda daftarkan.
         Ini bukan callback invoke API Automation. Jika conversation sudah di-assign ke agent manusia,
         pesan tidak akan diteruskan ke webhook.
       </Alert>
@@ -292,7 +292,7 @@ export function WebhooksPage() {
             <p className="text-sm font-medium">Example payload</p>
             <CopyButton value={EXAMPLE_PAYLOAD} label="Copy" />
           </div>
-          <pre className="overflow-x-auto rounded-md border bg-muted p-3 font-mono text-[11px] leading-relaxed text-foreground">
+          <pre className="overflow-x-auto rounded-md border bg-muted p-3 font-mono text-xs leading-relaxed text-foreground">
             {EXAMPLE_PAYLOAD}
           </pre>
         </div>
@@ -384,7 +384,7 @@ export function WebhooksPage() {
                             )}
                             <span>
                               <span className="block font-medium">{item.name}</span>
-                              <code className="font-mono text-[11px] text-muted-foreground">{item.id}</code>
+                              <code className="font-mono text-xs text-muted-foreground">{item.id}</code>
                             </span>
                           </button>
                         </td>

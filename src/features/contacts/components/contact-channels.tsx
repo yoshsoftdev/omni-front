@@ -117,7 +117,7 @@ export function ContactChannels({
             <div className="flex flex-wrap items-center gap-2">
               <ProviderBadge provider={profile.provider} />
               {profile.is_source_of_truth ? <SourceOfTruthBadge /> : null}
-              <span className="ml-auto text-[10px] text-muted-foreground">
+              <span className="ml-auto text-xs text-muted-foreground">
                 {connectionLabel(profile)}
               </span>
             </div>

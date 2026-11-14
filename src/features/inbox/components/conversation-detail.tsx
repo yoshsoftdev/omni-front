@@ -157,7 +157,7 @@ export function ConversationDetail({
 
   if (!conversation) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center bg-[#F6F7F9] text-sm text-[#6B7280] dark:bg-muted/10">
+      <div className="flex h-full flex-1 items-center justify-center bg-background text-sm text-muted-foreground dark:bg-muted/10">
         Select a conversation to open the workspace.
       </div>
     );

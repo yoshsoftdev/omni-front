@@ -59,7 +59,7 @@ export function DeviceCard({ device, onChanged }: DeviceCardProps) {
             <h3 className="font-semibold">{device.name}</h3>
             <DeviceStatusBadge status={device.status} />
             {device.is_coex ? (
-              <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase text-blue-700">
+              <span className="rounded-full bg-info-muted px-2 py-0.5 text-xs font-semibold uppercase text-info-foreground">
                 Coex
               </span>
             ) : null}

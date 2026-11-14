@@ -44,19 +44,19 @@ export function CampaignReportTable({ campaigns }: { campaigns: Campaign[] }) {
               <DataTableCell className="text-muted-foreground">{campaign.sent_count.toLocaleString()}</DataTableCell>
               <DataTableCell className="text-muted-foreground">
                 {campaign.delivered_count.toLocaleString()}
-                <div className="text-[10px]">{calcPct(campaign.delivered_count, campaign.sent_count)}</div>
+                <div className="text-xs">{calcPct(campaign.delivered_count, campaign.sent_count)}</div>
               </DataTableCell>
               <DataTableCell className="text-muted-foreground">
                 {campaign.read_count.toLocaleString()}
-                <div className="text-[10px]">{calcPct(campaign.read_count, campaign.sent_count)}</div>
+                <div className="text-xs">{calcPct(campaign.read_count, campaign.sent_count)}</div>
               </DataTableCell>
               <DataTableCell className="text-muted-foreground">
                 {campaign.failed_count.toLocaleString()}
-                <div className="text-[10px]">{calcPct(campaign.failed_count, campaign.sent_count)}</div>
+                <div className="text-xs">{calcPct(campaign.failed_count, campaign.sent_count)}</div>
               </DataTableCell>
               <DataTableCell className="text-muted-foreground">
                 {campaign.reply_count.toLocaleString()}
-                <div className="text-[10px]">{calcPct(campaign.reply_count, campaign.sent_count)}</div>
+                <div className="text-xs">{calcPct(campaign.reply_count, campaign.sent_count)}</div>
               </DataTableCell>
               <DataTableCell className="text-muted-foreground">{calcCtr(campaign).toFixed(1)}%</DataTableCell>
               <DataTableCell className="text-right">

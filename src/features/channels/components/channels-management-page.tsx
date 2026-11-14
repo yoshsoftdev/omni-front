@@ -340,7 +340,7 @@ export function ChannelsManagementPage() {
               const tone = providerIconTone(kind);
               return (
                 <div key={kind} className="space-y-1">
-                  <p className="px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="px-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     {GROUP_LABELS[kind]} ({list.length})
                   </p>
                   <div className="space-y-1">
@@ -368,7 +368,7 @@ export function ChannelsManagementPage() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-medium">{ch.label}</span>
-                            <span className="block truncate text-[11px] text-muted-foreground">
+                            <span className="block truncate text-xs text-muted-foreground">
                               {formatSecondaryIdentifier(ch, kind)}
                             </span>
                           </span>

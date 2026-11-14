@@ -63,7 +63,7 @@ export function EmbeddedCoexConnect({ deviceId, onConnected, onCancel }: Embedde
       {loading ? (
         <p className="text-sm text-muted-foreground">Memuat konfigurasi Meta...</p>
       ) : !enabled ? (
-        <p className="text-sm text-amber-600">
+        <p className="text-sm text-warning-foreground">
           Embedded Signup belum dikonfigurasi di server (META_APP_ID, META_EMBEDDED_CONFIG_ID).
         </p>
       ) : null}

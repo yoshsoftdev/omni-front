@@ -124,7 +124,7 @@ export function SchedulesPage() {
                   <DataTableRow key={campaign.id}>
                     <DataTableCell className="font-medium">{campaign.name}</DataTableCell>
                     <DataTableCell>
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs text-emerald-700">
+                      <span className="inline-flex items-center gap-1.5 rounded-full border border-success-border bg-success-muted px-2 py-0.5 text-xs text-success-foreground">
                         <ColorDot color="#10B981" className="h-2 w-2" />
                         {campaign.audience?.name || campaign.segment_name || "—"}
                       </span>

@@ -187,7 +187,7 @@ export function TeamRolesPage() {
           <div
             className={[
               "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-lg",
-              toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700",
+              toast.type === "success" ? "border-success-border bg-success-muted text-success-foreground" : "border-error-border bg-error-muted text-error-foreground",
             ].join(" ")}
           >
             {toast.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
@@ -245,7 +245,7 @@ export function TeamRolesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="border-red-200 text-red-600"
+                    className="border-error-border text-error-foreground"
                     onClick={() => setDeleteOpen(true)}
                     disabled={saving}
                   >
@@ -325,7 +325,7 @@ export function TeamRolesPage() {
               <Button variant="outline" onClick={() => setDeleteOpen(false)}>
                 Cancel
               </Button>
-              <Button className="bg-red-600 hover:bg-red-700" onClick={() => void deleteRole()} disabled={saving}>
+              <Button className="bg-error hover:bg-error/90" onClick={() => void deleteRole()} disabled={saving}>
                 Delete
               </Button>
             </div>

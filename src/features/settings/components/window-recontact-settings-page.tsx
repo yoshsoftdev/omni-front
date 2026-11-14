@@ -86,8 +86,8 @@ export function WindowRecontactSettingsPage() {
   return (
     <div className="space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold text-[#111111]">Settings</h1>
-        <p className="mt-1 text-sm text-[#6B7280]">
+        <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Auto free-text before the Meta 24-hour messaging window closes.
         </p>
       </div>
@@ -95,12 +95,12 @@ export function WindowRecontactSettingsPage() {
       <SettingsNav />
 
       {loading ? (
-        <div className="h-40 animate-pulse rounded-lg border border-[#E5E7EB] bg-white" />
+        <div className="h-40 animate-pulse rounded-lg border border-border bg-card" />
       ) : loadError ? (
         <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} className="max-w-2xl" />
       ) : (
-        <div className="max-w-2xl space-y-5 rounded-lg border border-[#E5E7EB] bg-white p-5">
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        <div className="max-w-2xl space-y-5 rounded-lg border border-border bg-card p-5">
+          <div className="rounded-md border border-warning-border bg-warning-muted px-3 py-2 text-xs text-warning-foreground">
             When enabled, Omni Chan auto-sends the default text after the configured delay from the
             customer&apos;s last inbound message. Delay max is {WINDOW_RECONTACT_MAX_HOURS} hours so
             the send stays inside the 24-hour free-text window. Agent replies cancel the pending
@@ -112,18 +112,18 @@ export function WindowRecontactSettingsPage() {
               type="checkbox"
               checked={enabled}
               onChange={(event) => setEnabled(event.target.checked)}
-              className="mt-1 h-4 w-4 rounded border-[#E5E7EB]"
+              className="mt-1 h-4 w-4 rounded border-border"
             />
             <span>
-              <span className="block text-sm font-medium text-[#111111]">Enable auto recontact</span>
-              <span className="text-xs text-[#6B7280]">
+              <span className="block text-sm font-medium text-foreground">Enable auto recontact</span>
+              <span className="text-xs text-muted-foreground">
                 Send a default free-text message before the messaging window closes.
               </span>
             </span>
           </label>
 
           <div className="space-y-2">
-            <label htmlFor="recontact-hours" className="text-sm font-medium text-[#111111]">
+            <label htmlFor="recontact-hours" className="text-sm font-medium text-foreground">
               Auto-send after (hours)
             </label>
             <div className="flex items-center gap-3">
@@ -134,9 +134,9 @@ export function WindowRecontactSettingsPage() {
                 max={WINDOW_RECONTACT_MAX_HOURS}
                 value={afterHours}
                 onChange={(event) => setAfterHours(Number(event.target.value))}
-                className="h-10 w-28 rounded-md border border-[#E5E7EB] bg-white px-3 text-sm"
+                className="h-10 w-28 rounded-md border border-border bg-card px-3 text-sm"
               />
-              <span className="text-xs text-[#6B7280]">
+              <span className="text-xs text-muted-foreground">
                 {WINDOW_RECONTACT_MIN_HOURS}–{WINDOW_RECONTACT_MAX_HOURS} hours after last customer
                 message
               </span>
@@ -144,7 +144,7 @@ export function WindowRecontactSettingsPage() {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="recontact-text" className="text-sm font-medium text-[#111111]">
+            <label htmlFor="recontact-text" className="text-sm font-medium text-foreground">
               Default recontact text
             </label>
             <textarea
@@ -153,8 +153,8 @@ export function WindowRecontactSettingsPage() {
               onChange={(event) => setText(event.target.value)}
               rows={5}
               className={cn(
-                "w-full resize-y rounded-md border border-[#E5E7EB] bg-white px-3 py-2 text-sm",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111]",
+                "w-full resize-y rounded-md border border-border bg-card px-3 py-2 text-sm",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
               )}
               placeholder={WINDOW_RECONTACT_DEFAULT_TEXT}
             />

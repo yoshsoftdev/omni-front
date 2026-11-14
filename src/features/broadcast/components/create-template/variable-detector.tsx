@@ -24,7 +24,7 @@ export function VariableDetector({ variables }: { variables: DetectedVariable[] 
               </span>
               <span className="text-muted-foreground">Contoh:</span>
               <span className="font-medium">{variable.sampleValue}</span>
-              <span className="ml-auto inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700">
+              <span className="ml-auto inline-flex rounded-full border border-success-border bg-success-muted px-2 py-0.5 text-xs font-medium text-success-foreground">
                 {variable.fieldLabel}
               </span>
             </div>

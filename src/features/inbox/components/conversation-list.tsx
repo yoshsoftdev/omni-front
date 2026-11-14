@@ -133,7 +133,7 @@ export function ConversationList({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-card">
-      <div className="border-b border-[#E5E7EB] px-3 pt-3 dark:border-border">
+      <div className="border-b border-border px-3 pt-3">
         <div className="flex gap-1 overflow-x-auto pb-2">
           {TABS.map((tab) => (
             <button
@@ -143,8 +143,8 @@ export function ConversationList({
               className={cn(
                 "shrink-0 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
                 activeTab === tab.id
-                  ? "bg-[#111111] text-white dark:bg-foreground dark:text-background"
-                  : "text-[#6B7280] hover:bg-[#F6F7F9] dark:hover:bg-muted",
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-background dark:hover:bg-muted",
               )}
             >
               {tab.label} ({tabCounts[tab.id]})
@@ -156,7 +156,7 @@ export function ConversationList({
           <select
             value={activeChannelId}
             onChange={(e) => onChannelSelect(e.target.value)}
-            className="h-8 w-full rounded-md border border-[#E5E7EB] bg-white px-2 text-xs dark:border-border dark:bg-background"
+            className="h-8 w-full rounded-md border border-border bg-card px-2 text-xs dark:bg-background"
             aria-label="Channel account"
           >
             <option value="all">All Inbox</option>
@@ -173,7 +173,7 @@ export function ConversationList({
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as ConversationListSort)}
-            className="h-8 min-w-0 flex-1 rounded-md border border-[#E5E7EB] bg-white px-2 text-xs dark:border-border dark:bg-background"
+            className="h-8 min-w-0 flex-1 rounded-md border border-border bg-card px-2 text-xs dark:bg-background"
             aria-label="Sort conversations"
           >
             <option value="recent">Sort: Recent</option>
@@ -183,7 +183,7 @@ export function ConversationList({
             value={agentFilter}
             onChange={(e) => onAgentFilterChange(e.target.value)}
             className={cn(
-              "h-8 min-w-0 flex-1 rounded-md border border-[#E5E7EB] bg-white px-2 text-xs dark:border-border dark:bg-background",
+              "h-8 min-w-0 flex-1 rounded-md border border-border bg-card px-2 text-xs dark:bg-background",
               !showAgentFilter && "hidden",
             )}
             disabled={!showAgentFilter}
@@ -199,7 +199,7 @@ export function ConversationList({
           <button
             type="button"
             onClick={onRefresh}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[#E5E7EB] hover:bg-[#F6F7F9] dark:border-border dark:hover:bg-muted"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border hover:bg-background dark:hover:bg-muted"
             aria-label="Refresh"
           >
             <RefreshCw className="h-3.5 w-3.5" />
@@ -207,14 +207,14 @@ export function ConversationList({
         </div>
 
         <div className="relative pb-3">
-          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6B7280]" />
+          <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <input
             id="inbox-search"
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search conversations..."
             aria-label="Search conversations"
-            className="h-9 w-full rounded-md border border-[#E5E7EB] bg-white pl-8 pr-3 text-sm dark:border-border dark:bg-background"
+            className="h-9 w-full rounded-md border border-border bg-card pl-8 pr-3 text-sm dark:bg-background"
           />
         </div>
       </div>
@@ -227,11 +227,11 @@ export function ConversationList({
         {loading && sortedConversations.length === 0 ? (
           <div className="space-y-2 p-3">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-20 animate-pulse rounded-lg bg-[#F6F7F9] dark:bg-muted" />
+              <div key={index} className="h-20 animate-pulse rounded-lg bg-background dark:bg-muted" />
             ))}
           </div>
         ) : sortedConversations.length === 0 ? (
-          <p className="p-4 text-sm text-[#6B7280]">{emptyMessage}</p>
+          <p className="p-4 text-sm text-muted-foreground">{emptyMessage}</p>
         ) : (
           <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
             {virtualItems.map((virtualRow) => {
@@ -261,7 +261,7 @@ export function ConversationList({
           </div>
         )}
         {isFetchingNextPage ? (
-          <p className="p-3 text-center text-xs text-[#6B7280]">Loading more...</p>
+          <p className="p-3 text-center text-xs text-muted-foreground">Loading more...</p>
         ) : null}
       </div>
     </div>

@@ -20,7 +20,7 @@ export function ChannelPlatformBadge({ channelType, className }: ChannelPlatform
   return (
     <span
       className={cn(
-        "inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-[#E5E7EB] bg-[#F6F7F9] px-1.5 text-[10px] font-semibold tracking-wide text-[#6B7280] dark:border-border dark:bg-muted dark:text-muted-foreground",
+        "inline-flex h-6 shrink-0 items-center gap-1 rounded-md border border-border bg-background px-1.5 text-xs font-semibold tracking-wide text-muted-foreground dark:bg-muted",
         className,
       )}
       title={code}

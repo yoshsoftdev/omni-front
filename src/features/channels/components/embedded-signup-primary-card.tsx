@@ -14,26 +14,26 @@ export function EmbeddedSignupPrimaryCard() {
           <h2 className="mt-1 text-lg font-semibold">Connect with Meta</h2>
           <p className="mt-1 text-sm text-muted-foreground">Embedded Signup (Coexistence)</p>
         </div>
-        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-semibold uppercase text-emerald-700">
+        <span className="rounded-full bg-success-muted px-2.5 py-0.5 text-xs font-semibold uppercase text-success-foreground">
           Primary
         </span>
       </div>
 
       <ul className="space-y-2 text-sm text-muted-foreground">
         <li className="flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <CheckCircle2 className="h-4 w-4 text-success-foreground" />
           Automatic setup
         </li>
         <li className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-emerald-600" />
+          <Shield className="h-4 w-4 text-success-foreground" />
           Secure OAuth
         </li>
         <li className="flex items-center gap-2">
-          <Zap className="h-4 w-4 text-emerald-600" />
+          <Zap className="h-4 w-4 text-success-foreground" />
           Automatic webhook
         </li>
         <li className="flex items-center gap-2">
-          <Smartphone className="h-4 w-4 text-emerald-600" />
+          <Smartphone className="h-4 w-4 text-success-foreground" />
           Automatic token management
         </li>
       </ul>

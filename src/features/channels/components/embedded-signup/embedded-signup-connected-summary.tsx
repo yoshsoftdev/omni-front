@@ -15,9 +15,9 @@ export function EmbeddedSignupConnectedSummary({
   onContinue,
 }: EmbeddedSignupConnectedSummaryProps) {
   return (
-    <div className="space-y-5 rounded-lg border border-emerald-200 bg-emerald-50/50 p-6 dark:border-emerald-900 dark:bg-emerald-950/20">
+    <div className="space-y-5 rounded-lg border border-success-border bg-success-muted p-6">
       <div className="flex items-start gap-3">
-        <CheckCircle2 className="mt-0.5 h-6 w-6 text-emerald-600" />
+        <CheckCircle2 className="mt-0.5 h-6 w-6 text-success-foreground" />
         <div>
           <h2 className="text-lg font-semibold">WhatsApp Connected</h2>
           <p className="mt-1 text-sm text-muted-foreground">

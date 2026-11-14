@@ -102,7 +102,7 @@ export function TeamWorkspacePage() {
           <div
             className={[
               "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-lg",
-              toast.type === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-red-200 bg-red-50 text-red-700",
+              toast.type === "success" ? "border-success-border bg-success-muted text-success-foreground" : "border-error-border bg-error-muted text-error-foreground",
             ].join(" ")}
           >
             {toast.type === "success" ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
@@ -173,7 +173,7 @@ export function TeamWorkspacePage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Status</span>
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                    <span className="rounded-full bg-success-muted px-2.5 py-0.5 text-xs font-medium text-success-foreground">
                       {workspace.status}
                     </span>
                   </div>
@@ -270,37 +270,37 @@ export function TeamWorkspacePage() {
               </div>
             </div>
 
-            <div className="rounded-xl border border-red-200 bg-card p-5 shadow-sm">
-              <h3 className="text-base font-semibold text-red-700">Danger Zone</h3>
+            <div className="rounded-xl border border-error-border bg-card p-5 shadow-sm">
+              <h3 className="text-base font-semibold text-error-foreground">Danger Zone</h3>
               <p className="mt-1 text-sm text-muted-foreground">Irreversible and destructive actions.</p>
               <div className="mt-4 space-y-3">
                 <button
                   type="button"
-                  className="flex w-full items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-left"
+                  className="flex w-full items-start gap-3 rounded-lg border border-error-border bg-error-muted p-3 text-left"
                   onClick={() => setTransferOpen(true)}
                 >
-                  <Workflow className="mt-0.5 h-4 w-4 text-red-600" />
+                  <Workflow className="mt-0.5 h-4 w-4 text-error-foreground" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-red-700">Transfer Ownership</div>
-                    <div className="text-xs text-red-600/80">
+                    <div className="text-sm font-medium text-error-foreground">Transfer Ownership</div>
+                    <div className="text-xs text-error-foreground">
                       Transfer workspace ownership to another member
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-red-500" />
+                  <ChevronRight className="h-4 w-4 text-error" />
                 </button>
                 <button
                   type="button"
-                  className="flex w-full items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-left"
+                  className="flex w-full items-start gap-3 rounded-lg border border-error-border bg-error-muted p-3 text-left"
                   onClick={() => setDeleteOpen(true)}
                 >
-                  <Trash2 className="mt-0.5 h-4 w-4 text-red-600" />
+                  <Trash2 className="mt-0.5 h-4 w-4 text-error-foreground" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-red-700">Delete Workspace</div>
-                    <div className="text-xs text-red-600/80">
+                    <div className="text-sm font-medium text-error-foreground">Delete Workspace</div>
+                    <div className="text-xs text-error-foreground">
                       Permanently delete workspace and all data
                     </div>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-red-500" />
+                  <ChevronRight className="h-4 w-4 text-error" />
                 </button>
               </div>
             </div>
@@ -392,7 +392,7 @@ export function TeamWorkspacePage() {
       {deleteOpen ? (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <h4 className="text-base font-semibold text-red-700">Delete Workspace</h4>
+            <h4 className="text-base font-semibold text-error-foreground">Delete Workspace</h4>
             <p className="mt-1 text-sm text-muted-foreground">
               Type <span className="font-semibold">DELETE</span> to enable delete button.
             </p>

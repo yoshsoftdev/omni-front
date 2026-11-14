@@ -301,8 +301,8 @@ export function MessageComposer({
   const windowClosed = !freeTextAllowed;
 
   return (
-    <div className="sticky bottom-0 z-10 border-t border-[#E5E7EB] bg-white dark:border-border dark:bg-card">
-      <div className="flex items-center justify-between gap-2 border-b border-[#E5E7EB] px-3 py-1.5 dark:border-border">
+    <div className="sticky bottom-0 z-10 border-t border-border bg-card">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-1.5">
         <div className="flex gap-1" role="tablist" aria-label="Composer mode">
           <button
             type="button"
@@ -312,8 +312,8 @@ export function MessageComposer({
             className={cn(
               "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               activeTab === "reply"
-                ? "bg-[#111111] text-white dark:bg-foreground dark:text-background"
-                : "text-[#6B7280] hover:bg-[#F6F7F9] dark:hover:bg-muted",
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-background dark:hover:bg-muted",
             )}
           >
             Reply
@@ -326,8 +326,8 @@ export function MessageComposer({
             className={cn(
               "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
               activeTab === "note"
-                ? "bg-[#111111] text-white dark:bg-foreground dark:text-background"
-                : "text-[#6B7280] hover:bg-[#F6F7F9] dark:hover:bg-muted",
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-background dark:hover:bg-muted",
             )}
           >
             Internal Note
@@ -335,12 +335,12 @@ export function MessageComposer({
         </div>
         {activeTab === "reply" ? (
           <div
-            className="inline-flex max-w-[55%] items-center gap-1.5 truncate rounded-full border border-[#E5E7EB] bg-[#F6F7F9] px-2 py-1 text-[11px] text-[#6B7280] dark:border-border dark:bg-muted"
+            className="inline-flex max-w-[55%] items-center gap-1.5 truncate rounded-full border border-border bg-background px-2 py-1 text-xs text-muted-foreground dark:bg-muted"
             title={channelName ? `Replying via ${channelName}` : undefined}
           >
             <span className="shrink-0">Replying via</span>
             <ChannelPlatformBadge channelType={channel} className="h-5 border-0 bg-transparent px-0" />
-            <span className="truncate font-medium text-[#111111] dark:text-foreground">
+            <span className="truncate font-medium text-foreground">
               {channelName || "channel"}
             </span>
           </div>
@@ -350,10 +350,10 @@ export function MessageComposer({
       {activeTab === "reply" ? (
         <div className="p-3">
           {replyTo ? (
-            <div className="mb-3 rounded-md border border-[#E5E7EB] bg-[#F6F7F9] p-2.5 dark:border-border dark:bg-muted/30">
+            <div className="mb-3 rounded-md border border-border bg-background p-2.5 dark:bg-muted/30">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium text-[#6B7280]">
+                  <p className="text-xs font-medium text-muted-foreground">
                     Replying to {replyTo.sender_name?.trim() || "message"}
                   </p>
                   <p className="line-clamp-2 whitespace-pre-wrap text-xs">{replyTo.content || "(no text)"}</p>
@@ -372,7 +372,7 @@ export function MessageComposer({
           {windowClosed ? (
             <div
               role="status"
-              className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+              className="mb-3 rounded-md border border-warning-border bg-warning-muted px-3 py-2 text-xs text-warning-foreground"
             >
               The 24-hour messaging window has ended. Free-text replies are unavailable until the
               customer messages again.
@@ -453,7 +453,7 @@ export function MessageComposer({
               }}
               placeholder={isInstagramChannel ? "Type your Instagram message..." : "Type your message..."}
               aria-label="Message"
-              className="min-h-[72px] w-full resize-none rounded-lg border border-[#E5E7EB] bg-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] dark:border-border dark:bg-background"
+              className="min-h-[72px] w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-background"
               rows={3}
             />
             <QuickReplySelector

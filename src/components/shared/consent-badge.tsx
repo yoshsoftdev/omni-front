@@ -8,9 +8,9 @@ const LABELS: Record<ConsentStatus, string> = {
 };
 
 const STYLES: Record<ConsentStatus, string> = {
-  opt_in: "bg-emerald-100 text-emerald-700",
-  opt_out: "bg-red-100 text-red-700",
-  unknown: "bg-slate-100 text-slate-600",
+  opt_in: "bg-success-muted text-success-foreground",
+  opt_out: "bg-error-muted text-error-foreground",
+  unknown: "bg-muted text-muted-foreground",
 };
 
 export function ConsentBadge({ status, className }: { status: ConsentStatus; className?: string }) {

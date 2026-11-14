@@ -222,7 +222,7 @@ function MetricCard({ label, value, total }: { label: string; value: number; tot
     <div className="rounded-lg border bg-muted/20 px-3 py-2.5">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-lg font-semibold">{value.toLocaleString()}</p>
-      <p className="text-[10px] text-muted-foreground">{calcPct(value, total)}</p>
+      <p className="text-xs text-muted-foreground">{calcPct(value, total)}</p>
     </div>
   );
 }

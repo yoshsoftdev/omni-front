@@ -72,12 +72,12 @@ function InstagramOGLinkCard({ content }: { content: string }) {
         className="block max-w-72 overflow-hidden rounded-md border bg-muted/40 text-left transition-colors hover:bg-muted/70"
       >
         <div className="space-y-1 px-2.5 py-2">
-          <span className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             {isStory ? <Video className="h-3 w-3" /> : <ExternalLink className="h-3 w-3" />}
             {label || "Instagram link"}
           </span>
           {title ? <p className="line-clamp-2 text-sm font-medium text-foreground">{title}</p> : null}
-          <span className="block truncate text-xs text-sky-700 dark:text-sky-400">{linkHost(url)}</span>
+          <span className="block truncate text-xs text-info-foreground">{linkHost(url)}</span>
         </div>
       </a>
     );
@@ -85,7 +85,7 @@ function InstagramOGLinkCard({ content }: { content: string }) {
 
   return (
     <div className="rounded-md border bg-muted/40 px-2.5 py-2 text-sm text-foreground">
-      <span className="mb-1 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+      <span className="mb-1 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
         {isStory ? <Video className="h-3 w-3" /> : <ImageIcon className="h-3 w-3" />}
         {label || "Instagram event"}
       </span>
@@ -239,7 +239,7 @@ function MediaPreview({ message }: { message: InboxChatMessage }) {
   if (message.type === "template") {
     return (
       <div className="text-sm">
-        <span className="mb-1 block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="mb-1 block text-xs font-medium uppercase tracking-wide text-muted-foreground">
           Template
         </span>
         {message.content}
@@ -381,40 +381,40 @@ export function MessageBubble({
             "w-full rounded-2xl border px-3.5 py-2.5 shadow-sm transition-all",
             isOutbound ? "rounded-br-md" : "rounded-bl-md",
             bubbleClass(channel, isOutbound),
-            highlighted ? "ring-2 ring-amber-400" : "",
+            highlighted ? "ring-2 ring-warning" : "",
           )}
         >
         {repliedTo ? (
           <button
             type="button"
             onClick={() => onJumpToMessage?.(repliedTo.id)}
-            className="mb-2 block w-full rounded-md border-l-2 border-[#111111] bg-black/5 px-2 py-1 text-left text-xs text-[#6B7280] hover:bg-black/10 dark:border-foreground"
+            className="mb-2 block w-full rounded-md border-l-2 border-primary bg-black/5 px-2 py-1 text-left text-xs text-muted-foreground hover:bg-black/10 dark:border-foreground"
             title="Jump to replied message"
           >
             <p className="line-clamp-2 whitespace-pre-wrap">{repliedTo.content}</p>
           </button>
         ) : hasUnresolvedReply ? (
           <div
-            className="mb-2 rounded-md border-l-2 border-amber-500 bg-black/5 px-2 py-1 text-left text-xs text-[#6B7280]"
+            className="mb-2 rounded-md border-l-2 border-warning bg-black/5 px-2 py-1 text-left text-xs text-muted-foreground"
             title="Original replied message is not available in loaded app history"
           >
             <p className="line-clamp-2 whitespace-pre-wrap italic">Reply to an earlier message (not available in app history)</p>
           </div>
         ) : null}
         {message.is_deleted ? (
-          <p className="text-sm italic text-[#6B7280]">This message was deleted</p>
+          <p className="text-sm italic text-muted-foreground">This message was deleted</p>
         ) : (
           <MediaPreview message={message} />
         )}
 
         <div
           className={cn(
-            "mt-1.5 flex items-center gap-2 text-[10px] text-[#6B7280]",
+            "mt-1.5 flex items-center gap-2 text-xs text-muted-foreground",
             isOutbound ? "justify-end" : "justify-start",
           )}
         >
           {senderLabel ? (
-            <span className="max-w-[10rem] truncate font-medium text-[#6B7280]" title={senderLabel}>
+            <span className="max-w-[10rem] truncate font-medium text-muted-foreground" title={senderLabel}>
               {senderLabel}
             </span>
           ) : null}
@@ -424,14 +424,14 @@ export function MessageBubble({
               <button
                 type="button"
                 onClick={() => onRetry?.(message.client_message_id ?? message.id)}
-                className="text-[10px] font-medium text-destructive hover:underline"
+                className="text-xs font-medium text-destructive hover:underline"
               >
                 Failed · Retry
               </button>
             ) : message.send_status === "sending" ? (
               <Loader2 className="h-3 w-3 animate-spin" />
             ) : message.read || message.send_status === "read" ? (
-              <CheckCheck className="h-3 w-3 text-blue-500" />
+              <CheckCheck className="h-3 w-3 text-info" />
             ) : message.delivered || message.send_status === "delivered" ? (
               <CheckCheck className="h-3 w-3" />
             ) : (
@@ -440,7 +440,7 @@ export function MessageBubble({
           ) : null}
         </div>
         {isOutbound && message.send_status === "failed" && message.send_error ? (
-          <p className="mt-1 text-[10px] text-destructive">{message.send_error}</p>
+          <p className="mt-1 text-xs text-destructive">{message.send_error}</p>
         ) : null}
         </div>
       </div>

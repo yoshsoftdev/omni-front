@@ -9,10 +9,10 @@ import {
 import { cn } from "@/lib/utils";
 
 const BADGE_STYLES: Record<NonNullable<CampaignAudience["type"]>, string> = {
-  segment: "border-blue-200 bg-blue-50 text-blue-700",
+  segment: "border-info-border bg-info-muted text-info-foreground",
   tag: "border-violet-200 bg-violet-50 text-violet-700",
-  manual: "border-amber-200 bg-amber-50 text-amber-700",
-  mixed: "border-slate-200 bg-slate-100 text-slate-700",
+  manual: "border-warning-border bg-warning-muted text-warning-foreground",
+  mixed: "border-border bg-muted text-muted-foreground",
   "": "border-border bg-muted text-muted-foreground",
 };
 
@@ -43,7 +43,7 @@ export function CampaignAudienceCell({ campaign }: CampaignAudienceCellProps) {
       {audience.type ? (
         <span
           className={cn(
-            "inline-flex rounded border px-1.5 py-0.5 text-[10px] font-medium",
+            "inline-flex rounded border px-1.5 py-0.5 text-xs font-medium",
             BADGE_STYLES[audience.type] ?? BADGE_STYLES[""],
           )}
         >
@@ -64,7 +64,7 @@ export function CampaignAudienceCell({ campaign }: CampaignAudienceCellProps) {
       </div>
 
       {audience.snapshot ? (
-        <div className="text-[10px] text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           Snapshot
           {audience.snapshot_at
             ? ` · ${new Date(audience.snapshot_at).toLocaleDateString(undefined, {

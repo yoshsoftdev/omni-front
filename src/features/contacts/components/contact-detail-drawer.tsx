@@ -253,13 +253,13 @@ export function ContactDetailDrawer({
               <p className="text-xs text-muted-foreground">{detail.email ?? "—"}</p>
               {contactSourceProvider ? (
                 <div className="mt-2 flex flex-wrap items-center gap-1">
-                  <span className="mr-1 text-[11px] font-medium text-muted-foreground">
+                  <span className="mr-1 text-xs font-medium text-muted-foreground">
                     Contact source:
                   </span>
                   <ProviderBadge provider={contactSourceProvider} />
                 </div>
               ) : (
-                <div className="mt-2 flex items-center gap-1.5 text-[11px]">
+                <div className="mt-2 flex items-center gap-1.5 text-xs">
                   <span className="font-medium text-muted-foreground">Contact source:</span>
                   <SourceIcon source={detail.source} className="h-3.5 w-3.5" />
                   <span>{sourceLabel(detail.source)}</span>

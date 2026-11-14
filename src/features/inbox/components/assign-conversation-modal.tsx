@@ -9,8 +9,8 @@ import type { InboxAgent } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
 
 const PRESENCE_STYLES = {
-  online: "bg-emerald-500",
-  away: "bg-amber-500",
+  online: "bg-success",
+  away: "bg-warning",
   offline: "bg-slate-400",
 };
 

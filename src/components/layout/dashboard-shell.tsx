@@ -20,7 +20,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-medium text-primary-foreground">
+              <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-xs font-medium text-primary-foreground">
                 2
               </span>
             </button>
@@ -35,7 +35,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <UserCircle2 className="h-4 w-4 text-muted-foreground" />
               <div className="leading-tight">
                 <div className="text-xs font-medium">{user?.email ?? "Admin"}</div>
-                <div className="text-[10px] text-muted-foreground">Admin</div>
+                <div className="text-xs text-muted-foreground">Admin</div>
               </div>
             </div>
           </div>

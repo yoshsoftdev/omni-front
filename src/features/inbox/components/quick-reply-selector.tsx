@@ -82,7 +82,7 @@ export function QuickReplySelector({
           ) : (
             grouped.map(([category, categoryItems]) => (
               <div key={category} className="mb-2 last:mb-0">
-                <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {category}
                 </p>
                 {categoryItems.map((item) => {

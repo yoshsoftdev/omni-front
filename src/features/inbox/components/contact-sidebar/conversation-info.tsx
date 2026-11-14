@@ -10,8 +10,8 @@ import { resolvePriorityLabel } from "@/features/inbox/utils/priority-label";
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3 text-sm">
-      <dt className="shrink-0 text-[#6B7280]">{label}</dt>
-      <dd className="min-w-0 text-right font-medium text-[#111111] dark:text-foreground">{children}</dd>
+      <dt className="shrink-0 text-muted-foreground">{label}</dt>
+      <dd className="min-w-0 text-right font-medium text-foreground">{children}</dd>
     </div>
   );
 }
@@ -34,7 +34,7 @@ export function ConversationInfo({ conversation, channelLabel }: ConversationInf
     <section aria-labelledby="conversation-info-heading">
       <h4
         id="conversation-info-heading"
-        className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#6B7280]"
+        className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
       >
         Conversation
       </h4>
@@ -50,7 +50,7 @@ export function ConversationInfo({ conversation, channelLabel }: ConversationInf
           </span>
         </InfoRow>
         <InfoRow label="Conversation ID">
-          <span className="break-all font-mono text-[11px] font-normal text-[#6B7280]">
+          <span className="break-all font-mono text-xs font-normal text-muted-foreground">
             {conversation.id}
           </span>
         </InfoRow>

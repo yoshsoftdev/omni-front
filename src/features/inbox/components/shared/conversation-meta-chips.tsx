@@ -16,15 +16,15 @@ export function ConversationStatusChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium",
         closed
-          ? "border-[#E5E7EB] bg-[#F6F7F9] text-[#6B7280] dark:border-border dark:bg-muted"
-          : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400",
+          ? "border-border bg-background text-muted-foreground dark:bg-muted"
+          : "border-success-border bg-success-muted text-success-foreground",
         className,
       )}
     >
       <span
-        className={cn("h-1.5 w-1.5 rounded-full", closed ? "bg-[#6B7280]" : "bg-emerald-600")}
+        className={cn("h-1.5 w-1.5 rounded-full", closed ? "bg-muted-foreground" : "bg-success")}
         aria-hidden
       />
       {closed ? "Closed" : "Open"}
@@ -43,11 +43,11 @@ export function AssigneeChip({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border border-[#E5E7EB] bg-[#F6F7F9] px-2 py-0.5 text-[11px] font-medium text-[#6B7280] dark:border-border dark:bg-muted",
+          "inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium text-muted-foreground dark:bg-muted",
           className,
         )}
       >
-        <span className="h-1.5 w-1.5 rounded-full bg-[#9CA3AF]" aria-hidden />
+        <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" aria-hidden />
         Unassigned
       </span>
     );
@@ -56,11 +56,11 @@ export function AssigneeChip({
   return (
     <span
       className={cn(
-        "inline-flex max-w-[12rem] items-center gap-1.5 truncate rounded-full border border-[#E5E7EB] bg-white px-2 py-0.5 text-[11px] font-medium text-[#111111] dark:border-border dark:bg-card dark:text-foreground",
+        "inline-flex max-w-[12rem] items-center gap-1.5 truncate rounded-full border border-border bg-card px-2 py-0.5 text-xs font-medium text-foreground",
         className,
       )}
     >
-      <User className="h-3 w-3 shrink-0 text-[#6B7280]" aria-hidden />
+      <User className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden />
       <span className="truncate">{name}</span>
     </span>
   );
@@ -76,7 +76,7 @@ export function PriorityChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
+        "inline-flex items-center gap-1 rounded-full border border-warning-border bg-warning-muted px-2 py-0.5 text-xs font-medium text-warning-foreground",
         className,
       )}
     >
@@ -96,7 +96,7 @@ export function WaitingChip({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium tabular-nums text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300",
+        "inline-flex items-center gap-1.5 rounded-full border border-warning-border bg-warning-muted px-2 py-0.5 text-xs font-medium tabular-nums text-warning-foreground",
         className,
       )}
       title={`Waiting ${label}`}

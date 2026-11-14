@@ -21,12 +21,12 @@ export function StepWizard({
   const currentIndex = steps.findIndex((s) => s.id === currentStep);
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <ol className={cn("flex flex-wrap items-center gap-2", className)}>
       {steps.map((step, index) => {
         const done = index < currentIndex;
         const active = step.id === currentStep;
         return (
-          <div key={step.id} className="flex items-center gap-2">
+          <li key={step.id} aria-current={active ? "step" : undefined} className="flex items-center gap-2">
             <div
               className={cn(
                 "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium",
@@ -36,10 +36,10 @@ export function StepWizard({
               {done ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
             </div>
             <span className={cn("text-sm", active ? "font-medium" : "text-muted-foreground")}>{step.label}</span>
-            {index < steps.length - 1 ? <div className="mx-2 hidden h-px w-8 bg-border sm:block" /> : null}
-          </div>
+            {index < steps.length - 1 ? <div aria-hidden className="mx-2 hidden h-px w-8 bg-border sm:block" /> : null}
+          </li>
         );
       })}
-    </div>
+    </ol>
   );
 }

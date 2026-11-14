@@ -14,7 +14,7 @@ export function useToast() {
   function Toast() {
     if (!toast) return null;
     return (
-      <div className="fixed right-6 top-6 z-[80]">
+      <div role="status" aria-live="polite" className="fixed right-6 top-6 z-[80]">
         <div
           className={[
             "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-lg",

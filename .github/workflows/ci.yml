@@ -39,3 +39,26 @@ jobs:
             playwright-report
             test-results
           retention-days: 7
+
+  visual:
+    # Same image as `pnpm test:visual:update`, so font rendering matches the baselines.
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/playwright:v1.64.1-noble
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build-storybook
+      - run: pnpm test:visual
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: visual-diff
+          path: test-results
+          retention-days: 7

@@ -1,11 +1,15 @@
 import { resolveWsCandidates } from "@/services/websocket/resolve-ws-url";
 
 type MessageHandler = (data: MessageEvent) => void;
+type ReconnectHandler = () => void;
 
 export class WebSocketClient {
   private socket: WebSocket | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private handlers = new Set<MessageHandler>();
+  private reconnectHandlers = new Set<ReconnectHandler>();
+  /** True once a socket has opened; a later open is a reconnect (events may have been missed). */
+  private hasOpened = false;
   private shouldReconnect = true;
   private token: string | null = null;
   private currentUrlIndex = 0;
@@ -38,11 +42,23 @@ export class WebSocketClient {
     this.socket?.close();
     this.socket = null;
     this.currentUrlIndex = 0;
+    this.hasOpened = false; // next connect (new session) is a fresh start, not a resync
   }
 
   onMessage(handler: MessageHandler) {
     this.handlers.add(handler);
     return () => this.handlers.delete(handler);
+  }
+
+  /**
+   * Called after the socket comes back. Realtime fan-out is at-most-once (D9),
+   * so subscribers refetch what they show instead of trusting the event stream.
+   */
+  onReconnect(handler: ReconnectHandler) {
+    this.reconnectHandlers.add(handler);
+    return () => {
+      this.reconnectHandlers.delete(handler);
+    };
   }
 
   send(payload: unknown) {
@@ -66,6 +82,10 @@ export class WebSocketClient {
         clearTimeout(this.reconnectTimer);
         this.reconnectTimer = null;
       }
+      if (this.hasOpened) {
+        this.reconnectHandlers.forEach((handler) => handler());
+      }
+      this.hasOpened = true;
     };
 
     this.socket.onmessage = (event) => {

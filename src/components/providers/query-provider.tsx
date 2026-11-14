@@ -3,6 +3,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
+import { websocketClient } from "@/services/websocket/client";
+
 const CLEAR_SESSION_CACHE_EVENT = "omni-chan:clear-session-cache";
 
 export function dispatchClearSessionCache() {
@@ -30,6 +32,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     window.addEventListener(CLEAR_SESSION_CACHE_EVENT, handleClear);
     return () => window.removeEventListener(CLEAR_SESSION_CACHE_EVENT, handleClear);
   }, [client]);
+
+  // Events sent while the socket was down are gone (D9): refetch every query on screen.
+  useEffect(() => websocketClient.onReconnect(() => void client.invalidateQueries()), [client]);
 
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

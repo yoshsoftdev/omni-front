@@ -1,4 +1,6 @@
-import { callsTo, expect, mockShell, signIn, test, TEST_SESSION } from "./fixtures/api-mock";
+import type { WebSocketRoute } from "@playwright/test";
+
+import { type ApiMock, callsTo, expect, mockShell, signIn, test, TEST_SESSION } from "./fixtures/api-mock";
 
 const CONV_ID = "44444444-4444-4444-8444-444444444444";
 const now = () => new Date().toISOString();
@@ -27,8 +29,7 @@ const inbound = () => ({
   sent_at: now(),
 });
 
-test("reply to a customer from the inbox", async ({ page, api }) => {
-  await signIn(page);
+function mockInbox(api: ApiMock) {
   mockShell(api);
   api.ok("GET", "/inbox", { conversations: [conversation()], has_more: false });
   api.ok("GET", `/conversations/${CONV_ID}`, conversation());
@@ -44,6 +45,11 @@ test("reply to a customer from the inbox", async ({ page, api }) => {
   api.ok("GET", `/conversations/${CONV_ID}/presence`, presence);
   api.ok("POST", `/conversations/${CONV_ID}/presence/open`, presence);
   api.ok("POST", `/conversations/${CONV_ID}/presence/close`, presence);
+}
+
+test("reply to a customer from the inbox", async ({ page, api }) => {
+  await signIn(page);
+  mockInbox(api);
   api.on("POST", `/conversations/${CONV_ID}/messages`, async (route, request) => {
     const body = JSON.parse(request.postData() ?? "{}");
     await route.fulfill({
@@ -81,4 +87,40 @@ test("reply to a customer from the inbox", async ({ page, api }) => {
   expect(sent[0].body).toMatchObject({ content: "Masih ada kak, mau pesan berapa?" });
   expect(sent[0].authorization).toBe(`Bearer ${TEST_SESSION.access_token}`);
   expect(api.unmatched.map((c) => `${c.method} ${c.path}`)).toEqual([]);
+});
+
+// D9: realtime fan-out is at-most-once, so a message that arrives while the
+// socket is down must still appear once the socket reconnects.
+test("inbox resyncs the open thread after the realtime socket reconnects", async ({ page, api }) => {
+  const sockets: WebSocketRoute[] = [];
+  // Keep sockets open (the default fixture closes them) so we control the drop.
+  await page.routeWebSocket(/\/ws(\?|$)/, (ws) => {
+    sockets.push(ws);
+  });
+  await signIn(page);
+  mockInbox(api);
+
+  await page.goto("/inbox");
+  await page.getByText("Budi Santoso").first().click();
+  await expect(page.getByText("Halo, stok masih ada?").last()).toBeVisible();
+  await expect.poll(() => sockets.length).toBeGreaterThan(0);
+  // Let initial loads settle (the thread may load twice while agents resolve).
+  let settled = -1;
+  await expect
+    .poll(() => {
+      const n = callsTo(api, "GET", `/conversations/${CONV_ID}/messages`).length;
+      const stable = n === settled;
+      settled = n;
+      return stable;
+    }, { intervals: [1000] })
+    .toBe(true);
+
+  // While offline the customer sends another message; no realtime event reaches the browser.
+  const missed = { ...inbound(), id: "88888888-8888-4888-8888-888888888888", content: "Kalau warna merah ada?" };
+  api.ok("GET", `/conversations/${CONV_ID}/messages`, { items: [missed, inbound()] });
+  const before = callsTo(api, "GET", `/conversations/${CONV_ID}/messages`).length;
+  await sockets[sockets.length - 1].close();
+
+  await expect(page.getByText("Kalau warna merah ada?")).toBeVisible({ timeout: 10_000 });
+  expect(callsTo(api, "GET", `/conversations/${CONV_ID}/messages`).length).toBeGreaterThan(before);
 });

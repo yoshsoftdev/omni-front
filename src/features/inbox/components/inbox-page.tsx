@@ -52,6 +52,7 @@ import { formatApiErrorMessage } from "@/services/api/errors";
 import { useAuthStore } from "@/store/auth-store";
 import type { ConsentStatus } from "@/types/contact";
 import type { Message } from "@/types/message";
+import { websocketClient } from "@/services/websocket/client";
 
 function toMillis(value?: string): number {
   if (!value) return 0;
@@ -104,6 +105,9 @@ export function InboxPage() {
   const { count: totalUnreadCount } = useInboxUnreadCount();
 
   const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>({});
+  // Bumped when the realtime socket reconnects so the open thread is reloaded (D9).
+  const [resyncTick, setResyncTick] = useState(0);
+  useEffect(() => websocketClient.onReconnect(() => setResyncTick((n) => n + 1)), []);
   const [contacts, setContacts] = useState<Record<string, InboxContact>>({});
   const [activitiesByConversation, setActivitiesByConversation] = useState<Record<string, InboxActivityEvent[]>>({});
   const [workspaceNotes, setWorkspaceNotes] = useState<Record<string, InboxWorkspaceNote[]>>({});
@@ -214,7 +218,7 @@ export function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId, toInboxMessage]);
+  }, [selectedId, toInboxMessage, resyncTick]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -234,7 +238,7 @@ export function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId]);
+  }, [selectedId, resyncTick]);
 
   const resolvedConversations = useMemo(
     () =>

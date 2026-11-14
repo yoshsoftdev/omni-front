@@ -12,24 +12,7 @@ export interface paths {
             cookie?: never;
         };
         /** Health check */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["authGetHealth"];
         put?: never;
         post?: never;
         delete?: never;
@@ -48,37 +31,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Register workspace */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name: string;
-                        /** Format: email */
-                        email: string;
-                        /** Format: password */
-                        password: string;
-                        team_name?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Registered */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"];
-                    };
-                };
-            };
-        };
+        post: operations["authRegister"];
         delete?: never;
         options?: never;
         head?: never;
@@ -95,33 +48,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Login */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** Format: email */
-                        email: string;
-                        /** Format: password */
-                        password: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Logged in */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["authLogin"];
         delete?: never;
         options?: never;
         head?: never;
@@ -138,24 +65,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Refresh access token */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Token refreshed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["authRefresh"];
         delete?: never;
         options?: never;
         head?: never;
@@ -172,24 +82,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Logout */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Logged out */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["authLogout"];
         delete?: never;
         options?: never;
         head?: never;
@@ -204,25 +97,7 @@ export interface paths {
             cookie?: never;
         };
         /** Current user profile */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["authMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -239,48 +114,14 @@ export interface paths {
             cookie?: never;
         };
         /** Get workspace */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["workspaceGet"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
         /** Update workspace */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["workspaceUpdate"];
         trace?: never;
     };
     "/workspace/quotas": {
@@ -291,24 +132,7 @@ export interface paths {
             cookie?: never;
         };
         /** Workspace quotas */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["workspaceGetQuotas"];
         put?: never;
         post?: never;
         delete?: never;
@@ -325,28 +149,7 @@ export interface paths {
             cookie?: never;
         };
         /** Workspace readiness checklist */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["ReadinessResponse"];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["workspaceGetReadiness"];
         put?: never;
         post?: never;
         delete?: never;
@@ -365,29 +168,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Recompute and persist workspace readiness snapshot */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Refreshed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["ReadinessResponse"];
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        post: operations["workspaceRefreshReadiness"];
         delete?: never;
         options?: never;
         head?: never;
@@ -402,44 +183,10 @@ export interface paths {
             cookie?: never;
         };
         /** List team members */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["teamsListMembers"];
         put?: never;
         /** Add team member */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["teamsAddMember"];
         delete?: never;
         options?: never;
         head?: never;
@@ -454,34 +201,7 @@ export interface paths {
             cookie?: never;
         };
         /** List team users */
-        get: {
-            parameters: {
-                query?: {
-                    search?: string;
-                    role?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: {
-                                users?: Record<string, never>[];
-                            };
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["teamsListUsers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -500,24 +220,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Invite user */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Invited */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["teamsInviteUser"];
         delete?: never;
         options?: never;
         head?: never;
@@ -538,26 +241,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Update user role */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["teamsUpdateUserRole"];
         trace?: never;
     };
     "/teams/users/{id}/deactivate": {
@@ -570,26 +254,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Deactivate user */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deactivated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["teamsDeactivateUser"];
         delete?: never;
         options?: never;
         head?: never;
@@ -607,26 +272,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove user */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Removed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["teamsRemoveUser"];
         options?: never;
         head?: never;
         patch?: never;
@@ -640,26 +286,10 @@ export interface paths {
             cookie?: never;
         };
         /** List assignable roles */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["teamsListRoles"];
         put?: never;
-        post?: never;
+        /** Create role */
+        post: operations["teamsCreateRole"];
         delete?: never;
         options?: never;
         head?: never;
@@ -674,52 +304,10 @@ export interface paths {
             cookie?: never;
         };
         /** List channels */
-        get: {
-            parameters: {
-                query?: {
-                    page?: components["parameters"]["PageParam"];
-                    page_size?: components["parameters"]["PageSizeParam"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["PageResponse"];
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["channelsList"];
         put?: never;
         /** Create channel */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["channelsCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -737,29 +325,7 @@ export interface paths {
          * List supported channel types
          * @description Returns channel platform capabilities. Does not perform OAuth or Meta calls.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["ChannelTypeInfo"][];
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["channelsListTypes"];
         put?: never;
         post?: never;
         delete?: never;
@@ -779,29 +345,7 @@ export interface paths {
          * Workspace channel connection status
          * @description WhatsApp status is derived from existing channels rows. Instagram is not connected until implemented.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["ChannelStatusReport"];
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["channelsStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -821,29 +365,7 @@ export interface paths {
          * Instagram connection status
          * @description Returns Instagram Business Login connection state for the workspace.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["InstagramChannelStatus"];
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["channelsStatus2"];
         put?: never;
         post?: never;
         delete?: never;
@@ -860,38 +382,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Instagram Business Login authorization URL */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Optional browser URL to redirect after OAuth callback completes. */
-                    return_url?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: {
-                                /** @example https://www.instagram.com/oauth/authorize?client_id=... */
-                                authorization_url: string;
-                                state: string;
-                                /** Format: date-time */
-                                expires_at: string;
-                            };
-                        };
-                    };
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["channelsConnectURL"];
         put?: never;
         post?: never;
         delete?: never;
@@ -912,37 +403,7 @@ export interface paths {
          * @description Public OAuth redirect target. Exchanges the authorization code, stores encrypted credentials,
          *     creates or updates the Instagram channel, then redirects to return_url when provided.
          */
-        get: {
-            parameters: {
-                query: {
-                    code?: string;
-                    state: string;
-                    error?: string;
-                    error_description?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Connected (JSON response when return_url is not set) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Redirect to return_url after success or validation error */
-                302: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                400: components["responses"]["BadRequest"];
-            };
-        };
+        get: operations["channelsCallback"];
         put?: never;
         post?: never;
         delete?: never;
@@ -962,25 +423,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Disconnect Instagram channel for the workspace */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        delete: operations["channelsDisconnect"];
         options?: never;
         head?: never;
         patch?: never;
@@ -994,72 +437,15 @@ export interface paths {
             cookie?: never;
         };
         /** Get channel */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["channelsGet"];
         put?: never;
         post?: never;
         /** Delete channel */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["channelsDelete"];
         options?: never;
         head?: never;
         /** Update channel */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["channelsUpdate"];
         trace?: never;
     };
     "/templates": {
@@ -1070,34 +456,10 @@ export interface paths {
             cookie?: never;
         };
         /** List templates */
-        get: {
-            parameters: {
-                query?: {
-                    channel_id?: string;
-                    search?: string;
-                    status?: "APPROVED" | "PENDING" | "REJECTED";
-                    language?: string;
-                    category?: "MARKETING" | "UTILITY" | "AUTHENTICATION";
-                    page?: components["parameters"]["PageParam"];
-                    page_size?: components["parameters"]["PageSizeParam"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["templatesList"];
         put?: never;
-        post?: never;
+        /** Create template */
+        post: operations["templatesCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1112,29 +474,11 @@ export interface paths {
             cookie?: never;
         };
         /** Get template */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["templatesGet"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete template */
+        delete: operations["templatesDelete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1150,18 +494,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Sync templates from Meta */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                501: components["responses"]["FeatureNotAvailable"];
-            };
-        };
+        post: operations["templatesSync"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1176,44 +509,10 @@ export interface paths {
             cookie?: never;
         };
         /** List contacts */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["contactsList"];
         put?: never;
         /** Create contact */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["contactsCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1228,72 +527,15 @@ export interface paths {
             cookie?: never;
         };
         /** Get contact */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["contactsGet"];
         put?: never;
         post?: never;
         /** Delete contact */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["contactsDelete"];
         options?: never;
         head?: never;
         /** Update contact */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["contactsUpdate"];
         trace?: never;
     };
     "/contacts/{id}/providers": {
@@ -1304,34 +546,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Provider Profiles linked to a Contact */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Provider Profiles */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            success?: boolean;
-                            message?: string;
-                            data?: {
-                                providers?: components["schemas"]["ProviderProfile"][];
-                            };
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["providersListByContact"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1348,28 +563,7 @@ export interface paths {
             cookie?: never;
         };
         /** List provider ownership activities for a Contact */
-        get: {
-            parameters: {
-                query?: {
-                    limit?: number;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Provider activities */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["providersListActivities"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1386,60 +580,10 @@ export interface paths {
             cookie?: never;
         };
         /** List contacts linked bidirectionally to a Contact */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Linked contacts */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            success?: boolean;
-                            message?: string;
-                            data?: {
-                                linked_contacts?: components["schemas"]["LinkedContact"][];
-                            };
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["contactsListLinks"];
         put?: never;
         /** Link two independent Contacts bidirectionally */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ContactLinkRequest"];
-                };
-            };
-            responses: {
-                /** @description Contacts linked */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["contactsLinkContact"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1457,27 +601,7 @@ export interface paths {
         put?: never;
         post?: never;
         /** Remove a bidirectional Contact link */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    linkedContactId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Contacts unlinked */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["contactsUnlinkContact"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1491,24 +615,7 @@ export interface paths {
             cookie?: never;
         };
         /** List Provider Profiles */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Provider Profiles */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["providersList"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1525,26 +632,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get Provider Profile */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Provider Profile */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["providersGet"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1563,30 +651,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Link a Provider Profile to a Contact without moving history */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["ProviderLinkRequest"];
-                };
-            };
-            responses: {
-                /** @description Provider linked */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["providersLink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1603,30 +668,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Move a Provider Profile to a new standalone Contact */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["ProviderUnlinkRequest"];
-                };
-            };
-            responses: {
-                /** @description Provider unlinked */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["providersUnlink"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1647,26 +689,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Select a linked WhatsApp profile as source of truth */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Source of truth updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["providersSetSourceOfTruth"];
         trace?: never;
     };
     "/segments": {
@@ -1677,44 +700,10 @@ export interface paths {
             cookie?: never;
         };
         /** List segments */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["segmentsList"];
         put?: never;
         /** Create segment */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["segmentsCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1729,72 +718,15 @@ export interface paths {
             cookie?: never;
         };
         /** Get segment */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["segmentsGet"];
         put?: never;
         post?: never;
         /** Delete segment */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["segmentsDelete"];
         options?: never;
         head?: never;
         /** Update segment */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["segmentsUpdate"];
         trace?: never;
     };
     "/tags": {
@@ -1805,44 +737,10 @@ export interface paths {
             cookie?: never;
         };
         /** List tags */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["tagsList"];
         put?: never;
         /** Create tag */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["tagsCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1857,73 +755,15 @@ export interface paths {
             cookie?: never;
         };
         /** Get tag */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                404: components["responses"]["NotFound"];
-            };
-        };
+        get: operations["tagsGet"];
         put?: never;
         post?: never;
         /** Delete tag */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["tagsDelete"];
         options?: never;
         head?: never;
         /** Update tag */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["tagsUpdate"];
         trace?: never;
     };
     "/tags/{id}/contacts/{contact_id}": {
@@ -1936,50 +776,9 @@ export interface paths {
         get?: never;
         put?: never;
         /** Assign tag to contact */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    contact_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Assigned */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                404: components["responses"]["NotFound"];
-            };
-        };
+        post: operations["tagsAssign"];
         /** Unassign tag from contact */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                    contact_id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Unassigned */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["tagsUnassign"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1993,51 +792,10 @@ export interface paths {
             cookie?: never;
         };
         /** List campaigns */
-        get: {
-            parameters: {
-                query?: {
-                    page?: components["parameters"]["PageParam"];
-                    page_size?: components["parameters"]["PageSizeParam"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["PageResponse"];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["campaignsList"];
         put?: never;
         /** Create campaign */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["campaignsCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2052,73 +810,15 @@ export interface paths {
             cookie?: never;
         };
         /** Get campaign */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                404: components["responses"]["NotFound"];
-            };
-        };
+        get: operations["campaignsGet"];
         put?: never;
         post?: never;
         /** Delete campaign */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        delete: operations["campaignsDelete"];
         options?: never;
         head?: never;
         /** Update campaign */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["campaignsUpdate"];
         trace?: never;
     };
     "/campaigns/{id}/send": {
@@ -2136,31 +836,7 @@ export interface paths {
          *     `broadcast.job.created` outbox event for the orchestrator pipeline.
          *     Requires `campaign.send` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Campaign queued for send */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"];
-                    };
-                };
-                400: components["responses"]["BadRequest"];
-                403: components["responses"]["Forbidden"];
-                404: components["responses"]["NotFound"];
-            };
-        };
+        post: operations["campaignsSend"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2182,38 +858,7 @@ export interface paths {
          *     to `cancelled` and a Redis cancel flag (`cancel:campaign:{id}`, TTL 24h)
          *     for fast worker polling. Requires `campaign.cancel` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description Optional human-readable cancel reason */
-                        reason?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Campaign cancelled (idempotent if already cancelled) */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"];
-                    };
-                };
-                403: components["responses"]["Forbidden"];
-                404: components["responses"]["NotFound"];
-                409: components["responses"]["Conflict"];
-            };
-        };
+        post: operations["campaignsCancel"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2231,34 +876,7 @@ export interface paths {
          * Broadcast pipeline status
          * @description Read-only operational metrics. Requires `workspace.manage`.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Broadcast pipeline snapshot */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: {
-                                queued_jobs?: number;
-                                active_batches?: number;
-                                stale_batches?: number;
-                                recovery_pending?: number;
-                            };
-                        };
-                    };
-                };
-                403: components["responses"]["Forbidden"];
-            };
-        };
+        get: operations["operationsBroadcastStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2279,33 +897,7 @@ export interface paths {
          * @description Counts live worker heartbeats from Redis (`ops:worker:*`).
          *     Requires `workspace.manage`.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Worker registration snapshot */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: {
-                                orchestrators?: number;
-                                send_workers?: number;
-                                event_consumers?: number;
-                            };
-                        };
-                    };
-                };
-                403: components["responses"]["Forbidden"];
-            };
-        };
+        get: operations["operationsWorkerStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2322,29 +914,7 @@ export interface paths {
             cookie?: never;
         };
         /** Reporting dashboard */
-        get: {
-            parameters: {
-                query: {
-                    from: string;
-                    to: string;
-                    channel_id?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                401: components["responses"]["Unauthorized"];
-            };
-        };
+        get: operations["reportsDashboard"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2361,27 +931,7 @@ export interface paths {
             cookie?: never;
         };
         /** Daily campaign trend */
-        get: {
-            parameters: {
-                query: {
-                    from: string;
-                    to: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["reportsDailyTrend"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2398,33 +948,7 @@ export interface paths {
             cookie?: never;
         };
         /** List campaign reports */
-        get: {
-            parameters: {
-                query: {
-                    from: string;
-                    to: string;
-                    page?: components["parameters"]["PageParam"];
-                    page_size?: components["parameters"]["PageSizeParam"];
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["PageResponse"];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["reportsListCampaigns"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2441,27 +965,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get campaign report funnel */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                404: components["responses"]["NotFound"];
-            };
-        };
+        get: operations["reportsGetCampaign"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2478,34 +982,7 @@ export interface paths {
             cookie?: never;
         };
         /** List campaign link clicks */
-        get: {
-            parameters: {
-                query?: {
-                    page?: components["parameters"]["PageParam"];
-                    page_size?: components["parameters"]["PageSizeParam"];
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["PageResponse"];
-                        };
-                    };
-                };
-                404: components["responses"]["NotFound"];
-            };
-        };
+        get: operations["reportsListLinkClicks"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2522,54 +999,10 @@ export interface paths {
             cookie?: never;
         };
         /** List conversations */
-        get: {
-            parameters: {
-                query?: {
-                    page?: components["parameters"]["PageParam"];
-                    page_size?: components["parameters"]["PageSizeParam"];
-                    status?: "open" | "assigned" | "closed";
-                    assigned_to?: string;
-                    search?: string;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["PageResponse"];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["conversationsList"];
         put?: never;
         /** Create conversation */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Created */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["conversationsCreate"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2584,27 +1017,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get conversation */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                404: components["responses"]["NotFound"];
-            };
-        };
+        get: operations["conversationsGet"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2623,33 +1036,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Assign conversation */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** Format: uuid */
-                        user_id?: string | null;
-                    };
-                };
-            };
-            responses: {
-                /** @description Assigned */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["conversationsAssign"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2670,33 +1057,7 @@ export interface paths {
         options?: never;
         head?: never;
         /** Update conversation status */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        status: "open" | "assigned" | "closed";
-                    };
-                };
-            };
-            responses: {
-                /** @description Updated */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        patch: operations["conversationsUpdateStatus"];
         trace?: never;
     };
     "/conversations/{id}/messages": {
@@ -2707,57 +1068,10 @@ export interface paths {
             cookie?: never;
         };
         /** List conversation messages */
-        get: {
-            parameters: {
-                query?: {
-                    page?: number;
-                    page_size?: number;
-                };
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        get: operations["messagesList"];
         put?: never;
         /** Send message */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    id: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        content: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Sent */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["messagesSend"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2772,28 +1086,7 @@ export interface paths {
             cookie?: never;
         };
         /** Dashboard overview KPIs */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["DashboardOverview"];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["dashboardGet"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2810,28 +1103,7 @@ export interface paths {
             cookie?: never;
         };
         /** Onboarding wizard snapshot */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SuccessResponse"] & {
-                            data?: components["schemas"]["OnboardingSnapshot"];
-                        };
-                    };
-                };
-            };
-        };
+        get: operations["onboardingGetOnboarding"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2850,31 +1122,1133 @@ export interface paths {
         get?: never;
         put?: never;
         /** Mark onboarding step complete */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        step: number;
-                    };
-                };
-            };
-            responses: {
-                /** @description Step completed */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-            };
-        };
+        post: operations["onboardingCompleteOnboardingStep"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/media/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Media serve */
+        get: operations["internalServe"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/internal/automation/endpoints/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invoke an automation endpoint (internal ingress from webhook-service) */
+        post: operations["internalInvokeInternal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/webhook/meta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Meta webhook verification challenge */
+        get: operations["webhooksVerifyMeta"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get invitation */
+        get: operations["authGetInvitation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept invitation */
+        post: operations["authAcceptInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/roles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get role */
+        get: operations["teamsGetRole"];
+        put?: never;
+        post?: never;
+        /** Delete role */
+        delete: operations["teamsDeleteRole"];
+        options?: never;
+        head?: never;
+        /** Update role */
+        patch: operations["teamsUpdateRole"];
+        trace?: never;
+    };
+    "/teams/roles/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update role permissions */
+        put: operations["teamsUpdateRolePermissions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/teams/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get permissions */
+        get: operations["teamsGetPermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/manual/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify manual connect */
+        post: operations["channelsVerifyManualConnect"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Channel health */
+        get: operations["channelsHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/payment-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get payment status */
+        get: operations["channelsGetPaymentStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/payment-link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create payment link */
+        post: operations["channelsCreatePaymentLink"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/embedded-signup/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start embedded signup */
+        post: operations["channelsStartEmbeddedSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/embedded-signup/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get embedded signup status */
+        get: operations["channelsGetEmbeddedSignupStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/embedded-signup/{session_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete embedded signup */
+        post: operations["channelsCompleteEmbeddedSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/sync/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get sync status */
+        get: operations["channelsGetSyncStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/sync/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync contacts */
+        post: operations["channelsSyncContacts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/sync/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync conversations */
+        post: operations["channelsSyncConversations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get channel permissions */
+        get: operations["channelsGetPermissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/channels/{id}/permissions/reauthorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reauthorize permissions */
+        post: operations["channelsReauthorizePermissions"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/embedded-signup/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start team embedded signup */
+        post: operations["channelsStartTeamEmbeddedSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/embedded-signup/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get team embedded signup status */
+        get: operations["channelsGetTeamEmbeddedSignupStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/embedded-signup/{session_id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Complete team embedded signup */
+        post: operations["channelsCompleteTeamEmbeddedSignup"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/sync/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sync history */
+        get: operations["templatesSyncHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/templates/sync/history/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get sync history */
+        get: operations["templatesGetSyncHistory"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contacts/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Contact stats */
+        get: operations["contactsStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contacts/field-definitions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List field definitions */
+        get: operations["contactsListFieldDefinitions"];
+        put?: never;
+        /** Create field definition */
+        post: operations["contactsCreateFieldDefinition"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contacts/field-definitions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete field definition */
+        delete: operations["contactsDeleteFieldDefinition"];
+        options?: never;
+        head?: never;
+        /** Update field definition */
+        patch: operations["contactsUpdateFieldDefinition"];
+        trace?: never;
+    };
+    "/quick-replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List quick replies */
+        get: operations["quickRepliesList"];
+        put?: never;
+        /** Create quick reply */
+        post: operations["quickRepliesCreate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/quick-replies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get quick reply */
+        get: operations["quickRepliesGet"];
+        put?: never;
+        post?: never;
+        /** Delete quick reply */
+        delete: operations["quickRepliesDelete"];
+        options?: never;
+        head?: never;
+        /** Update quick reply */
+        patch: operations["quickRepliesUpdate"];
+        trace?: never;
+    };
+    "/automation/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Automation summary */
+        get: operations["automationSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/endpoints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List endpoints */
+        get: operations["automationListEndpoints"];
+        put?: never;
+        /** Create endpoint */
+        post: operations["automationCreateEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/endpoints/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get endpoint */
+        get: operations["automationGetEndpoint"];
+        put?: never;
+        post?: never;
+        /** Delete endpoint */
+        delete: operations["automationDeleteEndpoint"];
+        options?: never;
+        head?: never;
+        /** Update endpoint */
+        patch: operations["automationUpdateEndpoint"];
+        trace?: never;
+    };
+    "/automation/endpoints/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable endpoint */
+        post: operations["automationDisableEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/endpoints/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable endpoint */
+        post: operations["automationEnableEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/endpoints/{id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Duplicate endpoint */
+        post: operations["automationDuplicateEndpoint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/endpoints/{id}/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Endpoint analytics */
+        get: operations["automationAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/endpoints/{id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Test-invoke an automation endpoint */
+        post: operations["automationTestInvoke"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List API keys */
+        get: operations["automationListAPIKeys"];
+        put?: never;
+        /** Create API key */
+        post: operations["automationCreateAPIKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/keys/{id}/rotate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rotate API key */
+        post: operations["automationRotateAPIKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/keys/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable API key */
+        post: operations["automationDisableAPIKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/keys/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable API key */
+        post: operations["automationEnableAPIKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/keys/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete API key */
+        delete: operations["automationDeleteAPIKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/webhooks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List forward webhooks */
+        get: operations["automationListForwardWebhooks"];
+        put?: never;
+        /** Create forward webhook */
+        post: operations["automationCreateForwardWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get inbox automation settings */
+        get: operations["automationGetInboxAutomationSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update inbox automation settings */
+        patch: operations["automationUpdateInboxAutomationSettings"];
+        trace?: never;
+    };
+    "/automation/webhooks/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete forward webhook */
+        delete: operations["automationDeleteForwardWebhook"];
+        options?: never;
+        head?: never;
+        /** Update forward webhook */
+        patch: operations["automationUpdateForwardWebhook"];
+        trace?: never;
+    };
+    "/automation/webhooks/{id}/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable forward webhook */
+        post: operations["automationEnableForwardWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/webhooks/{id}/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable forward webhook */
+        post: operations["automationDisableForwardWebhook"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/automation/webhooks/{id}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List forward deliveries */
+        get: operations["automationListForwardDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark read */
+        post: operations["conversationsMarkRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/activities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List activities */
+        get: operations["conversationsListActivities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List notes */
+        get: operations["conversationsListNotes"];
+        put?: never;
+        /** Create note */
+        post: operations["conversationsCreateNote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/notes/{noteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete note */
+        delete: operations["conversationsDeleteNote"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/presence/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Presence open */
+        post: operations["conversationsOpen"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/presence/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Presence close */
+        post: operations["conversationsClose"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/presence/typing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Presence typing */
+        post: operations["conversationsTyping"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/presence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get presence */
+        get: operations["conversationsGet2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/messages/{messageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete message */
+        delete: operations["conversationsDelete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List inbox */
+        get: operations["inboxList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inbox/settings/window-recontact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get window recontact settings */
+        get: operations["inboxGetWindowRecontactSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update window recontact settings */
+        patch: operations["inboxUpdateWindowRecontactSettings"];
+        trace?: never;
+    };
+    "/meta/embedded-config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Embedded config */
+        get: operations["channelsEmbeddedConfig"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a file (proxied to storage-service) */
+        post: operations["storagePostStorageUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/blob/*": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Stream an object by key (proxied to storage-service)
+         * @description The path after /storage/blob/ is the object key.
+         */
+        get: operations["storageGetStorageBlob"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/objects/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Stream an object by id (proxied to storage-service) */
+        get: operations["storageGetStorageObjectsIdContent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/storage/objects/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Object metadata (proxied to storage-service) */
+        get: operations["storageGetStorageObjectsId"];
+        put?: never;
+        post?: never;
+        /** Delete an object (proxied to storage-service) */
+        delete: operations["storageDeleteStorageObjectsId"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2888,14 +2262,15 @@ export interface components {
             /** @example true */
             success: boolean;
             message: string;
-            data?: Record<string, never>;
+            /** @description Operation payload (see each operation) */
+            data?: unknown;
         };
         ErrorResponse: {
             /** @example false */
             success: boolean;
             error: {
                 /** @enum {string} */
-                code: "validation_error" | "unauthorized" | "forbidden" | "not_found" | "conflict" | "quota_exceeded" | "feature_not_available" | "internal_error";
+                code: "validation_error" | "unauthorized" | "forbidden" | "not_found" | "conflict" | "quota_exceeded" | "feature_not_available" | "payment_required" | "permission_required" | "internal_error";
                 message: string;
             };
         };
@@ -2906,10 +2281,6 @@ export interface components {
             total?: number;
             total_pages?: number;
         };
-        PageResponse: {
-            items?: Record<string, never>[];
-            pagination?: components["schemas"]["PaginationMeta"];
-        };
         ProviderProfile: {
             /** Format: uuid */
             id: string;
@@ -2917,21 +2288,17 @@ export interface components {
             team_id: string;
             /** Format: uuid */
             contact_id: string;
-            /** @description Extensible provider key such as whatsapp, instagram, messenger, telegram, or email. */
-            provider: string;
+            /** @enum {string} */
+            provider: "email" | "instagram" | "messenger" | "telegram" | "whatsapp";
             provider_user_id: string;
             /** Format: uuid */
             channel_id?: string | null;
             display_name?: string;
             username?: string;
             phone?: string;
-            /** Format: uri */
             avatar_url?: string;
-            /** Format: email */
             email?: string;
-            metadata?: {
-                [key: string]: unknown;
-            };
+            metadata: unknown;
             /** Format: date-time */
             connected_at: string;
             /** Format: date-time */
@@ -2941,39 +2308,17 @@ export interface components {
             /** @enum {string} */
             status: "active" | "unavailable" | "unlinked";
             is_source_of_truth: boolean;
-            conversation_ids?: string[];
-        };
-        LinkedContact: {
-            /** Format: uuid */
-            link_id: string;
-            /** Format: uuid */
-            id: string;
-            contact_name: string;
-            customer_name: string;
-            phone: string;
-            /** Format: email */
-            email?: string | null;
-            /** Format: uri */
-            avatar_url?: string | null;
-            provider_kinds: string[];
+            conversation_ids?: string[] | null;
             /** Format: date-time */
-            linked_at: string;
-        };
-        ContactLinkRequest: {
-            /** Format: uuid */
-            contact_id: string;
-        };
-        ProviderLinkRequest: {
-            /** Format: uuid */
-            contact_id: string;
-            reason?: string;
-        };
-        ProviderUnlinkRequest: {
-            reason?: string;
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         ProviderActivity: {
             /** Format: uuid */
             id: string;
+            /** Format: uuid */
+            team_id: string;
             /** Format: uuid */
             contact_id: string;
             /** Format: uuid */
@@ -2984,70 +2329,1372 @@ export interface components {
             actor_id?: string | null;
             actor_name?: string;
             description: string;
-            metadata?: {
-                [key: string]: unknown;
-            };
+            metadata: unknown;
             /** Format: date-time */
             created_at: string;
         };
-        ChannelTypeInfo: {
-            /**
-             * @example whatsapp
-             * @enum {string}
-             */
-            type: "whatsapp" | "instagram" | "messenger" | "telegram" | "email";
-            /** @example WhatsApp Business */
-            display_name: string;
-            /** @example true */
-            supported: boolean;
+        DashboardOverview: {
+            /** Format: int64 */
+            contacts: number;
+            /** Format: int64 */
+            channels: number;
+            /** Format: int64 */
+            campaigns: number;
+            /** Format: int64 */
+            unread_conversations: number;
+            /** Format: int64 */
+            open_conversations: number;
+            /** Format: int64 */
+            unassigned_conversations: number;
+            avg_first_response_seconds?: number | null;
+            avg_resolution_seconds?: number | null;
+            readiness_score: number;
+            /** Format: date-time */
+            last_contact_sync_at?: string | null;
+            /** Format: date-time */
+            last_template_sync_at?: string | null;
+            /** Format: date-time */
+            last_conversation_sync_at?: string | null;
+            permission_status?: string;
         };
-        ChannelStatusEntry: {
+        AcceptInviteRequest: {
+            name?: string;
+            password?: string;
+        };
+        AddMemberRequest: {
+            email?: string;
+            role?: string;
+        };
+        AssignConversationRequest: {
+            user_id?: string | null;
+            assignee_id?: string | null;
+        };
+        AuthMeResponse: {
+            user: components["schemas"]["AuthUserProfile"];
+            team: components["schemas"]["AuthTeamProfile"];
+            role: string;
+        };
+        AuthTeamProfile: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            slug: string;
+        };
+        AuthUserProfile: {
+            /** Format: uuid */
+            id: string;
+            email: string;
+            name: string;
+        };
+        AutomationAPIKey: {
+            id: string;
+            /** Format: uuid */
+            teamId: string;
+            name: string;
+            keyPrefix: string;
+            scopes: string[] | null;
             /** @enum {string} */
-            type: "whatsapp" | "instagram";
+            status: "active" | "disabled";
+            /** Format: uuid */
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string | null;
+            /** Format: date-time */
+            lastUsedAt?: string | null;
+        };
+        AutomationAPIKeySecretResult: {
+            key?: components["schemas"]["AutomationAPIKey"] | null;
+            secret: string;
+        };
+        AutomationClientIPCount: {
+            ip: string;
+            /** Format: int64 */
+            count: number;
+        };
+        AutomationDayRequestStat: {
+            date: string;
+            /** Format: int64 */
+            success: number;
+            /** Format: int64 */
+            failed: number;
+        };
+        AutomationEndpoint: {
+            id: string;
+            /** Format: uuid */
+            teamId: string;
+            name: string;
+            slug: string;
+            description: string;
+            method: string;
+            /** @enum {string} */
+            status: "active" | "disabled";
+            /** @enum {string} */
+            actionType: "send_template" | "send_text";
+            actionConfig: unknown;
+            webhook: components["schemas"]["AutomationWebhookConfig"];
+            /** Format: uuid */
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string | null;
+            /** Format: date-time */
+            lastUsedAt?: string | null;
+            stats: components["schemas"]["AutomationEndpointStats"];
+        };
+        AutomationEndpointAnalytics: {
+            endpointId: string;
+            /** Format: int64 */
+            callsToday: number;
+            /** Format: int64 */
+            totalRequests: number;
+            successRate: number;
+            /** Format: int64 */
+            failedRequests: number;
+            /** Format: int64 */
+            averageLatencyMs: number;
+            /** Format: date-time */
+            lastUsedAt?: string | null;
+            lastError?: components["schemas"]["AutomationLastError"] | null;
+            topClientIps: components["schemas"]["AutomationClientIPCount"][] | null;
+            requestsOverTime: components["schemas"]["AutomationDayRequestStat"][] | null;
+        };
+        AutomationEndpointStats: {
+            /** Format: int64 */
+            totalCalls: number;
+            successRate: number;
+            /** Format: int64 */
+            failedCalls: number;
+            /** Format: int64 */
+            callsToday: number;
+            /** Format: int64 */
+            averageLatencyMs: number;
+        };
+        AutomationForwardDelivery: {
+            id: string;
+            /** Format: uuid */
+            teamId: string;
+            webhookId: string;
+            eventType: string;
+            /** Format: uuid */
+            messageId?: string | null;
+            /** Format: uuid */
+            conversationId?: string | null;
+            /** @enum {string} */
+            status: "failed" | "success";
+            statusCode: number;
+            errorMessage?: string | null;
+            /** Format: date-time */
+            attemptedAt: string;
+        };
+        AutomationForwardWebhook: {
+            id: string;
+            /** Format: uuid */
+            teamId: string;
+            name: string;
+            url: string;
+            secret?: string;
+            /** @enum {string} */
+            status: "active" | "disabled";
+            events: string[] | null;
+            /** Format: uuid */
+            channelId?: string | null;
+            onlyUnassigned: boolean;
+            assignAutomationOnReopen: boolean;
+            /** Format: uuid */
+            createdBy?: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt?: string | null;
+            /** Format: date-time */
+            lastUsedAt?: string | null;
+        };
+        AutomationInboxAutomationSettings: {
+            enabled: boolean;
+            hasWebhook: boolean;
+        };
+        AutomationLastError: {
+            /** Format: date-time */
+            at: string;
+            message: string;
+            statusCode: number;
+        };
+        AutomationSummary: {
+            /** Format: int64 */
+            endpointCount: number;
+            /** Format: int64 */
+            requestsToday: number;
+            successRate: number;
+            /** Format: int64 */
+            failedToday: number;
+            /** Format: int64 */
+            apiKeyCount: number;
+        };
+        AutomationWebhookConfig: {
+            url: string;
+            isEnabled: boolean;
+            secret?: string;
+        };
+        Campaign: {
+            /** Format: uuid */
+            ID: string;
+            /** Format: uuid */
+            TeamID: string;
+            /** Format: uuid */
+            ChannelID: string;
+            /** Format: uuid */
+            TemplateID: string;
+            /** Format: uuid */
+            SegmentID?: string | null;
+            Name: string;
+            Description?: string | null;
+            /** @enum {string} */
+            Status: "cancelled" | "completed" | "draft" | "failed" | "queued" | "scheduled" | "sending";
+            VariableMapping: unknown;
+            SampleValues: unknown;
+            Timezone?: string | null;
+            /** @enum {string|null} */
+            SendMode?: "later" | "now" | null;
+            /** Format: date-time */
+            ScheduledAt?: string | null;
+            /** Format: date-time */
+            StartedAt?: string | null;
+            /** Format: date-time */
+            CompletedAt?: string | null;
+            TotalContacts: number;
+            SentCount: number;
+            DeliveredCount: number;
+            ReadCount: number;
+            FailedCount: number;
+            ReplyCount: number;
+            ClickedCount: number;
+            /** Format: uuid */
+            CreatedBy?: string | null;
+            /** Format: date-time */
+            CreatedAt: string;
+            /** Format: date-time */
+            UpdatedAt: string;
+            /** Format: date-time */
+            DeletedAt?: string | null;
+        };
+        CampaignAudienceSourceView: {
+            type: string;
+            id: string;
+            name: string;
+        };
+        CampaignAudienceSummary: {
+            type: string;
+            name: string;
+            recipient_count: number;
+            snapshot: boolean;
+            /** Format: date-time */
+            snapshot_at?: string | null;
+            extra_audiences?: number;
+            sources?: components["schemas"]["CampaignAudienceSourceView"][] | null;
+        };
+        CampaignResponse: {
+            id: string;
+            name: string;
+            description?: string | null;
+            status: string;
+            channel_id: string;
+            template_id: string;
+            template_name?: string;
+            template_language?: string;
+            /** Format: date-time */
+            scheduled_at?: string | null;
+            /** Format: date-time */
+            started_at?: string | null;
+            /** Format: date-time */
+            completed_at?: string | null;
+            total_contacts: number;
+            sent_count: number;
+            delivered_count: number;
+            read_count: number;
+            failed_count: number;
+            reply_count: number;
+            clicked_count: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            audience?: components["schemas"]["CampaignAudienceSummary"] | null;
+            audiences?: components["schemas"]["CampaignAudienceSourceView"][] | null;
+        };
+        CancelCampaignRequest: {
+            reason?: string;
+        };
+        Channel: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            name: string;
+            provider: string;
+            /** @enum {string} */
+            channel_type: "instagram" | "whatsapp";
+            /** @enum {string} */
+            status: "connected" | "connecting" | "disconnected";
+            /** @enum {string|null} */
+            connection_type?: "embedded_coex" | "manual" | "oauth" | null;
+            phone_number?: string | null;
+            waba_id?: string | null;
+            phone_number_id?: string | null;
+            business_id?: string | null;
+            ig_user_id?: string | null;
+            is_coex: boolean;
+            /** Format: date-time */
+            last_connected_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        ChannelManualVerifyChecks: {
+            token: boolean;
+            waba: boolean;
+            phone: boolean;
+            templates_api: boolean;
+        };
+        ChannelManualVerifyResult: {
+            waba_name?: string;
+            phone_display?: string;
+            template_count: number;
+            checks: components["schemas"]["ChannelManualVerifyChecks"];
+        };
+        ChannelmgmtChannelStatusEntry: {
+            type: string;
             connected: boolean;
-            /** @example Sales Line 1 */
             display_name?: string;
         };
-        ChannelStatusReport: {
-            channels: components["schemas"]["ChannelStatusEntry"][];
+        ChannelmgmtChannelTypeInfo: {
+            type: string;
+            display_name: string;
+            supported: boolean;
         };
-        InstagramChannelStatus: {
-            /** @example false */
+        ChannelmgmtStatusReport: {
+            channels: components["schemas"]["ChannelmgmtChannelStatusEntry"][] | null;
+        };
+        ChannelsyncContactSyncResult: {
+            created: number;
+            updated: number;
+            duplicates: number;
+        };
+        ChannelsyncConversationSyncResult: {
+            imported: number;
+            reason?: string | null;
+        };
+        ChannelsyncPermissions: {
+            contacts: boolean;
+            templates: boolean;
+            conversation_sync: boolean;
+            /** Format: date-time */
+            last_checked_at?: string | null;
+        };
+        ChannelsyncResourceStatus: {
+            /** @enum {string} */
+            status: "completed" | "failed" | "in_progress" | "not_synced";
+            created?: number | null;
+            updated?: number | null;
+            synced?: number | null;
+            imported?: number | null;
+        };
+        ChannelsyncStatusResponse: {
+            /** @enum {string} */
+            permissions: "expired" | "granted" | "missing";
+            contacts: components["schemas"]["ChannelsyncResourceStatus"];
+            templates: components["schemas"]["ChannelsyncResourceStatus"];
+            conversations: components["schemas"]["ChannelsyncResourceStatus"];
+            /** Format: date-time */
+            last_sync_at?: string | null;
+        };
+        CompleteEmbeddedSignupRequest: {
+            code?: string;
+            oauth_state?: string;
+            business_id?: string;
+            waba_id?: string;
+            phone_number_id?: string;
+        };
+        CompleteOnboardingStepRequest: {
+            step?: number;
+        };
+        Contact: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            contact_name: string;
+            customer_name: string;
+            name?: string;
+            phone: string;
+            email?: string | null;
+            avatar_url?: string | null;
+            notes?: string | null;
+            city?: string | null;
+            country?: string | null;
+            province?: string | null;
+            company?: string | null;
+            job_title?: string | null;
+            language?: string | null;
+            customer_type?: string | null;
+            /** @enum {string} */
+            source: "api" | "ig" | "import" | "manual" | "meta_inbound" | "meta_sync" | "whatsapp";
+            /** @enum {string} */
+            marketing_status: "subscribed" | "unknown" | "unsubscribed";
+            tags: components["schemas"]["ContactTagRef"][] | null;
+            providers: components["schemas"]["ProviderProfile"][] | null;
+            linked_contacts: components["schemas"]["ContactLinkedContact"][] | null;
+            custom_fields?: components["schemas"]["ContactCustomFieldValue"][] | null;
+            /** Format: date-time */
+            last_activity_at?: string | null;
+            conversations_count: number;
+            last_campaign?: components["schemas"]["ContactLastCampaignRef"] | null;
+            /** Format: uuid */
+            import_job_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        ContactCustomFieldValue: {
+            /** Format: uuid */
+            id: string;
+            field_key: string;
+            label: string;
+            /** @enum {string} */
+            field_type: "boolean" | "date" | "number" | "select" | "text";
+            options?: unknown;
+            value: unknown;
+        };
+        ContactFieldDefinition: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            field_key: string;
+            label: string;
+            /** @enum {string} */
+            field_type: "boolean" | "date" | "number" | "select" | "text";
+            options?: unknown;
+            sort_order: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ContactLastCampaignRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: date-time */
+            sent_at: string;
+        };
+        ContactLinkedContact: {
+            /** Format: uuid */
+            link_id: string;
+            /** Format: uuid */
+            id: string;
+            contact_name: string;
+            customer_name: string;
+            phone: string;
+            email?: string | null;
+            avatar_url?: string | null;
+            provider_kinds: string[] | null;
+            /** Format: date-time */
+            linked_at: string;
+        };
+        ContactTagRef: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            color: string;
+        };
+        Conversation: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            /** Format: uuid */
+            contact_id: string;
+            /** Format: uuid */
+            provider_profile_id?: string | null;
+            external_thread_id: string;
+            provider: string;
+            linked_providers: string[] | null;
+            is_source_of_truth: boolean;
+            linked_account_count: number;
+            /** Format: uuid */
+            channel_id?: string | null;
+            /** @enum {string} */
+            channel_type: "instagram" | "other" | "whatsapp";
+            /** @enum {string} */
+            status: "assigned" | "closed" | "open" | "pending" | "resolved";
+            /** Format: uuid */
+            assigned_to?: string | null;
+            unread_count: number;
+            last_message_preview: string;
+            /** Format: date-time */
+            last_message_at?: string | null;
+            /** Format: date-time */
+            first_response_at?: string | null;
+            /** Format: date-time */
+            last_customer_message_at?: string | null;
+            /** Format: date-time */
+            last_agent_message_at?: string | null;
+            /** Format: date-time */
+            resolution_at?: string | null;
+            /** Format: date-time */
+            waiting_since?: string | null;
+            base_priority: number;
+            /** Format: int64 */
+            priority_score: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        ConversationActivity: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            /** Format: uuid */
+            conversation_id: string;
+            /** @enum {string} */
+            type: "assigned" | "closed" | "note_added" | "opened" | "reassigned" | "reopened";
+            /** Format: uuid */
+            actor_id?: string | null;
+            actor_name?: string;
+            description: string;
+            metadata?: unknown;
+            /** Format: date-time */
+            created_at: string;
+        };
+        ConversationItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            /** Format: uuid */
+            contact_id: string;
+            /** Format: uuid */
+            provider_profile_id?: string | null;
+            external_thread_id: string;
+            provider: string;
+            linked_providers: string[] | null;
+            is_source_of_truth: boolean;
+            linked_account_count: number;
+            /** Format: uuid */
+            channel_id?: string | null;
+            /** @enum {string} */
+            channel_type: "instagram" | "other" | "whatsapp";
+            /** @enum {string} */
+            status: "assigned" | "closed" | "open" | "pending" | "resolved";
+            /** Format: uuid */
+            assigned_to?: string | null;
+            unread_count: number;
+            last_message_preview: string;
+            /** Format: date-time */
+            last_message_at?: string | null;
+            /** Format: date-time */
+            first_response_at?: string | null;
+            /** Format: date-time */
+            last_customer_message_at?: string | null;
+            /** Format: date-time */
+            last_agent_message_at?: string | null;
+            /** Format: date-time */
+            resolution_at?: string | null;
+            /** Format: date-time */
+            waiting_since?: string | null;
+            base_priority: number;
+            /** Format: int64 */
+            priority_score: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+            contact_name: string;
+            customer_name?: string;
+            contact_phone: string;
+            contact_avatar_url?: string;
+            device_id?: string;
+            assignee_name?: string;
+        };
+        ConversationNote: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            /** Format: uuid */
+            conversation_id: string;
+            /** Format: uuid */
+            author_id: string;
+            author_name: string;
+            content: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        CreateAPIKeyRequest: {
+            name?: string;
+            scopes?: string[] | null;
+        };
+        CreateCampaignRequest: {
+            name?: string;
+            description?: string | null;
+            channel_id?: string;
+            device_id?: string;
+            template_id?: string;
+            segment_id?: string | null;
+            variable_mapping?: unknown;
+            sample_values?: unknown;
+            segment_ids?: string[] | null;
+            contact_ids?: string[] | null;
+            tag_ids?: string[] | null;
+            scheduled_at?: string | null;
+            timezone?: string | null;
+        };
+        CreateChannelRequest: {
+            name?: string;
+            provider?: string;
+            connection_type?: string;
+            phone_number?: string;
+            access_token?: string;
+            waba_id?: string;
+            phone_number_id?: string;
+            business_id?: string;
+        };
+        CreateContactRequest: {
+            name?: string;
+            phone?: string;
+            email?: string;
+            notes?: string;
+            city?: string;
+            country?: string;
+            province?: string;
+            company?: string;
+            job_title?: string;
+            language?: string;
+            marketing_status?: string;
+            consent_status?: string;
+            tag_ids?: string[] | null;
+            custom_fields?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        CreateConversationRequest: {
+            contact_id?: string;
+            channel_id?: string;
+            channel_type?: string;
+        };
+        CreateEndpointRequest: {
+            name?: string;
+            slug?: string;
+            description?: string;
+            actionType?: string;
+            actionConfig?: unknown;
+            webhook?: components["schemas"]["WebhookConfig"] | null;
+        };
+        CreateFieldDefinitionRequest: {
+            field_key?: string;
+            label?: string;
+            field_type?: string;
+            options?: unknown;
+            sort_order?: number;
+        };
+        CreateForwardWebhookRequest: {
+            name?: string;
+            url?: string;
+            secret?: string;
+            events?: string[] | null;
+            channelId?: string | null;
+            onlyUnassigned?: boolean;
+            assignAutomationOnReopen?: boolean;
+        };
+        CreateNoteRequest: {
+            content?: string;
+        };
+        CreateQuickReplyRequest: {
+            category?: string;
+            content?: string;
+            text?: string;
+        };
+        CreateRoleRequest: {
+            name?: string;
+            description?: string;
+        };
+        CreateSegmentRequest: {
+            name?: string;
+            description?: string;
+            color?: string;
+            is_dynamic?: boolean;
+            rules?: components["schemas"]["SegmentRuleRequest"][] | null;
+        };
+        CreateTagRequest: {
+            name?: string;
+            color?: string;
+        };
+        CreateTemplateRequest: {
+            device_id?: string;
+            channel_id?: string;
+            name?: string;
+            language?: string;
+            category?: string;
+            components?: unknown;
+        };
+        DeleteMessageRequest: {
+            propagate_to_wa?: boolean;
+        };
+        InboxCollisionAgent: {
+            agent_id: string;
+            agent_name: string;
+        };
+        InboxCollisionSnapshot: {
+            conversation_id: string;
+            agent_id?: string;
+            agent_name?: string;
+            viewers: components["schemas"]["InboxCollisionAgent"][] | null;
+            typing: components["schemas"]["InboxCollisionAgent"][] | null;
+        };
+        InboxListResult: {
+            conversations: components["schemas"]["ConversationItem"][] | null;
+            next_cursor?: string;
+            has_more: boolean;
+        };
+        InboxWindowRecontactSettings: {
+            enabled: boolean;
+            text: string;
+            after_hours: number;
+        };
+        InstagramCallbackResult: {
+            /** Format: uuid */
+            channel_id: string;
             connected: boolean;
-            /** @example brand.ig */
+            username: string;
+            account_type: string;
+            instagram_user_id: string;
+        };
+        InstagramConnectURLResult: {
+            authorization_url: string;
+            state: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        InstagramStatusResult: {
+            connected: boolean;
             username?: string;
-            /**
-             * @example BUSINESS
-             * @enum {string}
-             */
-            account_type?: "BUSINESS" | "MEDIA_CREATOR";
+            account_type?: string;
             /** Format: date-time */
             token_expiry?: string | null;
         };
-        ReadinessResponse: {
-            score?: number;
+        InviteUserRequest: {
+            name?: string;
+            email?: string;
+            role?: string;
+        };
+        LinkContactRequest: {
+            contact_id?: string;
+        };
+        LinkProviderRequest: {
+            contact_id?: string;
+            reason?: string;
+        };
+        LoginRequest: {
+            email?: string;
+            password?: string;
+        };
+        LogoutRequest: {
+            refresh_token?: string;
+        };
+        Message: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            client_message_id?: string | null;
+            /** Format: uuid */
+            conversation_id: string;
+            /** Format: uuid */
+            team_id: string;
+            /** Format: uuid */
+            channel_id?: string | null;
             /** @enum {string} */
-            status?: "not_started" | "in_progress" | "ready";
-            checks?: {
-                key?: string;
-                completed?: boolean;
-            }[];
+            direction: "inbound" | "outbound";
+            sender: string;
+            sender_name?: string | null;
+            recipient?: string | null;
+            content: string;
+            /** @enum {string} */
+            content_type: "audio" | "document" | "image" | "other" | "template" | "text" | "video";
+            wamid?: string | null;
+            reply_to_wamid?: string | null;
+            /** Format: uuid */
+            reply_to_message_id?: string | null;
+            /** @enum {string|null} */
+            status?: "delivered" | "failed" | "read" | "sent" | null;
+            is_deleted: boolean;
+            /** Format: date-time */
+            deleted_at?: string | null;
+            /** @enum {string|null} */
+            deleted_by_source?: "agent_app" | "system" | "user_wa" | null;
+            attachment?: components["schemas"]["MessageAttachment"] | null;
+            /** Format: date-time */
+            received_at: string;
+            /** Format: date-time */
+            created_at: string;
+            delivery_notice?: string | null;
         };
-        DashboardOverview: {
+        MessageAttachment: {
+            /** Format: uuid */
+            storage_object_id: string;
+            mime_type: string;
             /** Format: int64 */
-            contacts?: number;
-            /** Format: int64 */
-            channels?: number;
-            /** Format: int64 */
-            campaigns?: number;
-            /** Format: int64 */
-            unread_conversations?: number;
-            readiness_score?: number;
+            size_bytes: number;
+            filename: string;
         };
-        OnboardingSnapshot: {
-            current_step?: number;
-            completed_steps?: number[];
-            score?: number;
+        MetaCompleteEmbeddedSignupResult: {
+            /** Format: uuid */
+            channel_id: string;
+            status: string;
+            business_id?: string;
+            waba_id?: string;
+            phone_number_id?: string;
+            phone_number?: string;
+        };
+        MetaEmbeddedConfigResponse: {
+            app_id: string;
+            config_id: string;
+            api_version: string;
+            enabled: boolean;
+        };
+        MetaEmbeddedSignupStatusResult: {
+            session_id: string;
+            status: string;
+            business_id?: string;
+            waba_id?: string;
+            phone_number_id?: string;
+            error_message?: string;
+            /** Format: date-time */
+            expires_at: string;
+            /** Format: date-time */
+            completed_at?: string | null;
+        };
+        MetaHealthChecks: {
+            token: boolean;
+            waba?: boolean;
+            phone?: boolean;
+            templates_api?: boolean;
+            template_sync?: boolean;
+            profile?: boolean;
+        };
+        MetaHealthResult: {
+            healthy: boolean;
+            checks: components["schemas"]["MetaHealthChecks"];
+        };
+        MetaPaymentLinkResult: {
+            url: string;
+        };
+        MetaPaymentStatusResult: {
+            status: string;
+            message: string;
+            waba_status?: string;
+            business_verification_status?: string;
+            has_primary_funding: boolean;
+            primary_funding_id?: string;
+            funding_check_error?: string;
+            check_source?: string;
+            health_can_send_message?: string;
+            health_payment_error_code?: number;
+            health_payment_error?: string;
+            requested_waba_id?: string;
+            stored_business_id?: string;
+            meta_object_id?: string;
+            owner_business_id?: string;
+        };
+        MetaStartEmbeddedSignupResult: {
+            session_id: string;
+            oauth_state: string;
+            status: string;
+            /** Format: date-time */
+            expires_at: string;
+        };
+        OperationsBroadcastStatus: {
+            queued_jobs: number;
+            active_batches: number;
+            stale_batches: number;
+            recovery_pending: number;
+        };
+        OperationsWorkerStatus: {
+            orchestrators: number;
+            send_workers: number;
+            event_consumers: number;
+        };
+        ProviderLinkResult: {
+            Profile?: components["schemas"]["ProviderProfile"] | null;
+            /** Format: uuid */
+            PreviousContactID: string;
+        };
+        ProviderUnlinkResult: {
+            Profile?: components["schemas"]["ProviderProfile"] | null;
+            /** Format: uuid */
+            NewContactID: string;
+        };
+        QuickreplyQuickReply: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            category: string;
+            content: string;
+            text: string;
+            /** Format: uuid */
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        QuotaSnapshot: {
+            ContactLimit: number;
+            /** Format: int64 */
+            ContactCount: number;
+            ChannelLimit: number;
+            /** Format: int64 */
+            ChannelCount: number;
+            MemberLimit: number;
+            MemberCount: number;
+        };
+        RbacPermission: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            description: string;
+        };
+        RbacRole: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            is_system: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RbacRoleDetail: {
+            role: components["schemas"]["RbacRole"];
+            permissions: components["schemas"]["RbacPermission"][] | null;
+        };
+        RefreshRequest: {
+            refresh_token?: string;
+        };
+        RegisterRequest: {
+            name?: string;
+            email?: string;
+            password?: string;
+            team_name?: string;
+        };
+        ReportCampaignFunnel: {
+            /** Format: uuid */
+            CampaignID: string;
+            /** Format: uuid */
+            TeamID: string;
+            Name: string;
+            Status: string;
+            TotalContacts: number;
+            Sent: number;
+            Delivered: number;
+            Read: number;
+            Failed: number;
+            Replies: number;
+            Clicked: number;
+            /** Format: date-time */
+            StartedAt?: string | null;
+            /** Format: date-time */
+            CompletedAt?: string | null;
+        };
+        ReportDailyStat: {
+            /** Format: uuid */
+            ID: string;
+            /** Format: uuid */
+            TeamID: string;
+            /** Format: date-time */
+            StatDate: string;
+            CampaignsStarted: number;
+            MessagesSent: number;
+            MessagesDelivered: number;
+            MessagesRead: number;
+            MessagesFailed: number;
+            RepliesReceived: number;
+            LinkClicks: number;
+            /** Format: date-time */
+            CreatedAt: string;
+            /** Format: date-time */
+            UpdatedAt: string;
+        };
+        ReportDashboardStats: {
+            TotalCampaigns: number;
+            MessagesSent: number;
+            MessagesDelivered: number;
+            MessagesRead: number;
+            MessagesFailed: number;
+            RepliesReceived: number;
+            LinkClicks: number;
+        };
+        ReportLinkClick: {
+            /** Format: uuid */
+            ID: string;
+            /** Format: uuid */
+            CampaignID: string;
+            /** Format: uuid */
+            RecipientID?: string | null;
+            /** Format: uuid */
+            TeamID: string;
+            URL: string;
+            /** Format: date-time */
+            ClickedAt: string;
+            UserAgent?: string | null;
+            DeviceType?: string | null;
+        };
+        Segment: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            name: string;
+            description: string;
+            color: string;
+            contact_count: number;
+            is_dynamic: boolean;
+            /** Format: date-time */
+            last_evaluated_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        SegmentRule: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            segment_id: string;
+            /** @enum {string} */
+            field: "city" | "last_activity" | "marketing_status" | "source" | "tag";
+            /** @enum {string} */
+            operator: "contains" | "equals" | "greater_than" | "less_than" | "not_equals";
+            value: string;
+            sort_order: number;
+            /** Format: date-time */
+            created_at: string;
+        };
+        SegmentRuleRequest: {
+            field?: string;
+            operator?: string;
+            value?: string;
+            sort_order?: number;
+        };
+        SendMessageRequest: {
+            content?: string;
+            storage_object_id?: string;
+            reply_to_wamid?: string;
+            reply_to_message_id?: string;
+            client_message_id?: string;
+        };
+        Tag: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            name: string;
+            color: string;
+            description?: string | null;
+            contact_count: number;
+            /** Format: uuid */
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        Team: {
+            /** Format: uuid */
+            ID: string;
+            Name: string;
+            Slug: string;
+            /** Format: uuid */
+            OwnerID?: string | null;
+            Timezone: string;
+            Country: string;
+            /** @enum {string} */
+            PlanType: "business" | "enterprise" | "growth" | "starter";
+            ContactLimit: number;
+            ChannelLimit: number;
+            /** Format: date-time */
+            CreatedAt: string;
+            /** Format: date-time */
+            UpdatedAt: string;
+            /** Format: date-time */
+            DeletedAt?: string | null;
+        };
+        TeamMemberWithUser: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+            email: string;
+            name: string;
+            /** @enum {string} */
+            role: "admin" | "agent" | "owner" | "supervisor";
+            /** Format: uuid */
+            role_id: string;
+            /** @enum {string} */
+            status: "active" | "inactive" | "invited";
+            /** Format: date-time */
+            last_active_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        Template: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            channel_id: string;
+            /** Format: uuid */
+            team_id?: string;
+            waba_id: string;
+            meta_template_id: string;
+            name: string;
+            language: string;
+            normalized_language?: string;
+            category?: string | null;
+            /** @enum {string} */
+            status: "APPROVED" | "PENDING" | "REJECTED";
+            preview?: string | null;
+            components?: unknown;
+            variable_count?: number;
+            /** Format: byte */
+            metadata?: string;
+            sync_version?: number;
+            /** Format: date-time */
+            last_sync_at?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: date-time */
+            deleted_at?: string | null;
+        };
+        TemplateSyncHistoryItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            channel_id: string;
+            channel_name: string;
+            /** @enum {string} */
+            status: "failed" | "running" | "success";
+            /** Format: date-time */
+            started_at: string;
+            /** Format: date-time */
+            completed_at?: string | null;
+            created: number;
+            updated: number;
+            /** Format: int64 */
+            removed: number;
+            error_count?: number;
+        };
+        TemplateSyncResult: {
+            /** Format: uuid */
+            sync_run_id: string;
+            created: number;
+            updated: number;
+            /** Format: int64 */
+            removed: number;
+            synced: number;
+            error_count?: number;
+        };
+        TypingPresenceRequest: {
+            action?: string;
+        };
+        UnlinkProviderRequest: {
+            reason?: string;
+        };
+        UpdateCampaignRequest: {
+            name?: string | null;
+            description?: string | null;
+            variable_mapping?: unknown;
+            sample_values?: unknown;
+            scheduled_at?: string | null;
+            timezone?: string | null;
+            segment_id?: string | null;
+        };
+        UpdateChannelRequest: {
+            name?: string | null;
+            phone_number?: string | null;
+        };
+        UpdateContactRequest: {
+            name?: string | null;
+            phone?: string | null;
+            email?: string | null;
+            notes?: string | null;
+            city?: string | null;
+            country?: string | null;
+            province?: string | null;
+            company?: string | null;
+            job_title?: string | null;
+            language?: string | null;
+            marketing_status?: string | null;
+            consent_status?: string | null;
+            tag_ids?: string[] | null;
+            custom_fields?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        UpdateConversationStatusRequest: {
+            status?: string;
+        };
+        UpdateEndpointRequest: {
+            name?: string | null;
+            slug?: string | null;
+            description?: string | null;
+            actionConfig?: unknown;
+            status?: string | null;
+            webhook?: components["schemas"]["WebhookConfig"] | null;
+        };
+        UpdateFieldDefinitionRequest: {
+            label?: string | null;
+            field_type?: string | null;
+            options?: unknown;
+            sort_order?: number | null;
+        };
+        UpdateForwardWebhookRequest: {
+            name?: string | null;
+            url?: string | null;
+            status?: string | null;
+            events?: string[] | null;
+            channelId?: string | null;
+            onlyUnassigned?: boolean | null;
+            assignAutomationOnReopen?: boolean | null;
+            clearChannel?: boolean;
+            rotateSecret?: boolean;
+            secret?: string | null;
+        };
+        UpdateInboxAutomationSettingsRequest: {
+            enabled?: boolean;
+        };
+        UpdateQuickReplyRequest: {
+            category?: string | null;
+            content?: string | null;
+            text?: string | null;
+        };
+        UpdateRoleMetaRequest: {
+            name?: string;
+            description?: string;
+        };
+        UpdateRolePermissionsRequest: {
+            permissions?: string[] | null;
+        };
+        UpdateRoleRequest: {
+            role?: string;
+        };
+        UpdateSegmentRequest: {
+            name?: string | null;
+            description?: string | null;
+            color?: string | null;
+            is_dynamic?: boolean | null;
+            rules?: components["schemas"]["SegmentRuleRequest"][] | null;
+        };
+        UpdateTagRequest: {
+            name?: string | null;
+            color?: string | null;
+        };
+        UpdateWindowRecontactRequest: {
+            enabled?: boolean | null;
+            text?: string | null;
+            after_hours?: number | null;
+        };
+        UpdateWorkspaceRequest: {
+            name?: string | null;
+            timezone?: string | null;
+            country?: string | null;
+        };
+        VerifyManualConnectRequest: {
+            access_token?: string;
+            waba_id?: string;
+            phone_number_id?: string;
+        };
+        WebhookConfig: {
+            url: string;
+            isEnabled: boolean;
+            secret: string;
+        };
+        WorkspaceOnboardingSnapshot: {
+            current_step: number;
+            completed_steps: number[] | null;
+            score: number;
+        };
+        WorkspaceReadinessCheck: {
+            key: string;
+            completed: boolean;
+        };
+        WorkspaceReadinessResult: {
+            score: number;
+            status: string;
+            checks: components["schemas"]["WorkspaceReadinessCheck"][] | null;
+        };
+        StorageObject: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            team_id: string;
+            object_key: string;
+            storage_driver: string;
+            mime_type: string;
+            /** Format: int64 */
+            size_bytes: number;
+            hash: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        AutomationInvokeBody: {
+            success: boolean;
+            /** @description Present on failure */
+            message?: string;
+            /** @description Present on success */
+            data?: {
+                executionId?: string;
+                /** @description Meta wamid */
+                messageId?: string;
+                /** @enum {string} */
+                status?: "queued";
+            };
         };
     };
     responses: {
@@ -3114,6 +3761,42 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
+        /** @description Payment method required */
+        PaymentRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Meta permission required */
+        PermissionRequired: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Plan quota exceeded */
+        QuotaExceeded: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Error (code tells which) */
+        Error: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
     };
     parameters: {
         PageParam: number;
@@ -3124,4 +3807,4762 @@ export interface components {
     pathItems: never;
 }
 export type $defs = Record<string, never>;
-export type operations = Record<string, never>;
+export interface operations {
+    authGetHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            version?: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    authRegister: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    authLogin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    authRefresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    authLogout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogoutRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+        };
+    };
+    authMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AuthMeResponse"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    workspaceGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Team"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    workspaceUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkspaceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Team"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    workspaceGetQuotas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["QuotaSnapshot"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    workspaceGetReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["WorkspaceReadinessResult"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    workspaceRefreshReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["WorkspaceReadinessResult"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsListMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            members?: components["schemas"]["TeamMemberWithUser"][] | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsAddMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMemberRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["TeamMemberWithUser"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsListUsers: {
+        parameters: {
+            query?: {
+                role?: string;
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            users?: components["schemas"]["TeamMemberWithUser"][] | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsInviteUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InviteUserRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            invitation_id?: string;
+                            invite_url?: string;
+                            expires_at?: string;
+                            role?: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsUpdateUserRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["TeamMemberWithUser"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsDeactivateUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["TeamMemberWithUser"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsRemoveUser: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsListRoles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            roles?: unknown[] | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsCreateRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateRoleRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["RbacRole"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["Channel"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChannelRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Channel"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsListTypes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ChannelmgmtChannelTypeInfo"][] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ChannelmgmtStatusReport"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsStatus2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InstagramStatusResult"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsConnectURL: {
+        parameters: {
+            query?: {
+                return_url?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InstagramConnectURLResult"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsCallback: {
+        parameters: {
+            query?: {
+                code?: string;
+                error?: string;
+                error_description?: string;
+                state?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InstagramCallbackResult"] | null;
+                    };
+                };
+            };
+            /** @description Redirect */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsDisconnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Channel"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChannelRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Channel"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    templatesList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                category?: string;
+                channel_id?: string;
+                language?: string;
+                search?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["Template"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    templatesCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTemplateRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Template"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    templatesGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Template"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    templatesDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    templatesSync: {
+        parameters: {
+            query?: {
+                channel_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["TemplateSyncResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                consent_status?: string;
+                marketing_status?: string;
+                search?: string;
+                tag_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["Contact"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContactRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Contact"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Contact"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContactRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Contact"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    providersListByContact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            providers?: components["schemas"]["ProviderProfile"][] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    providersListActivities: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            activities?: components["schemas"]["ProviderActivity"][] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsListLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            linked_contacts?: components["schemas"]["ContactLinkedContact"][] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsLinkContact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkContactRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ContactLinkedContact"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsUnlinkContact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                linkedContactId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    providersList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            providers?: components["schemas"]["ProviderProfile"][] | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    providersGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ProviderProfile"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    providersLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ProviderLinkResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    providersUnlink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnlinkProviderRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ProviderUnlinkResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    providersSetSourceOfTruth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ProviderProfile"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    segmentsList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["Segment"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    segmentsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSegmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            segment?: components["schemas"]["Segment"] | null;
+                            rules?: components["schemas"]["SegmentRule"][] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    segmentsGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            segment?: components["schemas"]["Segment"] | null;
+                            rules?: components["schemas"]["SegmentRule"][] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    segmentsDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    segmentsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSegmentRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            segment?: components["schemas"]["Segment"] | null;
+                            rules?: components["schemas"]["SegmentRule"][] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    tagsList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["Tag"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    tagsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTagRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Tag"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    tagsGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Tag"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    tagsDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    tagsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTagRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Tag"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    tagsAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    tagsUnassign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                contact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    campaignsList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                channel_id?: string;
+                search?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["CampaignResponse"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    campaignsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCampaignRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["CampaignResponse"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    campaignsGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["CampaignResponse"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    campaignsDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    campaignsUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCampaignRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Campaign"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    campaignsSend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["CampaignResponse"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    campaignsCancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelCampaignRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Campaign"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    operationsBroadcastStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["OperationsBroadcastStatus"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    operationsWorkerStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["OperationsWorkerStatus"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    reportsDashboard: {
+        parameters: {
+            query: {
+                channel_id?: string;
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ReportDashboardStats"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    reportsDailyTrend: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["ReportDailyStat"][] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    reportsListCampaigns: {
+        parameters: {
+            query: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["ReportCampaignFunnel"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    reportsGetCampaign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ReportCampaignFunnel"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    reportsListLinkClicks: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["ReportLinkClick"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                assigned_to?: string;
+                search?: string;
+                status?: string;
+                view?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["ConversationItem"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Conversation"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ConversationItem"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsAssign: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssignConversationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ConversationItem"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsUpdateStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateConversationStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ConversationItem"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    messagesList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["Message"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    messagesSend: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Message"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    dashboardGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["DashboardOverview"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    onboardingGetOnboarding: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["WorkspaceOnboardingSnapshot"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    onboardingCompleteOnboardingStep: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteOnboardingStepRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    internalServe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Binary content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    internalInvokeInternal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                } | null;
+            };
+        };
+        responses: {
+            /** @description Invoke result; the HTTP status mirrors the outcome (200, 4xx, 5xx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationInvokeBody"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    webhooksVerifyMeta: {
+        parameters: {
+            query: {
+                "hub.mode": string;
+                "hub.verify_token": string;
+                "hub.challenge": string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Echoes hub.challenge */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/plain": string;
+                };
+            };
+            403: components["responses"]["Forbidden"];
+        };
+    };
+    authGetInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            invitation_id?: string;
+                            email?: string;
+                            name?: string;
+                            role?: string;
+                            team_name?: string;
+                            team_slug?: string;
+                            expires_at?: string;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    authAcceptInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptInviteRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsGetRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["RbacRoleDetail"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsDeleteRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsUpdateRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoleMetaRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["RbacRole"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsUpdateRolePermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRolePermissionsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    teamsGetPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            matrix?: unknown[] | null;
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsVerifyManualConnect: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyManualConnectRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ChannelManualVerifyResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaHealthResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsGetPaymentStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaPaymentStatusResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsCreatePaymentLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaPaymentLinkResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsStartEmbeddedSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaStartEmbeddedSignupResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsGetEmbeddedSignupStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaEmbeddedSignupStatusResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsCompleteEmbeddedSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteEmbeddedSignupRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaCompleteEmbeddedSignupResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsGetSyncStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ChannelsyncStatusResponse"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsSyncContacts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ChannelsyncContactSyncResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsSyncConversations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ChannelsyncConversationSyncResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsGetPermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ChannelsyncPermissions"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsReauthorizePermissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaStartEmbeddedSignupResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsStartTeamEmbeddedSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaStartEmbeddedSignupResult"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsGetTeamEmbeddedSignupStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaEmbeddedSignupStatusResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsCompleteTeamEmbeddedSignup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompleteEmbeddedSignupRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaCompleteEmbeddedSignupResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            501: components["responses"]["FeatureNotAvailable"];
+            default: components["responses"]["Error"];
+        };
+    };
+    templatesSyncHistory: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                channel_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["TemplateSyncHistoryItem"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    templatesGetSyncHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["TemplateSyncHistoryItem"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            [key: string]: number;
+                        } | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsListFieldDefinitions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["ContactFieldDefinition"][] | null;
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsCreateFieldDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFieldDefinitionRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ContactFieldDefinition"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsDeleteFieldDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    contactsUpdateFieldDefinition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFieldDefinitionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ContactFieldDefinition"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    quickRepliesList: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["QuickreplyQuickReply"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    quickRepliesCreate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateQuickReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["QuickreplyQuickReply"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    quickRepliesGet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["QuickreplyQuickReply"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    quickRepliesDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    quickRepliesUpdate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateQuickReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["QuickreplyQuickReply"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationSummary"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationListEndpoints: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+                actionType?: string;
+                search?: string;
+                status?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["AutomationEndpoint"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationCreateEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEndpointRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationEndpoint"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationGetEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationEndpoint"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationDeleteEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationUpdateEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateEndpointRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationEndpoint"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationDisableEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationEndpoint"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationEnableEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationEndpoint"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationDuplicateEndpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationEndpoint"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationAnalytics: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationEndpointAnalytics"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationTestInvoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                } | null;
+            };
+        };
+        responses: {
+            /** @description Invoke result; the HTTP status mirrors the outcome (200, 4xx, 5xx) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutomationInvokeBody"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationListAPIKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationAPIKey"][] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationCreateAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAPIKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationAPIKeySecretResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationRotateAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationAPIKeySecretResult"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationDisableAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationAPIKey"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationEnableAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationAPIKey"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationDeleteAPIKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationListForwardWebhooks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationForwardWebhook"][] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationCreateForwardWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateForwardWebhookRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationForwardWebhook"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationGetInboxAutomationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationInboxAutomationSettings"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationUpdateInboxAutomationSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInboxAutomationSettingsRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationInboxAutomationSettings"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationDeleteForwardWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationUpdateForwardWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateForwardWebhookRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationForwardWebhook"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationEnableForwardWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationForwardWebhook"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationDisableForwardWebhook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["AutomationForwardWebhook"] | null;
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    automationListForwardDeliveries: {
+        parameters: {
+            query?: {
+                page?: components["parameters"]["PageParam"];
+                page_size?: components["parameters"]["PageSizeParam"];
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["AutomationForwardDelivery"][];
+                            pagination?: components["schemas"]["PaginationMeta"];
+                        };
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsMarkRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ConversationItem"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsListActivities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ConversationActivity"][] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsListNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ConversationNote"][] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsCreateNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateNoteRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ConversationNote"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsDeleteNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                noteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsOpen: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxCollisionSnapshot"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsClose: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxCollisionSnapshot"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsTyping: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TypingPresenceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxCollisionSnapshot"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsGet2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxCollisionSnapshot"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            default: components["responses"]["Error"];
+        };
+    };
+    conversationsDelete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                messageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteMessageRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["Message"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxList: {
+        parameters: {
+            query?: {
+                assigned_to?: string;
+                channel_id?: string;
+                channel_type?: string;
+                cursor?: string;
+                limit?: number;
+                search?: string;
+                status?: string;
+                view?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxListResult"] | null;
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxGetWindowRecontactSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxWindowRecontactSettings"];
+                    };
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxUpdateWindowRecontactSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWindowRecontactRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxWindowRecontactSettings"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    channelsEmbeddedConfig: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["MetaEmbeddedConfigResponse"];
+                    };
+                };
+            };
+        };
+    };
+    storagePostStorageUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** @description Optional folder under the team prefix */
+                    namespace?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            object?: components["schemas"]["StorageObject"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    storageGetStorageBlob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Object bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    storageGetStorageObjectsIdContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Object bytes */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    storageGetStorageObjectsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            object?: components["schemas"]["StorageObject"];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    storageDeleteStorageObjectsId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+}

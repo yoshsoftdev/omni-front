@@ -11,6 +11,7 @@ import { instagramOAuthService } from "@/features/channels/services/instagram-oa
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function DevicesPage() {
   const role = useAuthStore((state) => state.role);
@@ -31,7 +32,7 @@ export function DevicesPage() {
       const data = await channelQueryService.getChannels();
       setChannels(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load channels");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export function DevicesPage() {
       const start = await instagramOAuthService.getConnectUrl(returnUrl);
       window.location.assign(start.authorization_url);
     } catch (err) {
-      setInstagramError(err instanceof Error ? err.message : "Failed to start Instagram login");
+      setInstagramError(formatApiErrorMessage(err));
       setInstagramBusy(false);
     }
   }
@@ -99,7 +100,7 @@ export function DevicesPage() {
       await loadInstagramStatus();
       await loadChannels();
     } catch (err) {
-      setInstagramError(err instanceof Error ? err.message : "Failed to disconnect Instagram");
+      setInstagramError(formatApiErrorMessage(err));
     } finally {
       setInstagramBusy(false);
     }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { deviceService } from "@/features/devices/services/device.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface ConnectMetaFormProps {
   deviceId: string;
@@ -32,7 +33,7 @@ export function ConnectMetaForm({ deviceId, onConnected, onCancel }: ConnectMeta
       });
       onConnected();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect device");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

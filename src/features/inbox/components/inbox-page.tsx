@@ -506,7 +506,7 @@ export function InboxPage() {
         }));
         notify("success", "Internal note saved");
       } catch (err) {
-        notify("error", err instanceof Error ? err.message : "Failed to save note");
+        notify("error", formatApiErrorMessage(err));
       }
     },
     [selectedId, notify],
@@ -540,7 +540,7 @@ export function InboxPage() {
       setContacts((prev) => ({ ...prev, [updated.id]: inboxContact }));
       notify("success", `Subscription status changed to ${inboxContact.subscription_status}`);
     } catch (err) {
-      notify("error", err instanceof Error ? err.message : "Failed to update subscription");
+      notify("error", formatApiErrorMessage(err));
     }
   }, [selectedContact, notify]);
 
@@ -563,7 +563,7 @@ export function InboxPage() {
         }
         notify("success", "Contact saved");
       } catch (err) {
-        notify("error", err instanceof Error ? err.message : "Failed to save contact");
+        notify("error", formatApiErrorMessage(err));
         throw err;
       }
     },

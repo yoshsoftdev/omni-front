@@ -21,19 +21,29 @@ import {
   DataTableRow,
 } from "@/components/shared/data-table";
 import { DeliveryDonutChart } from "@/features/broadcast/components/delivery-donut-chart";
+import { ErrorState } from "@/components/shared/empty-state";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function CampaignReportDetailPage({ campaignId }: { campaignId: string }) {
   const [tab, setTab] = useState("overview");
   const [detail, setDetail] = useState<CampaignReportDetail | undefined>(undefined);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     setLoaded(false);
-    campaignQueryService.getCampaignReport(campaignId).then((result) => {
-      setDetail(result);
-      setLoaded(true);
-    });
-  }, [campaignId]);
+    setLoadError(null);
+    campaignQueryService
+      .getCampaignReport(campaignId)
+      .then(setDetail)
+      .catch((err) => setLoadError(formatApiErrorMessage(err)))
+      .finally(() => setLoaded(true));
+  }, [campaignId, attempt]);
+
+  if (loadError) {
+    return <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} />;
+  }
 
   if (!loaded) {
     return (

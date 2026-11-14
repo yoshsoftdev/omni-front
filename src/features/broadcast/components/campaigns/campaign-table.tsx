@@ -48,12 +48,13 @@ function StatusBadge({ status }: { status: Campaign["status"] }) {
 
 interface CampaignTableProps {
   campaigns: Campaign[];
+  emptyMessage?: string;
   onCancel?: (id: string) => void;
   onDuplicate?: (id: string) => void;
   onSend?: (campaign: Campaign) => void;
 }
 
-export function CampaignTable({ campaigns, onCancel, onDuplicate, onSend }: CampaignTableProps) {
+export function CampaignTable({ campaigns, emptyMessage = "No campaigns found.", onCancel, onDuplicate, onSend }: CampaignTableProps) {
   return (
     <DataTable>
       <DataTableHead>
@@ -70,7 +71,7 @@ export function CampaignTable({ campaigns, onCancel, onDuplicate, onSend }: Camp
       </DataTableHead>
       <DataTableBody>
         {campaigns.length === 0 ? (
-          <DataTableEmpty message="No campaigns found." />
+          <DataTableEmpty message={emptyMessage} />
         ) : (
           campaigns.map((campaign) => {
             const recipientTotal =

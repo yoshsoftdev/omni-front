@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { teamService } from "@/features/team/services/team.service";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function TeamSettingsForm() {
   const team = useAuthStore((state) => state.team);
@@ -26,7 +27,7 @@ export function TeamSettingsForm() {
     try {
       await teamService.updateTeam(name);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update team");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

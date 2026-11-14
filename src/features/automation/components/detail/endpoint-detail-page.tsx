@@ -39,6 +39,8 @@ import {
 } from "@/features/automation/utils/variable-defaults";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ErrorState } from "@/components/shared/empty-state";
+import { formatApiErrorMessage, isNotFound } from "@/services/api/errors";
 
 type DetailTab = "overview" | "documentation" | "code" | "variables" | "analytics" | "test";
 
@@ -63,11 +65,13 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
   const [analytics, setAnalytics] = useState<EndpointAnalytics | null>(null);
   const [keys, setKeys] = useState<AutomationApiKey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [editingVars, setEditingVars] = useState(false);
   const [draftMappings, setDraftMappings] = useState<VariableMapping[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [ep, keyList] = await Promise.all([
         endpointService.getById(endpointId),
@@ -82,6 +86,9 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
         setDraftMappings(ep.actionConfig.variableMappings);
       }
       setKeys(keyList.filter((k) => k.status === "active"));
+    } catch (err) {
+      if (isNotFound(err)) setEndpoint(null);
+      else setLoadError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -163,6 +170,15 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
         <AutomationNav />
         <div className="h-10 w-64 animate-pulse rounded bg-muted" />
         <div className="h-40 animate-pulse rounded-lg bg-muted" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <AutomationNav />
+        <ErrorState message={loadError} onRetry={() => void load()} />
       </div>
     );
   }

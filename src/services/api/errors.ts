@@ -45,8 +45,16 @@ export function formatApiErrorMessage(error: unknown): string {
     }
     return error.message;
   }
+  // Runtime bugs ("x is not iterable") and network failures ("Failed to fetch") mean nothing to users.
+  if (error instanceof TypeError || error instanceof ReferenceError || error instanceof RangeError) {
+    return "Something went wrong. Please try again.";
+  }
   if (error instanceof Error) {
     return error.message;
   }
   return "Something went wrong. Please try again.";
+}
+
+export function isNotFound(error: unknown): boolean {
+  return error instanceof ApiClientError && error.code === "not_found";
 }

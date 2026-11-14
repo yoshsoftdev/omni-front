@@ -8,6 +8,7 @@ import { CheckCircle2, Loader2, Users, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { channelOnboardingService } from "@/features/channels/services/channel-onboarding.service";
 import type { OnboardingStatusResponse } from "@/types/device";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface OnboardingWizardProps {
   deviceId: string;
@@ -27,7 +28,7 @@ export function OnboardingWizard({ deviceId, deviceName }: OnboardingWizardProps
       setStatus(data);
       return data;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memuat status onboarding");
+      setError(formatApiErrorMessage(err));
       return null;
     } finally {
       setLoading(false);
@@ -41,7 +42,7 @@ export function OnboardingWizard({ deviceId, deviceName }: OnboardingWizardProps
       setStatus(data);
       setSyncStarted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal memulai sync");
+      setError(formatApiErrorMessage(err));
     }
   }
 

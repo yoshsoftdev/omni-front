@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { QuickReplyFormModal } from "@/features/settings/components/quick-reply-form-modal";
 import { SettingsNav } from "@/features/settings/components/settings-nav";
@@ -12,6 +12,7 @@ import { quickReplyService } from "@/features/settings/services/quick-reply.serv
 import type { QuickReply } from "@/features/settings/types/quick-reply";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function QuickRepliesPage() {
   const router = useRouter();
@@ -20,6 +21,8 @@ export function QuickRepliesPage() {
   const { notify, Toast } = useToast();
   const [items, setItems] = useState<QuickReply[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<QuickReply | null>(null);
   const [category, setCategory] = useState("General");
@@ -35,12 +38,14 @@ export function QuickRepliesPage() {
       router.replace("/inbox");
       return;
     }
+    setLoading(true);
+    setLoadError(null);
     quickReplyService
       .list()
       .then(setItems)
-      .catch((error) => notify("error", error instanceof Error ? error.message : "Failed to load quick replies"))
+      .catch((error) => setLoadError(formatApiErrorMessage(error)))
       .finally(() => setLoading(false));
-  }, [canManage, notify, router]);
+  }, [canManage, notify, router, attempt]);
 
   function openCreate() {
     setEditing(null);
@@ -79,7 +84,7 @@ export function QuickRepliesPage() {
       }
       setModalOpen(false);
     } catch (error) {
-      notify("error", error instanceof Error ? error.message : "Failed to save quick reply");
+      notify("error", formatApiErrorMessage(error));
     }
   }
 
@@ -90,7 +95,7 @@ export function QuickRepliesPage() {
       setItems((prev) => prev.filter((item) => item.id !== id));
       notify("success", "Quick reply deleted");
     } catch (error) {
-      notify("error", error instanceof Error ? error.message : "Failed to delete quick reply");
+      notify("error", formatApiErrorMessage(error));
     }
   }
 
@@ -121,6 +126,8 @@ export function QuickRepliesPage() {
       <section className="rounded-xl border bg-card shadow-sm">
         {loading ? (
           <EmptyState message="Loading quick replies..." className="m-4" />
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} className="m-4" />
         ) : sorted.length === 0 ? (
           <EmptyState message="No quick replies yet." className="m-4" />
         ) : (

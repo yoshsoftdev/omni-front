@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, CheckCircle2, Pencil, Plus, Trash2, X } from "lucide-react";
 
+import { ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PermissionMatrix } from "@/features/team/components/permission-matrix";
@@ -26,6 +27,7 @@ export function TeamRolesPage() {
   const [nameInput, setNameInput] = useState("");
   const [descriptionInput, setDescriptionInput] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const activeRole = roles.find((r) => r.id === selectedRole) ?? null;
@@ -46,6 +48,7 @@ export function TeamRolesPage() {
   }
 
   const loadData = useCallback(async () => {
+    setLoadError(null);
     try {
       const [apiRoles, apiMatrix] = await Promise.all([
         teamService.listRoles(),
@@ -55,7 +58,7 @@ export function TeamRolesPage() {
       setMatrix(apiMatrix);
       setSelectedRole((current) => current || apiRoles[0]?.id || "");
     } catch (err) {
-      notify("error", formatApiErrorMessage(err));
+      setLoadError(formatApiErrorMessage(err));
     }
   }, []);
 
@@ -199,6 +202,8 @@ export function TeamRolesPage() {
       </div>
 
       <TeamNav />
+
+      {loadError ? <ErrorState message={loadError} onRetry={() => void loadData()} /> : null}
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <div className="space-y-3 rounded-lg border bg-card p-3">

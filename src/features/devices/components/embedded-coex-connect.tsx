@@ -6,6 +6,7 @@ import { Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useMetaEmbeddedSignup } from "@/features/devices/hooks/use-meta-embedded-signup";
 import { deviceService } from "@/features/devices/services/device.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface EmbeddedCoexConnectProps {
   deviceId: string;
@@ -30,7 +31,7 @@ export function EmbeddedCoexConnect({ deviceId, onConnected, onCancel }: Embedde
       });
       onConnected(deviceId);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Gagal menghubungkan WhatsApp Business");
+      setSubmitError(formatApiErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

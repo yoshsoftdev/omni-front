@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorState } from "@/components/shared/empty-state";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { DeliveryDonutChart } from "@/features/broadcast/components/delivery-donut-chart";
 import { CampaignReportTable } from "@/features/broadcast/components/reports/campaign-report-table";
@@ -11,6 +12,7 @@ import { ReportStatsCard } from "@/features/broadcast/components/reports/report-
 import { campaignQueryService } from "@/features/broadcast/services/campaign-query.service";
 import type { Campaign } from "@/features/broadcast/types/campaign";
 import type { CampaignDashboardStats } from "@/features/broadcast/services/campaign-query.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const DATE_OPTIONS = [
   { value: "7d", label: "Last 7 days" },
@@ -22,11 +24,15 @@ export function ReportsDashboardPage() {
   const [dateRange, setDateRange] = useState("30d");
   const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
   const [dashboard, setDashboard] = useState<CampaignDashboardStats | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    campaignQueryService.getCampaigns().then(setAllCampaigns);
-    campaignQueryService.getDashboardStats().then(setDashboard);
-  }, []);
+    setLoadError(null);
+    const fail = (err: unknown) => setLoadError(formatApiErrorMessage(err));
+    campaignQueryService.getCampaigns().then(setAllCampaigns).catch(fail);
+    campaignQueryService.getDashboardStats().then(setDashboard).catch(fail);
+  }, [attempt]);
 
   const campaigns = useMemo(() => {
     if (dateRange === "all") return allCampaigns;
@@ -40,6 +46,10 @@ export function ReportsDashboardPage() {
     label: c.channel === "whatsapp" ? "WhatsApp" : c.channel === "instagram" ? "Instagram" : "Other",
     value: c.count,
   }));
+
+  if (loadError) {
+    return <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} />;
+  }
 
   if (!dashboard) {
     return (

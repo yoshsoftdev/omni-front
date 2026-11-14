@@ -1,5 +1,6 @@
 "use client";
 
+import { formatApiErrorMessage } from "@/services/api/errors";
 import { useQuery } from "@tanstack/react-query";
 
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
@@ -24,7 +25,7 @@ export function useInboxChannels(unreadByChannelId: Record<string, number> = {})
   return {
     channels,
     loading: query.isLoading,
-    error: query.error instanceof Error ? query.error.message : null,
+    error: query.error ? formatApiErrorMessage(query.error) : null,
     refresh: () => query.refetch(),
   };
 }

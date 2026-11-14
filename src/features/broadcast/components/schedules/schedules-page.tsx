@@ -15,6 +15,7 @@ import {
   DataTableRow,
 } from "@/components/shared/data-table";
 import { ColorDot } from "@/components/shared/color-dot";
+import { ErrorState } from "@/components/shared/empty-state";
 import { PageTabs } from "@/components/shared/page-tabs";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/features/broadcast/components/campaigns/campaign-table";
@@ -24,6 +25,7 @@ import { ScheduleDrawer } from "@/features/broadcast/components/schedules/schedu
 import { campaignQueryService } from "@/features/broadcast/services/campaign-query.service";
 import type { Campaign } from "@/features/broadcast/types/campaign";
 import { useToast } from "@/hooks/use-toast";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -35,11 +37,20 @@ export function SchedulesPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selected, setSelected] = useState<Campaign | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 5, 20));
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    campaignQueryService.getScheduledCampaigns().then(setCampaigns);
-  }, []);
+    setLoading(true);
+    setLoadError(null);
+    campaignQueryService
+      .getScheduledCampaigns()
+      .then(setCampaigns)
+      .catch((err) => setLoadError(formatApiErrorMessage(err)))
+      .finally(() => setLoading(false));
+  }, [attempt]);
 
   const dayCampaigns = useMemo(
     () => campaigns.filter((c) => c.scheduled_at && sameDay(new Date(c.scheduled_at), selectedDate)),
@@ -86,6 +97,10 @@ export function SchedulesPage() {
         onChange={(v) => setView(v as "list" | "calendar")}
       />
 
+      {loadError ? (
+        <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+      ) : null}
+
       {view === "list" ? (
         <div className="rounded-lg border bg-card p-4">
           <DataTable>
@@ -101,7 +116,9 @@ export function SchedulesPage() {
             </DataTableHead>
             <DataTableBody>
               {campaigns.length === 0 ? (
-                <DataTableEmpty message="No scheduled campaigns." />
+                <DataTableEmpty
+                  message={loading ? "Loading scheduled campaigns..." : loadError ? "Scheduled campaigns could not be loaded." : "No scheduled campaigns."}
+                />
               ) : (
                 campaigns.map((campaign) => (
                   <DataTableRow key={campaign.id}>

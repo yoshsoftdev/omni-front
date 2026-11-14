@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { contactService } from "@/features/contacts/services/contact.service";
 import type { ContactImportResult } from "@/types/contact";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface ImportContactsFormProps {
   onImported: () => void;
@@ -27,7 +28,7 @@ export function ImportContactsForm({ onImported }: ImportContactsFormProps) {
       setResult(data);
       onImported();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Import failed");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(null);
     }

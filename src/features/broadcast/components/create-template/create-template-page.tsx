@@ -26,6 +26,7 @@ import {
   validateCreateTemplateForm,
 } from "@/features/broadcast/utils/create-template.utils";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const defaultCreateTemplateForm: CreateTemplateForm = {
   name: "",
@@ -128,7 +129,7 @@ export function CreateTemplatePage() {
       await templateService.create(payload);
       router.push("/broadcast/templates");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal membuat template di Meta");
+      setError(formatApiErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

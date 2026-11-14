@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/features/auth/services/auth.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function LoginForm() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function LoginForm() {
       await authService.login({ email, password });
       router.replace("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

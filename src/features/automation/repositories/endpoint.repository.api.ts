@@ -9,6 +9,7 @@ import type {
   EndpointListQuery,
   UpdateEndpointInput,
 } from "@/features/automation/types/endpoint";
+import { isNotFound } from "@/services/api/errors";
 
 type PagePayload<T> = {
   items: T[];
@@ -52,8 +53,9 @@ class ApiEndpointRepository implements EndpointRepository {
     try {
       const res = await apiClient.get<AutomationEndpoint>(`/automation/endpoints/${id}`);
       return normalizeEndpoint(res.data as AutomationEndpoint);
-    } catch {
-      return undefined;
+    } catch (err) {
+      if (isNotFound(err)) return undefined;
+      throw err;
     }
   }
 

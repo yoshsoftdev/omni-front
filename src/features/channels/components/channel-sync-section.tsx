@@ -10,6 +10,7 @@ import { templateService } from "@/features/broadcast/services/broadcast.service
 import { useMetaEmbeddedSignup } from "@/features/channels/hooks/use-meta-embedded-signup";
 import { embeddedSignupService } from "@/features/channels/services/embedded-signup.service";
 import type { ChannelSyncStatus } from "@/features/channels/services/channel-sync.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 type ChannelSyncSectionProps = {
   channelId: string;
@@ -46,7 +47,7 @@ export function ChannelSyncSection({ channelId, canManage }: ChannelSyncSectionP
       const next = await channelSyncService.getStatus(channelId);
       setStatus(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load synchronization status");
+      setError(formatApiErrorMessage(err));
     }
   }
 
@@ -72,7 +73,7 @@ export function ChannelSyncSection({ channelId, canManage }: ChannelSyncSectionP
       await channelSyncService.syncConversations(channelId);
       await loadStatus();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Synchronization failed";
+      const message = formatApiErrorMessage(err);
       if (message.toLowerCase().includes("permission")) {
         setPermissionPrompt(true);
       }
@@ -105,7 +106,7 @@ export function ChannelSyncSection({ channelId, canManage }: ChannelSyncSectionP
       setPermissionPrompt(false);
       await runSync();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Meta reauthorization failed");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

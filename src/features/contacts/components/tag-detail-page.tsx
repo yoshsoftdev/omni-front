@@ -6,7 +6,7 @@ import { ArrowLeft, ArrowRight, Pencil } from "lucide-react";
 
 import { ColorDot } from "@/components/shared/color-dot";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { EntityMetaCard } from "@/components/shared/entity-meta-card";
 import { Button } from "@/components/ui/button";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
@@ -15,6 +15,7 @@ import { contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
 import { useToast } from "@/hooks/use-toast";
 import type { Contact, ContactTag } from "@/types/contact";
+import { formatApiErrorMessage, isNotFound } from "@/services/api/errors";
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
@@ -25,11 +26,15 @@ export function TagDetailPage({ tagId }: { tagId: string }) {
   const [tag, setTag] = useState<ContactTag | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
+    setLoading(true);
+    setLoadError(null);
     Promise.all([tagService.getById(tagId), contactService.list({ tag_id: tagId })])
       .then(([tagDto, contactResult]) => {
         const mapped = { ...tagDto, contact_count: contactResult.total };
@@ -38,14 +43,18 @@ export function TagDetailPage({ tagId }: { tagId: string }) {
         setDescription(mapped.description);
         setContacts(contactResult.items.slice(0, 5));
       })
-      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load tag"))
+      .catch((err) => (isNotFound(err) ? setTag(null) : setLoadError(formatApiErrorMessage(err))))
       .finally(() => setLoading(false));
-  }, [tagId, notify]);
+  }, [tagId, attempt]);
 
   const recentContacts = useMemo(() => contacts, [contacts]);
 
   if (loading) {
     return <EmptyState message="Loading tag..." className="m-8" />;
+  }
+
+  if (loadError) {
+    return <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} className="m-8" />;
   }
 
   if (!tag) {
@@ -122,7 +131,7 @@ export function TagDetailPage({ tagId }: { tagId: string }) {
             setEditOpen(false);
             notify("success", "Tag updated");
           } catch (err) {
-            notify("error", err instanceof Error ? err.message : "Failed to update tag");
+            notify("error", formatApiErrorMessage(err));
           }
         }}
       />

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { teamService } from "@/features/team/services/team.service";
 import { useAuthStore } from "@/store/auth-store";
 import type { TeamMember, TeamRole } from "@/types/team";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface TeamMembersTableProps {
   members: TeamMember[];
@@ -26,7 +27,7 @@ export function TeamMembersTable({ members, onChanged }: TeamMembersTableProps) 
       await teamService.updateMemberRole(member.id, newRole);
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update role");
+      setError(formatApiErrorMessage(err));
     } finally {
       setPendingId(null);
     }
@@ -41,7 +42,7 @@ export function TeamMembersTable({ members, onChanged }: TeamMembersTableProps) 
       await teamService.removeMember(member.id);
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to remove member");
+      setError(formatApiErrorMessage(err));
     } finally {
       setPendingId(null);
     }

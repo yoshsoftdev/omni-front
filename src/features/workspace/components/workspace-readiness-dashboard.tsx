@@ -26,6 +26,7 @@ import type {
 } from "@/features/workspace/types/workspace-readiness";
 import { useAuthStore } from "@/store/auth-store";
 import { cn } from "@/lib/utils";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const STATUS_COPY = {
   not_started: {
@@ -76,7 +77,7 @@ export function WorkspaceReadinessDashboard() {
         setReadiness(nextReadiness);
         setOverview(nextOverview);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load workspace readiness"))
+      .catch((err) => setError(formatApiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
 

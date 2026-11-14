@@ -39,6 +39,7 @@ import {
   useEndpointWizardStore,
   type EndpointWizardStep,
 } from "@/store/endpoint-wizard-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const STEPS: { step: EndpointWizardStep; label: string }[] = [
   { step: 1, label: "General" },
@@ -235,7 +236,7 @@ export function CreateEndpointWizard() {
       notify("success", "Endpoint created");
       router.push(`/automation/endpoints/${created.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create endpoint");
+      setError(formatApiErrorMessage(err));
     } finally {
       setSubmitting(false);
     }

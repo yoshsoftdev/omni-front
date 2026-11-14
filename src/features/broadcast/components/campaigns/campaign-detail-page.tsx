@@ -17,6 +17,7 @@ import { calcPct } from "@/features/broadcast/utils/campaign-metrics";
 import { templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
 import { useToast } from "@/hooks/use-toast";
 import { formatApiErrorMessage } from "@/services/api/errors";
+import { ErrorState } from "@/components/shared/empty-state";
 
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
@@ -38,16 +39,20 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
   const [campaign, setCampaign] = useState<Campaign | undefined>(undefined);
   const [template, setTemplate] = useState<Template | undefined>(undefined);
   const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [sending, setSending] = useState(false);
   const { sendCampaign, paymentDialog } = useCampaignSendGuard(campaign?.device_id);
 
   useEffect(() => {
     setLoaded(false);
-    campaignQueryService.getCampaignById(campaignId).then((result) => {
-      setCampaign(result);
-      setLoaded(true);
-    });
-  }, [campaignId]);
+    setLoadError(null);
+    campaignQueryService
+      .getCampaignById(campaignId)
+      .then(setCampaign)
+      .catch((err) => setLoadError(formatApiErrorMessage(err)))
+      .finally(() => setLoaded(true));
+  }, [campaignId, attempt]);
 
   useEffect(() => {
     if (!campaign) {
@@ -59,6 +64,10 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
       .then((result) => result ?? templateQueryService.getTemplateByName(campaign.template_name))
       .then(setTemplate);
   }, [campaign]);
+
+  if (loadError) {
+    return <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} />;
+  }
 
   if (!loaded) {
     return (

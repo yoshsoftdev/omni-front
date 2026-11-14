@@ -31,6 +31,7 @@ import type {
   ConsentStatus,
   ProviderKind,
 } from "@/types/contact";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 function formatDateTime(date?: string) {
   if (!date) return "—";
@@ -121,7 +122,7 @@ export function ContactDetailDrawer({
       setConsentOpen(false);
       onNotify("success", "Subscription updated");
     } catch (err) {
-      onNotify("error", err instanceof Error ? err.message : "Failed to update marketing status");
+      onNotify("error", formatApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -140,7 +141,7 @@ export function ContactDetailDrawer({
       onNotify("success", `Tag "${tag.name}" added`);
       await onRefresh?.();
     } catch (err) {
-      onNotify("error", err instanceof Error ? err.message : "Failed to add tag");
+      onNotify("error", formatApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -153,7 +154,7 @@ export function ContactDetailDrawer({
       onUpdate(updated);
       onNotify("success", "Notes saved");
     } catch (err) {
-      onNotify("error", err instanceof Error ? err.message : "Failed to save notes");
+      onNotify("error", formatApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -187,7 +188,7 @@ export function ContactDetailDrawer({
       onNotify("success", "Contact updated");
       await onRefresh?.();
     } catch (err) {
-      onNotify("error", err instanceof Error ? err.message : "Failed to update contact");
+      onNotify("error", formatApiErrorMessage(err));
     } finally {
       setSaving(false);
     }

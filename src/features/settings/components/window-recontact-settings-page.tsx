@@ -13,8 +13,10 @@ import {
 } from "@/features/settings/types/window-recontact";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthStore } from "@/store/auth-store";
+import { ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function WindowRecontactSettingsPage() {
   const router = useRouter();
@@ -23,6 +25,8 @@ export function WindowRecontactSettingsPage() {
   const { notify, Toast } = useToast();
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [text, setText] = useState(WINDOW_RECONTACT_DEFAULT_TEXT);
@@ -33,6 +37,8 @@ export function WindowRecontactSettingsPage() {
       router.replace("/inbox");
       return;
     }
+    setLoading(true);
+    setLoadError(null);
     windowRecontactService
       .get()
       .then((settings: WindowRecontactSettings) => {
@@ -40,11 +46,10 @@ export function WindowRecontactSettingsPage() {
         setText(settings.text || WINDOW_RECONTACT_DEFAULT_TEXT);
         setAfterHours(settings.after_hours || WINDOW_RECONTACT_MAX_HOURS);
       })
-      .catch((error) =>
-        notify("error", error instanceof Error ? error.message : "Failed to load settings"),
-      )
+      // Never fall back to the form: saving defaults would overwrite the real settings.
+      .catch((error) => setLoadError(formatApiErrorMessage(error)))
       .finally(() => setLoading(false));
-  }, [canManage, notify, router]);
+  }, [canManage, router, attempt]);
 
   async function handleSave() {
     const trimmed = text.trim();
@@ -72,7 +77,7 @@ export function WindowRecontactSettingsPage() {
       setAfterHours(updated.after_hours);
       notify("success", "Window recontact settings saved");
     } catch (error) {
-      notify("error", error instanceof Error ? error.message : "Failed to save settings");
+      notify("error", formatApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -91,6 +96,8 @@ export function WindowRecontactSettingsPage() {
 
       {loading ? (
         <div className="h-40 animate-pulse rounded-lg border border-[#E5E7EB] bg-white" />
+      ) : loadError ? (
+        <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} className="max-w-2xl" />
       ) : (
         <div className="max-w-2xl space-y-5 rounded-lg border border-[#E5E7EB] bg-white p-5">
           <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">

@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { channelSyncService } from "@/features/channels/services/channel-sync.service";
 import { templateService } from "@/features/broadcast/services/broadcast.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 type EmbeddedSignupSyncStepProps = {
   channelId: string;
@@ -25,7 +26,7 @@ export function EmbeddedSignupSyncStep({ channelId, onSkip, onComplete }: Embedd
       await channelSyncService.syncConversations(channelId);
       onComplete();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Synchronization failed");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

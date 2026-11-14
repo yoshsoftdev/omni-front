@@ -6,6 +6,7 @@ import { inboxService } from "@/features/inbox/services/inbox.service";
 import { websocketClient } from "@/services/websocket/client";
 import { useAuthStore } from "@/store/auth-store";
 import type { InboxEvent, InboxMessage } from "@/types/inbox";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 function mergeMessages(existing: InboxMessage[], incoming: InboxMessage) {
   if (existing.some((m) => m.id === incoming.id)) {
@@ -26,7 +27,7 @@ export function useInboxFeed() {
       const data = await inboxService.listMessages();
       setMessages(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load messages");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

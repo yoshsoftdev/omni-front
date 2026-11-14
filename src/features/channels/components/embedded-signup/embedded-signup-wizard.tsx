@@ -21,6 +21,7 @@ import {
 } from "@/features/channels/store/embedded-signup-store";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const STEP_LABELS = {
   about: "About Embedded Signup",
@@ -123,7 +124,7 @@ export function EmbeddedSignupWizard() {
       setChannelId(null);
       setProgressState("initializing");
       setStep("launch");
-      setError(err instanceof Error ? err.message : "Embedded signup failed");
+      setError(formatApiErrorMessage(err));
     }
   }
 
@@ -135,7 +136,7 @@ export function EmbeddedSignupWizard() {
       const url = await channelPaymentService.createPaymentLink(result.channel_id);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to open payment setup");
+      setError(formatApiErrorMessage(err));
     } finally {
       setPaymentLoading(false);
     }

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
 import { inboxService } from "@/features/inbox/services/inbox.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface SendMessageFormProps {
   onSent: () => void;
@@ -46,7 +47,7 @@ export function SendMessageForm({ onSent }: SendMessageFormProps) {
       setContent("");
       onSent();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send message");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

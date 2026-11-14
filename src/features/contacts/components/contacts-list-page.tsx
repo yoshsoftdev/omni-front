@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Upload } from "lucide-react";
 
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,7 @@ import { contactFieldService, contactService } from "@/features/contacts/service
 import { tagService } from "@/features/contacts/services/tag.service";
 import { useToast } from "@/hooks/use-toast";
 import type { ConsentStatus, Contact, ContactFieldDefinition, ContactStats, ContactTag } from "@/types/contact";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function ContactsListPage() {
   const { notify, Toast } = useToast();
@@ -31,6 +32,7 @@ export function ContactsListPage() {
   const [fieldDefinitions, setFieldDefinitions] = useState<ContactFieldDefinition[]>([]);
   const [stats, setStats] = useState<ContactStats>({ total: 0, opt_in: 0, opt_out: 0, unknown: 0 });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
@@ -49,6 +51,7 @@ export function ContactsListPage() {
 
   const loadPage = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [listResult, tagItems, statsResult, fieldDefs] = await Promise.all([
         contactService.list({
@@ -76,11 +79,11 @@ export function ContactsListPage() {
       setStats(statsResult);
       setFieldDefinitions(fieldDefs);
     } catch (err) {
-      notify("error", err instanceof Error ? err.message : "Failed to load contacts");
+      setLoadError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [cityFilter, consentFilter, notify, page, pageSize, search, sourceFilter, tagFilter]);
+  }, [cityFilter, consentFilter, page, pageSize, search, sourceFilter, tagFilter]);
 
   useEffect(() => {
     void loadPage();
@@ -124,7 +127,7 @@ export function ContactsListPage() {
       setForm(emptyContactFormValues());
       notify("success", contactId ? "Contact updated" : "Contact added");
     } catch (err) {
-      notify("error", err instanceof Error ? err.message : "Failed to save contact");
+      notify("error", formatApiErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -143,7 +146,7 @@ export function ContactsListPage() {
       await loadPage();
       notify("success", "Contact deleted");
     } catch (err) {
-      notify("error", err instanceof Error ? err.message : "Failed to delete contact");
+      notify("error", formatApiErrorMessage(err));
     }
   }
 
@@ -182,6 +185,8 @@ export function ContactsListPage() {
       <section className="rounded-xl border bg-card shadow-sm">
         {loading ? (
           <EmptyState message="Loading contacts..." className="m-4" />
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={() => void loadPage()} className="m-4" />
         ) : contacts.length === 0 ? (
           <EmptyState message="No contacts found." className="m-4" />
         ) : (
@@ -227,7 +232,7 @@ export function ContactsListPage() {
                 return prev;
               });
             }).catch((err) => {
-              notify("error", err instanceof Error ? err.message : "Failed to open linked contact");
+              notify("error", formatApiErrorMessage(err));
             });
           }}
         />

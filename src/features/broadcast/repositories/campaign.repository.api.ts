@@ -8,6 +8,7 @@ import type {
 import type { Campaign, CampaignReportDetail } from "@/features/broadcast/types/campaign";
 import { campaignService } from "@/features/broadcast/services/broadcast.service";
 import { apiClient } from "@/services/api/client";
+import { isNotFound } from "@/services/api/errors";
 
 class ApiCampaignRepository implements CampaignQueryRepository {
   async list(): Promise<Campaign[]> {
@@ -18,8 +19,10 @@ class ApiCampaignRepository implements CampaignQueryRepository {
     try {
       const response = await apiClient.get<unknown>(`/campaigns/${id}`);
       return parseCampaignDto(normalizeCampaignDto(response.data));
-    } catch {
-      return undefined;
+    } catch (err) {
+      // Only a real 404 means "not found"; other failures must reach the page as errors.
+      if (isNotFound(err)) return undefined;
+      throw err;
     }
   }
 
@@ -88,8 +91,10 @@ class ApiCampaignRepository implements CampaignQueryRepository {
         locations: [],
         devices: [],
       };
-    } catch {
-      return undefined;
+    } catch (err) {
+      // Only a real 404 means "not found"; other failures must reach the page as errors.
+      if (isNotFound(err)) return undefined;
+      throw err;
     }
   }
 }

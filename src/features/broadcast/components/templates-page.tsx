@@ -25,6 +25,7 @@ import { templateService } from "@/features/broadcast/services/broadcast.service
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import { isWhatsAppChannel } from "@/features/channels/utils/is-whatsapp-channel";
 import { formatApiErrorMessage } from "@/services/api/errors";
+import { ErrorState } from "@/components/shared/empty-state";
 import type { WhatsAppTemplate } from "@/types/broadcast";
 
 const PAGE_SIZE = 8;
@@ -94,7 +95,7 @@ export function TemplatesPage() {
     [search, language, category, status, page],
   );
 
-  const { data, isLoading, refetch, isFetching } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ["broadcast-templates", queryParams],
     queryFn: () => templateService.listPage(queryParams),
   });
@@ -117,7 +118,7 @@ export function TemplatesPage() {
       await templateService.sync(effectiveSyncChannelId);
       await refetch();
     } catch (err) {
-      setSyncError(err instanceof Error ? err.message : "Gagal sync template");
+      setSyncError(formatApiErrorMessage(err));
     } finally {
       setSyncing(false);
     }
@@ -256,6 +257,12 @@ export function TemplatesPage() {
           <DataTableBody>
             {isLoading ? (
               <DataTableEmpty message="Memuat template..." />
+            ) : error ? (
+              <tr>
+                <td colSpan={99} className="p-4">
+                  <ErrorState message={formatApiErrorMessage(error)} onRetry={() => void refetch()} />
+                </td>
+              </tr>
             ) : items.length === 0 ? (
               <DataTableEmpty message="Tidak ada template ditemukan. Sync dari Meta untuk memuat template." />
             ) : (

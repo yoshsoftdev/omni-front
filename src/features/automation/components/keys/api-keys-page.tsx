@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import { apiKeyService } from "@/features/automation/services/api-key.service";
 import type { ApiKeyScope, AutomationApiKey } from "@/features/automation/types/api-key";
 import { formatRelativeTime, maskApiKey } from "@/features/automation/utils/format";
 import { useToast } from "@/hooks/use-toast";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const SCOPE_OPTIONS: Array<{ value: ApiKeyScope; label: string; available: boolean }> = [
   { value: "send_template", label: "send_template", available: true },
@@ -26,6 +28,7 @@ export function ApiKeysPage() {
   const { notify, Toast } = useToast();
   const [keys, setKeys] = useState<AutomationApiKey[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [secretModal, setSecretModal] = useState<{ name: string; secret: string } | null>(null);
   const [name, setName] = useState("");
@@ -34,8 +37,11 @@ export function ApiKeysPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       setKeys(await apiKeyService.list());
+    } catch (err) {
+      setLoadError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -111,6 +117,8 @@ export function ApiKeysPage() {
               <div key={i} className="h-14 animate-pulse rounded-md bg-muted" />
             ))}
           </div>
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={() => void load()} className="m-4" />
         ) : keys.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <KeyRound className="h-8 w-8 text-muted-foreground" />

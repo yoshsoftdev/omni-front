@@ -1,4 +1,5 @@
 import { apiClient } from "@/services/api/client";
+import { isNotFound } from "@/services/api/errors";
 import {
   normalizeSegment,
   normalizeSegmentGetResponse,
@@ -28,8 +29,9 @@ export const segmentService = {
     try {
       const response = await apiClient.get(`/segments/${id}`);
       return normalizeSegmentGetResponse(response.data as Parameters<typeof normalizeSegmentGetResponse>[0]);
-    } catch {
-      return undefined;
+    } catch (err) {
+      if (isNotFound(err)) return undefined;
+      throw err;
     }
   },
 

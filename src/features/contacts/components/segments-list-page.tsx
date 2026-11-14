@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
@@ -11,23 +11,28 @@ import { SegmentTable } from "@/features/contacts/components/segments/segment-ta
 import { segmentService } from "@/features/segments/services/segment.service";
 import { useToast } from "@/hooks/use-toast";
 import type { ContactSegment } from "@/types/segment";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function SegmentsListPage() {
   const { notify, Toast } = useToast();
   const [segments, setSegments] = useState<ContactSegment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const sorted = useMemo(() => [...segments].sort((a, b) => a.name.localeCompare(b.name)), [segments]);
 
   useEffect(() => {
+    setLoading(true);
+    setLoadError(null);
     segmentService
       .list()
       .then(setSegments)
-      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load segments"))
+      .catch((err) => setLoadError(formatApiErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [notify]);
+  }, [notify, attempt]);
 
   async function handleCreate() {
     if (!name.trim()) return notify("error", "Segment name is required");
@@ -42,7 +47,7 @@ export function SegmentsListPage() {
       setDescription("");
       notify("success", "Segment created");
     } catch (err) {
-      notify("error", err instanceof Error ? err.message : "Failed to create segment");
+      notify("error", formatApiErrorMessage(err));
     }
   }
 
@@ -64,6 +69,8 @@ export function SegmentsListPage() {
       <section className="rounded-xl border bg-card shadow-sm">
         {loading ? (
           <EmptyState message="Loading segments..." className="m-4" />
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} className="m-4" />
         ) : sorted.length === 0 ? (
           <EmptyState message="No segments found." className="m-4" />
         ) : (
@@ -77,7 +84,7 @@ export function SegmentsListPage() {
                 setSegments((prev) => prev.filter((segment) => segment.id !== id));
                 notify("success", "Segment deleted");
               } catch (err) {
-                notify("error", err instanceof Error ? err.message : "Failed to delete segment");
+                notify("error", formatApiErrorMessage(err));
               }
             }}
             onMore={() => notify("success", "More actions")}

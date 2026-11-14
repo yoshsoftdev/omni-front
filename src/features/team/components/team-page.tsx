@@ -8,6 +8,7 @@ import { TeamSettingsForm } from "@/features/team/components/team-settings-form"
 import { teamService } from "@/features/team/services/team.service";
 import { useAuthStore } from "@/store/auth-store";
 import type { TeamMember } from "@/types/team";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function TeamPage() {
   const role = useAuthStore((state) => state.role);
@@ -22,7 +23,7 @@ export function TeamPage() {
       const data = await teamService.listMembers();
       setMembers(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load members");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

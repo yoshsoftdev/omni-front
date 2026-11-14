@@ -32,6 +32,7 @@ import {
 } from "@/features/channels/utils/channel-display";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 function ProviderFilterPills({
   value,
@@ -82,7 +83,7 @@ export function ChannelsManagementPage() {
       const data = await channelQueryService.getChannels();
       setChannels(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load channels");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

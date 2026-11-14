@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { ErrorState } from "@/components/shared/empty-state";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
 import { CampaignTable } from "@/features/broadcast/components/campaigns/campaign-table";
@@ -35,13 +36,23 @@ export function CampaignsListPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    campaignQueryService.getCampaigns().then(setCampaigns);
-  }, []);
+    setLoading(true);
+    setLoadError(null);
+    campaignQueryService
+      .getCampaigns()
+      .then(setCampaigns)
+      .catch((err) => setLoadError(formatApiErrorMessage(err)))
+      .finally(() => setLoading(false));
+  }, [attempt]);
 
   useEffect(() => {
-    templateQueryService.getTemplates().then(setTemplates);
+    // Only feeds the template filter; the page still works without it.
+    templateQueryService.getTemplates().then(setTemplates).catch(() => setTemplates([]));
   }, []);
 
   const filtered = useMemo(() => {
@@ -115,6 +126,10 @@ export function CampaignsListPage() {
         }
       />
 
+      {loadError ? (
+        <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+      ) : null}
+
       <div className="space-y-4 rounded-lg border bg-card p-4">
         <FilterBar>
           <div className="relative min-w-[200px] flex-1">
@@ -139,6 +154,7 @@ export function CampaignsListPage() {
 
         <CampaignTable
           campaigns={filtered}
+          emptyMessage={loading ? "Loading campaigns..." : loadError ? "Campaigns could not be loaded." : undefined}
           onCancel={handleCancel}
           onDuplicate={handleDuplicate}
           onSend={handleSend}

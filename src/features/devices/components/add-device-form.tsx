@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { deviceService } from "@/features/devices/services/device.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface AddDeviceFormProps {
   onCreated: () => void;
@@ -26,7 +27,7 @@ export function AddDeviceForm({ onCreated }: AddDeviceFormProps) {
       setName("");
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add device");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

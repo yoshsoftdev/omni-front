@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authService } from "@/features/auth/services/auth.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export function RegisterForm() {
       });
       router.replace("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

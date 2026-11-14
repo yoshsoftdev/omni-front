@@ -7,6 +7,7 @@ import { StepWizard } from "@/components/shared/step-wizard";
 import { Button } from "@/components/ui/button";
 import { IMPORT_FIELD_OPTIONS } from "@/features/contacts/constants/import";
 import { contactService } from "@/features/contacts/services/contact.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const WIZARD_STEPS = [
   { id: 1, label: "Upload File" },
@@ -82,7 +83,7 @@ export function ImportWizard({ onNotify }: { onNotify: (type: "success" | "error
         : await contactService.importCSV(file);
       onNotify("success", `Import complete: ${result.created} created, ${result.updated} updated`);
     } catch (err) {
-      onNotify("error", err instanceof Error ? err.message : "Import failed");
+      onNotify("error", formatApiErrorMessage(err));
     } finally {
       setImporting(false);
     }

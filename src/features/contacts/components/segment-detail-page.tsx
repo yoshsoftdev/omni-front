@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Pencil, X } from "lucide-react";
 
 import { ColorDot } from "@/components/shared/color-dot";
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
@@ -14,6 +14,7 @@ import { SegmentRuleBuilder } from "@/features/contacts/components/segments/segm
 import { segmentService } from "@/features/segments/services/segment.service";
 import { useToast } from "@/hooks/use-toast";
 import type { ContactSegment } from "@/types/segment";
+import { formatApiErrorMessage, isNotFound } from "@/services/api/errors";
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
@@ -23,11 +24,15 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
   const { notify, Toast } = useToast();
   const [segment, setSegment] = useState<ContactSegment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
   useEffect(() => {
+    setLoading(true);
+    setLoadError(null);
     segmentService
       .getById(segmentId)
       .then((data) => {
@@ -39,12 +44,16 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
         setName(data.name);
         setDescription(data.description);
       })
-      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load segment"))
+      .catch((err) => (isNotFound(err) ? setSegment(null) : setLoadError(formatApiErrorMessage(err))))
       .finally(() => setLoading(false));
-  }, [segmentId, notify]);
+  }, [segmentId, attempt]);
 
   if (loading) {
     return <EmptyState message="Loading segment..." className="m-8" />;
+  }
+
+  if (loadError) {
+    return <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} className="m-8" />;
   }
 
   if (!segment) {

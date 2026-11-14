@@ -13,6 +13,7 @@ import { instagramOAuthService } from "@/features/channels/services/instagram-oa
 import type { ChannelKind } from "@/features/channels/utils/channel-display";
 import { providerIconTone } from "@/features/channels/utils/channel-display";
 import { cn } from "@/lib/utils";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const STEPS = [
   { id: 1, label: "Provider" },
@@ -95,7 +96,7 @@ export function AddChannelModal({ open, onClose, onConnected, canManage }: AddCh
         window.location.assign(start.authorization_url);
         return;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to start Instagram connect");
+        setError(formatApiErrorMessage(err));
         setConnecting(false);
         return;
       }

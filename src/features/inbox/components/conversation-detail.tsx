@@ -18,6 +18,7 @@ import type {
   InboxChatMessage,
   InboxConversation,
 } from "@/features/inbox/types";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface ConversationDetailProps {
   conversation: InboxConversation | null;
@@ -106,7 +107,7 @@ export function ConversationDetail({
           onNotify(agent ? `Assigned to ${agent.name}` : "Conversation assigned");
         }
       } catch (err) {
-        onNotify(err instanceof Error ? err.message : "Failed to assign conversation", "error");
+        onNotify(formatApiErrorMessage(err), "error");
       }
     },
     [agents, conversation, onConversationUpdate, onNotify],
@@ -119,7 +120,7 @@ export function ConversationDetail({
         await onDeleteMessage(message.id);
         onNotify("Message deleted");
       } catch (err) {
-        onNotify(err instanceof Error ? err.message : "Failed to delete message", "error");
+        onNotify(formatApiErrorMessage(err), "error");
       }
     },
     [conversation, onDeleteMessage, onNotify],
@@ -142,7 +143,7 @@ export function ConversationDetail({
           onNotify("Marked as unread");
         }
       } catch (err) {
-        onNotify(err instanceof Error ? err.message : "Action failed", "error");
+        onNotify(formatApiErrorMessage(err), "error");
       }
     },
     [conversation, onConversationUpdate, onNotify],

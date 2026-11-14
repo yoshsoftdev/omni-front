@@ -1,5 +1,6 @@
 "use client";
 
+import { formatApiErrorMessage } from "@/services/api/errors";
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 
@@ -93,7 +94,7 @@ export function useInboxList({
     filterKey,
     conversations,
     loading,
-    error: query.error instanceof Error ? query.error.message : null,
+    error: query.error ? formatApiErrorMessage(query.error) : null,
     hasMore: hasMore || Boolean(query.hasNextPage),
     nextCursor,
     fetchNextPage,

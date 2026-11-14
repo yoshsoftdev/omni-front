@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { channelCommandService } from "@/features/channels/services/channel-command.service";
 import type { ManualVerifyResult } from "@/features/channels/services/channels-api.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface ManualConnectFormProps {
   onConnected: () => void;
@@ -52,7 +53,7 @@ export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
       setVerified(true);
     } catch (err) {
       resetVerification();
-      setError(err instanceof Error ? err.message : "Connection test failed");
+      setError(formatApiErrorMessage(err));
     } finally {
       setTesting(false);
     }
@@ -75,7 +76,7 @@ export function ManualConnectForm({ onConnected }: ManualConnectFormProps) {
       });
       onConnected();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to connect channel");
+      setError(formatApiErrorMessage(err));
     } finally {
       setSaving(false);
     }

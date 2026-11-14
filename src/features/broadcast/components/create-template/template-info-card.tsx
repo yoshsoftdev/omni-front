@@ -22,15 +22,20 @@ type TemplateInfoCardProps = {
 
 export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
   const [channels, setChannels] = useState<Channel[]>([]);
+  const [channelsStatus, setChannelsStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    channelQueryService.getConnectedChannels().then((list) => {
-      const waChannels = list.filter(isWhatsAppChannel);
-      setChannels(waChannels);
-      if (!form.deviceId && waChannels[0]?.id) {
-        onChange({ deviceId: waChannels[0].id });
-      }
-    });
+    channelQueryService
+      .getConnectedChannels()
+      .then((list) => {
+        const waChannels = list.filter(isWhatsAppChannel);
+        setChannels(waChannels);
+        setChannelsStatus("ready");
+        if (!form.deviceId && waChannels[0]?.id) {
+          onChange({ deviceId: waChannels[0].id });
+        }
+      })
+      .catch(() => setChannelsStatus("error"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -81,7 +86,11 @@ export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
               </option>
             ))}
           </select>
-          {channels.length === 0 ? (
+          {channelsStatus === "error" ? (
+            <p role="alert" className="text-xs text-error-foreground">
+              Gagal memuat channel. Muat ulang halaman untuk mencoba lagi.
+            </p>
+          ) : channelsStatus === "ready" && channels.length === 0 ? (
             <p className="text-xs text-amber-700 dark:text-amber-400">
               Tidak ada channel WhatsApp terhubung. Hubungkan WABA di halaman Devices.
             </p>

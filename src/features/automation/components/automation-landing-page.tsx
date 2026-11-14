@@ -19,6 +19,8 @@ import type {
   EndpointStatus,
 } from "@/features/automation/types/endpoint";
 import { useToast } from "@/hooks/use-toast";
+import { ErrorState } from "@/components/shared/empty-state";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Status" },
@@ -37,6 +39,7 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
   const [summary, setSummary] = useState<AutomationSummary | null>(null);
   const [endpoints, setEndpoints] = useState<AutomationEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
@@ -47,6 +50,7 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [summaryResult, listResult] = await Promise.all([
         showSummary ? endpointService.getSummary() : Promise.resolve(null),
@@ -62,6 +66,8 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
       setEndpoints(listResult.items);
       setTotal(listResult.pagination.total);
       setTotalPages(listResult.pagination.totalPages);
+    } catch (err) {
+      setLoadError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -144,7 +150,9 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
           </FilterBar>
         </div>
 
-        {!loading && endpoints.length === 0 ? (
+        {loadError ? (
+          <ErrorState message={loadError} onRetry={() => void load()} className="m-4" />
+        ) : !loading && endpoints.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-6 py-10 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full border bg-muted">
               <Sparkles className="h-5 w-5 text-muted-foreground" />

@@ -1,6 +1,7 @@
 import { apiClient } from "@/services/api/client";
 import { useAuthStore } from "@/store/auth-store";
 import { useEffect, useState } from "react";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
 
@@ -35,7 +36,7 @@ export function useAuthenticatedMediaUrl(objectId?: string) {
       })
       .catch((err: unknown) => {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Unable to load media");
+        setError(formatApiErrorMessage(err));
         setUrl(null);
       })
       .finally(() => {

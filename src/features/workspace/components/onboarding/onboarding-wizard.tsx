@@ -26,6 +26,7 @@ import {
   isOnboardingSetupComplete,
 } from "@/features/workspace/utils/onboarding-progress";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 function formatDateTime(iso: string | null) {
   if (!iso) return "—";
@@ -65,7 +66,7 @@ export function OnboardingWizard() {
 
   useEffect(() => {
     loadSnapshot()
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load onboarding"))
+      .catch((err) => setError(formatApiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, [loadSnapshot]);
 
@@ -85,7 +86,7 @@ export function OnboardingWizard() {
     try {
       await loadSnapshot();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh");
+      setError(formatApiErrorMessage(err));
     } finally {
       setRefreshing(false);
     }
@@ -106,7 +107,7 @@ export function OnboardingWizard() {
       const url = await channelPaymentService.createPaymentLink(defaultChannelId);
       window.open(url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to open payment setup");
+      setError(formatApiErrorMessage(err));
     } finally {
       setPaymentLoading(false);
     }
@@ -125,7 +126,7 @@ export function OnboardingWizard() {
       await loadSnapshot();
       markStepComplete("sync_templates");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sync templates");
+      setError(formatApiErrorMessage(err));
     } finally {
       setSyncing(false);
     }

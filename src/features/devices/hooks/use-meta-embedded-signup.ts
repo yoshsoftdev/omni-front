@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { metaEmbeddedService, type MetaEmbeddedConfig } from "@/features/devices/services/meta-embedded.service";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 type EmbeddedSignupResult = {
   code: string;
@@ -72,7 +73,7 @@ export function useMetaEmbeddedSignup() {
     metaEmbeddedService
       .getConfig()
       .then(setConfig)
-      .catch((err) => setError(err instanceof Error ? err.message : "Failed to load Meta config"))
+      .catch((err) => setError(formatApiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -156,7 +157,7 @@ export function useMetaEmbeddedSignup() {
         phoneNumberId: sessionRef.current.phoneNumberId,
       };
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Embedded signup gagal";
+      const message = formatApiErrorMessage(err);
       setError(message);
       throw err;
     } finally {

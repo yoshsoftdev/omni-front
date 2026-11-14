@@ -9,6 +9,7 @@ import { DeviceStatusBadge } from "@/features/devices/components/device-status-b
 import { deviceService } from "@/features/devices/services/device.service";
 import { useAuthStore } from "@/store/auth-store";
 import type { Device } from "@/types/device";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface DeviceCardProps {
   device: Device;
@@ -31,7 +32,7 @@ export function DeviceCard({ device, onChanged }: DeviceCardProps) {
       await action();
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Action failed");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { tagService } from "@/features/contacts/services/tag.service";
 import { useAuthStore } from "@/store/auth-store";
 import type { Tag } from "@/types/tag";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface TagsPanelProps {
   tags: Tag[];
@@ -32,7 +33,7 @@ export function TagsPanel({ tags, selectedTagId, onSelectTag, onChanged }: TagsP
       setName("");
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create tag");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

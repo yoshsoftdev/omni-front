@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
-import { EmptyState } from "@/components/shared/empty-state";
+import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { TagFormModal, TAG_COLORS } from "@/features/contacts/components/tags/tag-form-modal";
@@ -11,11 +11,14 @@ import { TagTable } from "@/features/contacts/components/tags/tag-table";
 import { tagService } from "@/features/contacts/services/tag.service";
 import { useToast } from "@/hooks/use-toast";
 import type { ContactTag } from "@/types/contact";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function TagsListPage() {
   const { notify, Toast } = useToast();
   const [tags, setTags] = useState<ContactTag[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -23,12 +26,14 @@ export function TagsListPage() {
   const sorted = useMemo(() => [...tags].sort((a, b) => a.name.localeCompare(b.name)), [tags]);
 
   useEffect(() => {
+    setLoading(true);
+    setLoadError(null);
     tagService
       .list()
       .then(setTags)
-      .catch((err) => notify("error", err instanceof Error ? err.message : "Failed to load tags"))
+      .catch((err) => setLoadError(formatApiErrorMessage(err)))
       .finally(() => setLoading(false));
-  }, [notify]);
+  }, [notify, attempt]);
 
   async function handleCreate() {
     if (!name.trim()) return notify("error", "Tag name is required");
@@ -40,7 +45,7 @@ export function TagsListPage() {
       setDescription("");
       notify("success", "Tag created");
     } catch (err) {
-      notify("error", err instanceof Error ? err.message : "Failed to create tag");
+      notify("error", formatApiErrorMessage(err));
     }
   }
 
@@ -62,6 +67,8 @@ export function TagsListPage() {
       <section className="rounded-xl border bg-card shadow-sm">
         {loading ? (
           <EmptyState message="Loading tags..." className="m-4" />
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={() => setAttempt((n) => n + 1)} className="m-4" />
         ) : sorted.length === 0 ? (
           <EmptyState message="No tags found." className="m-4" />
         ) : (
@@ -75,7 +82,7 @@ export function TagsListPage() {
                 setTags((p) => p.filter((t) => t.id !== id));
                 notify("success", "Tag deleted");
               } catch (err) {
-                notify("error", err instanceof Error ? err.message : "Failed to delete tag");
+                notify("error", formatApiErrorMessage(err));
               }
             }}
             onMore={() => notify("success", "More actions")}

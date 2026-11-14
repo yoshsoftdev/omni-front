@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store";
 import type { Contact } from "@/types/contact";
 import type { Tag } from "@/types/tag";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function ContactsPage() {
   const role = useAuthStore((state) => state.role);
@@ -40,7 +41,7 @@ export function ContactsPage() {
       setContacts(contactList.items);
       setTags(tagList);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load contacts");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -62,7 +63,7 @@ export function ContactsPage() {
       await channelSyncService.syncContacts(connected.id);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to sync WhatsApp contacts");
+      setError(formatApiErrorMessage(err));
     } finally {
       setSyncing(false);
     }

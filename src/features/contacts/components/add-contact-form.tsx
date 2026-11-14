@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { contactService } from "@/features/contacts/services/contact.service";
 import type { Tag } from "@/types/tag";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface AddContactFormProps {
   tags: Tag[];
@@ -48,7 +49,7 @@ export function AddContactForm({ tags, onCreated }: AddContactFormProps) {
       setTagIds([]);
       onCreated();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create contact");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

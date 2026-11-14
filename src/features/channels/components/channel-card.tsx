@@ -10,6 +10,7 @@ import { channelPaymentService } from "@/features/channels/services/channel-paym
 import { templateService } from "@/features/broadcast/services/broadcast.service";
 import type { Channel } from "@/features/channels/types/channel";
 import { useAuthStore } from "@/store/auth-store";
+import { formatApiErrorMessage } from "@/services/api/errors";
 
 interface ChannelCardProps {
   channel: Channel;
@@ -68,7 +69,7 @@ export function ChannelCard({ channel, onChanged }: ChannelCardProps) {
       await channelCommandService.deleteChannel(channel.id);
       onChanged();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete channel");
+      setError(formatApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

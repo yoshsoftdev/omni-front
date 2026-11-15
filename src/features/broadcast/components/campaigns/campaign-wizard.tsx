@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import {
@@ -18,6 +18,7 @@ import {
 import { ErrorState } from "@/components/shared/empty-state";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
+import { StepWizard } from "@/components/shared/step-wizard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,34 +82,6 @@ const FIELD_OPTIONS = [
   { value: "amount", label: "Amount" },
   { value: "delivery_date", label: "Delivery Date" },
 ];
-
-function Stepper({ activeStep }: { activeStep: WizardStep }) {
-  return (
-    <div className="flex items-center gap-4 overflow-x-auto pb-2">
-      {STEPS.map((s) => {
-        const done = activeStep > s.step;
-        const active = activeStep === s.step;
-        return (
-          <div key={s.step} className="flex shrink-0 items-center gap-2">
-            <div
-              className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-full border text-sm",
-                done && "border-primary bg-primary text-primary-foreground",
-                active && !done && "border-primary text-primary",
-                !done && !active && "border-border text-muted-foreground",
-              )}
-            >
-              {done ? <Check className="h-4 w-4" /> : s.step}
-            </div>
-            <span className={cn("text-xs font-medium", active ? "text-foreground" : "text-muted-foreground")}>
-              {s.label}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
 
 export function CampaignWizard() {
   const router = useRouter();
@@ -442,7 +415,7 @@ export function CampaignWizard() {
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="min-w-0 flex-1 space-y-6">
-          <Stepper activeStep={step} />
+          <StepWizard steps={STEPS.map((s) => ({ id: s.step, label: s.label }))} currentStep={step} />
 
           {step === 1 ? (
             <div className="space-y-4 rounded-lg border bg-card p-5">

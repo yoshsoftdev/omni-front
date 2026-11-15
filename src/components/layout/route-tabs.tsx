@@ -23,7 +23,12 @@ export function RouteTabs({ tabs, className }: { tabs: RouteTab[]; className?: s
       {tabs.map((tab) => {
         if (tab.disabled) {
           return (
-            <span key={tab.href} title="Coming soon" className="shrink-0 cursor-not-allowed pb-3 text-sm text-muted-foreground/60">
+            <span
+              key={tab.href}
+              title="Coming soon"
+              aria-disabled="true"
+              className="shrink-0 cursor-not-allowed pb-3 text-sm text-muted-foreground"
+            >
               {tab.label}
               <span className="ml-1 text-xs uppercase tracking-wide">Soon</span>
             </span>

@@ -60,6 +60,7 @@ export function PaginationFooter({
         </button>
         {pageSize && onPageSizeChange ? (
           <select
+            aria-label="Rows per page"
             className="h-8 rounded border px-2 text-sm"
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}

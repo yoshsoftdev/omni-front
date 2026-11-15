@@ -24,7 +24,9 @@ import {
   Workflow,
 } from "lucide-react";
 
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/shared/empty-state";
 import { teamService } from "@/features/team/services/team.service";
@@ -324,9 +326,9 @@ export function TeamWorkspacePage() {
       </div>
 
       {editOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <h4 className="text-base font-semibold">Edit Workspace</h4>
+        <Dialog open onOpenChange={(next) => !next && setEditOpen(false)}>
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
+            <DialogTitle>Edit Workspace</DialogTitle>
             <div className="mt-4 space-y-3">
               <Input value={draftName} onChange={(e) => setDraftName(e.target.value)} placeholder="Workspace Name" />
               <Input value={draftTimezone} onChange={(e) => setDraftTimezone(e.target.value)} placeholder="Timezone" />
@@ -349,26 +351,24 @@ export function TeamWorkspacePage() {
                 Save
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {transferOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <h4 className="text-base font-semibold">Transfer Ownership</h4>
+        <Dialog open onOpenChange={(next) => !next && setTransferOpen(false)}>
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
+            <DialogTitle>Transfer Ownership</DialogTitle>
             <p className="mt-1 text-sm text-muted-foreground">Select member to become the new owner.</p>
-            <select
-              className="mt-3 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            <FilterSelect
+              label="New owner"
               value={transferOwnerId}
-              onChange={(e) => setTransferOwnerId(e.target.value)}
-            >
-              {members.filter((m) => m.status !== "invited").map((member) => (
-                <option key={member.user_id} value={member.user_id}>
-                  {member.name} ({member.email})
-                </option>
-              ))}
-            </select>
+              onChange={setTransferOwnerId}
+              options={members
+                .filter((m) => m.status !== "invited")
+                .map((member) => ({ value: member.user_id, label: `${member.name} (${member.email})` }))}
+              className="mt-3 w-full"
+            />
             <div className="mt-4 flex justify-end gap-2">
               <Button variant="outline" onClick={() => setTransferOpen(false)}>
                 Cancel
@@ -385,14 +385,14 @@ export function TeamWorkspacePage() {
                 Confirm Transfer
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {deleteOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <h4 className="text-base font-semibold text-error-foreground">Delete Workspace</h4>
+        <Dialog open onOpenChange={(next) => !next && setDeleteOpen(false)}>
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
+            <DialogTitle>Delete Workspace</DialogTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               Type <span className="font-semibold">DELETE</span> to enable delete button.
             </p>
@@ -412,8 +412,8 @@ export function TeamWorkspacePage() {
                 Delete
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </div>
   );

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CheckCircle2, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { TeamInvitation } from "@/types/team";
 
 function formatExpiry(date?: string) {
@@ -35,12 +36,12 @@ export function InvitationSuccessDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-lg border bg-card p-6 shadow-lg">
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-lg" aria-describedby={undefined}>
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-0.5 h-5 w-5 text-success-foreground" />
           <div>
-            <h2 className="text-lg font-semibold">Invitation created successfully</h2>
+            <DialogTitle>Invitation created successfully</DialogTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               Copy this invitation link
               {expiryLabel ? ` (valid until ${expiryLabel})` : ""}
@@ -61,7 +62,7 @@ export function InvitationSuccessDialog({
             {copied ? "Copied" : "Copy Link"}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { useEffect, useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
@@ -46,29 +54,28 @@ export function PermissionMatrix({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
-      <table className="w-full min-w-[720px] text-sm">
-        <thead>
-          <tr className="border-b bg-muted/40 text-left">
-            <th className="p-4 font-medium">Permission</th>
+    <DataTable className="rounded-lg border bg-card">
+        <DataTableHead>
+          <DataTableRow>
+            <DataTableHeaderCell>Permission</DataTableHeaderCell>
             {columns.map((role) => (
-              <th key={role} className="p-4 text-center font-medium capitalize">
+              <DataTableHeaderCell key={role} className="text-center capitalize">
                 {role}
-              </th>
+              </DataTableHeaderCell>
             ))}
-          </tr>
-        </thead>
-        <tbody>
+          </DataTableRow>
+        </DataTableHead>
+        <DataTableBody>
           {data.map((row, rowIndex) => (
-            <tr key={row.permission.code} className="border-b last:border-0">
-              <td className="p-4">
+            <DataTableRow key={row.permission.code}>
+              <DataTableCell>
                 <div className="font-medium">{row.permission.name}</div>
                 <div className="text-xs text-muted-foreground">{row.permission.code}</div>
-              </td>
+              </DataTableCell>
               {columns.map((role) => {
                 const allowed = row.roles[role];
                 return (
-                  <td key={role} className="p-4 text-center">
+                  <DataTableCell key={role} className="p-4 text-center">
                     {editable ? (
                       <button
                         type="button"
@@ -87,13 +94,12 @@ export function PermissionMatrix({
                         {allowed ? "✓" : "—"}
                       </span>
                     )}
-                  </td>
+                  </DataTableCell>
                 );
               })}
-            </tr>
+            </DataTableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </DataTableBody>
+      </DataTable>
   );
 }

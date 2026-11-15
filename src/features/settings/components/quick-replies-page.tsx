@@ -1,10 +1,19 @@
 "use client";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { EmptyState, ErrorState } from "@/components/shared/empty-state";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { QuickReplyFormModal } from "@/features/settings/components/quick-reply-form-modal";
 import { SettingsNav } from "@/features/settings/components/settings-nav";
@@ -19,6 +28,7 @@ export function QuickRepliesPage() {
   const role = useAuthStore((state) => state.role);
   const canManage = role === "owner" || role === "admin";
   const { notify, Toast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
   const [items, setItems] = useState<QuickReply[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -89,7 +99,7 @@ export function QuickRepliesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Delete this quick reply?")) return;
+    if (!(await confirm({ title: "Delete quick reply?", description: "Agents can no longer insert it from the inbox." }))) return;
     try {
       await quickReplyService.remove(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
@@ -106,6 +116,7 @@ export function QuickRepliesPage() {
   return (
     <div className="space-y-6">
       <Toast />
+      {confirmDialog}
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Manage workspace shortcuts for your team inbox.</p>
@@ -131,21 +142,20 @@ export function QuickRepliesPage() {
         ) : sorted.length === 0 ? (
           <EmptyState message="No quick replies yet." className="m-4" />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="p-4 font-medium">Category</th>
-                  <th className="p-4 font-medium">Content</th>
-                  <th className="p-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+          <DataTable className="">
+              <DataTableHead>
+                <DataTableRow>
+                  <DataTableHeaderCell>Category</DataTableHeaderCell>
+                  <DataTableHeaderCell>Content</DataTableHeaderCell>
+                  <DataTableHeaderCell>Actions</DataTableHeaderCell>
+                </DataTableRow>
+              </DataTableHead>
+              <DataTableBody>
                 {sorted.map((item) => (
-                  <tr key={item.id} className="border-b last:border-0 hover:bg-muted/40">
-                    <td className="p-4 align-top font-medium">{item.category}</td>
-                    <td className="p-4 align-top whitespace-pre-wrap text-muted-foreground">{item.content}</td>
-                    <td className="p-4 align-top">
+                  <DataTableRow key={item.id} className="hover:bg-muted/40">
+                    <DataTableCell className="align-top">{item.category}</DataTableCell>
+                    <DataTableCell className="align-top whitespace-pre-wrap text-muted-foreground">{item.content}</DataTableCell>
+                    <DataTableCell className="align-top">
                       <div className="flex items-center gap-1">
                         <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
                           <Pencil className="h-4 w-4" />
@@ -154,12 +164,11 @@ export function QuickRepliesPage() {
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </DataTableBody>
+            </DataTable>
         )}
       </section>
       <QuickReplyFormModal

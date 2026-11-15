@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
 import { useRef } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { QUICK_REPLY_VARIABLES } from "@/features/settings/types/quick-reply";
 
@@ -63,22 +63,19 @@ export function QuickReplyFormModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-lg border bg-card p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <button type="button" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-lg" aria-describedby={undefined}>
+        <DialogTitle>{title}</DialogTitle>
         <div className="space-y-3">
           <Input
+            aria-label="Category"
             placeholder="Category"
             value={category}
             onChange={(event) => onCategoryChange(event.target.value)}
           />
           <textarea
             ref={contentRef}
+            aria-label="Quick reply content"
             placeholder="Quick reply content"
             value={content}
             onChange={(event) => onContentChange(event.target.value)}
@@ -109,7 +106,7 @@ export function QuickReplyFormModal({
           </Button>
           <Button onClick={onSubmit}>{submitLabel}</Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

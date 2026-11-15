@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -17,10 +25,13 @@ import {
   Trash2,
   UserCircle2,
   Users,
-  X,
 } from "lucide-react";
 
+import { useConfirm } from "@/components/shared/confirm-dialog";
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { InvitationSuccessDialog } from "@/features/team/components/invitation-success-dialog";
 import { InviteUserModal } from "@/features/team/components/invite-user-modal";
@@ -44,6 +55,7 @@ import type { TeamInvitation, TeamMember, TeamRole } from "@/types/team";
 export function TeamUsersPage() {
   const { can } = usePermission();
   const canManage = can("user.invite");
+  const [confirm, confirmDialog] = useConfirm();
   const [users, setUsers] = useState<TeamMember[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -240,7 +252,7 @@ export function TeamUsersPage() {
   return (
     <div className="space-y-7">
       {toast ? (
-        <div className="fixed right-6 top-6 z-[60]">
+        <div className="fixed right-6 top-6 z-[80]">
           <div
             className={[
               "inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm shadow-lg",
@@ -285,18 +297,13 @@ export function TeamUsersPage() {
                 onChange={(e) => onSearchChange(e.target.value)}
               />
             </div>
-            <select
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm capitalize"
+            <FilterSelect
+              label="Filter by role"
               value={roleFilter}
-              onChange={(e) => onRoleFilterChange(e.target.value)}
-            >
-              <option value="">All Roles</option>
-              {roles.map((role) => (
-                <option key={role.id} value={role.slug}>
-                  {role.title}
-                </option>
-              ))}
-            </select>
+              onChange={onRoleFilterChange}
+              options={[{ value: "", label: "All Roles" }, ...roles.map((role) => ({ value: role.slug, label: role.title }))]}
+              className="capitalize"
+            />
             {canManage ? (
               <Button onClick={() => setInviteOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
@@ -340,7 +347,12 @@ export function TeamUsersPage() {
                   setConfirmDeactivateOpen(true);
                 }}
                 onRemove={async (member) => {
-                  if (!confirm(`Remove ${member.name} from the workspace?`)) return;
+                  const ok = await confirm({
+                    title: "Remove member?",
+                    description: `${member.name} loses access to this workspace.`,
+                    confirmLabel: "Remove",
+                  });
+                  if (!ok) return;
                   try {
                     await teamService.removeUser(member.id);
                     await loadUsers();
@@ -487,40 +499,38 @@ export function TeamUsersPage() {
               </div>
             ) : null}
           </div>
-          <div className="mt-4 overflow-x-auto">
-            <table className="w-full min-w-[620px] text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="p-3 font-medium">Permission</th>
+          <DataTable className="mt-4">
+              <DataTableHead>
+                <DataTableRow>
+                  <DataTableHeaderCell>Permission</DataTableHeaderCell>
                   {roles.map((role) => (
-                    <th
+                    <DataTableHeaderCell
                       key={role.id}
-                      className={[
-                        "p-3 text-center font-medium capitalize",
-                        selectedRoleId === role.id ? "bg-primary/5" : "",
-                      ].join(" ")}
+                      className={selectedRoleId === role.id ? "bg-primary/5 text-center capitalize" : "text-center capitalize"}
                     >
                       {role.title}
-                    </th>
+                    </DataTableHeaderCell>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </DataTableRow>
+              </DataTableHead>
+              <DataTableBody>
                 {PERMISSION_ROWS.map((rowName) => (
-                  <tr key={rowName} className="border-b last:border-0">
-                    <td className="p-3">{rowName}</td>
+                  <DataTableRow key={rowName}>
+                    <DataTableCell>{rowName}</DataTableCell>
                     {roles.map((role) => {
                       const allowed = permissionsByRole[role.slug]?.[rowName] ?? false;
                       const isSelectedCol = selectedRoleId === role.id;
                       return (
-                        <td
+                        <DataTableCell
                           key={`${rowName}-${role.id}`}
-                          className={["p-3 text-center", isSelectedCol ? "bg-primary/5" : ""].join(" ")}
+                          className={isSelectedCol ? "bg-primary/5 text-center" : "text-center"}
                         >
                           {canManage && isSelectedCol ? (
                             <button
                               type="button"
                               onClick={() => togglePermission(rowName)}
+                              aria-label={`${rowName} for ${role.title}`}
+                              aria-pressed={allowed}
                               className={[
                                 "inline-flex h-8 w-8 items-center justify-center rounded-md border transition-colors",
                                 allowed
@@ -535,14 +545,13 @@ export function TeamUsersPage() {
                               {allowed ? "✓" : "—"}
                             </span>
                           )}
-                        </td>
+                        </DataTableCell>
                       );
                     })}
-                  </tr>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </DataTableBody>
+            </DataTable>
         </div>
       </section>
 
@@ -567,13 +576,10 @@ export function TeamUsersPage() {
       ) : null}
 
       {editingMember ? (
-        <div className="fixed inset-0 z-50 bg-black/30">
-          <div className="absolute right-0 top-0 h-full w-full max-w-[420px] border-l bg-card p-5 shadow-xl">
+        <Sheet open onOpenChange={(next) => !next && setEditingMember(null)}>
+          <SheetContent className="overflow-y-auto p-5" hideClose={false} aria-describedby={undefined}>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Edit Member</h3>
-              <button onClick={() => setEditingMember(null)}>
-                <X className="h-4 w-4" />
-              </button>
+              <SheetTitle className="text-lg font-semibold">Edit Member</SheetTitle>
             </div>
             <div className="mb-4 rounded-lg border p-3">
               <div className="flex items-center gap-3">
@@ -657,14 +663,14 @@ export function TeamUsersPage() {
                 Deactivate Member
               </Button>
             </div>
-          </div>
-        </div>
+          </SheetContent>
+        </Sheet>
       ) : null}
 
       {confirmDeactivateOpen && editingMember ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-lg border bg-card p-5">
-            <h4 className="text-base font-semibold">Deactivate this member?</h4>
+        <Dialog open onOpenChange={(next) => !next && setConfirmDeactivateOpen(false)}>
+          <DialogContent className="max-w-sm" aria-describedby={undefined}>
+            <DialogTitle>Deactivate this member?</DialogTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               {editingMember.name} will lose access until reactivated.
             </p>
@@ -689,18 +695,15 @@ export function TeamUsersPage() {
                 Deactivate
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {roleModal ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
+        <Dialog open onOpenChange={(next) => !next && setRoleModal(null)}>
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{roleModal === "create" ? "Create Role" : "Edit Role"}</h3>
-              <button onClick={() => setRoleModal(null)}>
-                <X className="h-4 w-4" />
-              </button>
+              <DialogTitle>{roleModal === "create" ? "Create Role" : "Edit Role"}</DialogTitle>
             </div>
             <div className="space-y-3">
               <div>
@@ -731,14 +734,14 @@ export function TeamUsersPage() {
                 {roleModal === "create" ? "Create" : "Save"}
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {deleteRoleOpen && selectedRole ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-lg border bg-card p-5">
-            <h4 className="text-base font-semibold">Delete role?</h4>
+        <Dialog open onOpenChange={(next) => !next && setDeleteRoleOpen(false)}>
+          <DialogContent className="max-w-sm" aria-describedby={undefined}>
+            <DialogTitle>Delete role?</DialogTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               Role <span className="font-medium">{selectedRole.title}</span> will be permanently removed.
             </p>
@@ -750,9 +753,10 @@ export function TeamUsersPage() {
                 Delete
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
+      {confirmDialog}
     </div>
   );
 }

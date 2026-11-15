@@ -18,6 +18,7 @@ export function FilterSelect({
   value,
   onChange,
   options,
+  disabled,
   className,
 }: {
   /** Lets a visible <label htmlFor> point at the select. */
@@ -26,6 +27,7 @@ export function FilterSelect({
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
+  disabled?: boolean;
   className?: string;
 }) {
   return (
@@ -33,6 +35,7 @@ export function FilterSelect({
       id={id}
       aria-label={label}
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
       className={cn(
         "h-10 min-w-[140px] rounded-md border border-input bg-background px-3 text-sm",

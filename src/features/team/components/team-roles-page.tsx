@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, Pencil, Plus, Trash2, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PermissionMatrix } from "@/features/team/components/permission-matrix";
 import { RoleBadge } from "@/features/team/components/role-badge";
@@ -265,13 +266,10 @@ export function TeamRolesPage() {
       </div>
 
       {createOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
+        <Dialog open onOpenChange={(next) => !next && setCreateOpen(false)}>
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Create Role</h3>
-              <button onClick={() => setCreateOpen(false)}>
-                <X className="h-4 w-4" />
-              </button>
+              <DialogTitle>Create Role</DialogTitle>
             </div>
             <div className="space-y-3">
               <Input placeholder="Role Name (e.g. qa)" value={nameInput} onChange={(e) => setNameInput(e.target.value)} />
@@ -285,18 +283,15 @@ export function TeamRolesPage() {
                 Create
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {editOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
+        <Dialog open onOpenChange={(next) => !next && setEditOpen(false)}>
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
             <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Edit Role</h3>
-              <button onClick={() => setEditOpen(false)}>
-                <X className="h-4 w-4" />
-              </button>
+              <DialogTitle>Edit Role</DialogTitle>
             </div>
             <div className="space-y-3">
               <Input placeholder="Role Name" value={nameInput} onChange={(e) => setNameInput(e.target.value)} />
@@ -310,14 +305,14 @@ export function TeamRolesPage() {
                 Save
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {deleteOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-lg border bg-card p-5">
-            <h3 className="text-base font-semibold">Delete role?</h3>
+        <Dialog open onOpenChange={(next) => !next && setDeleteOpen(false)}>
+          <DialogContent className="max-w-sm" aria-describedby={undefined}>
+            <DialogTitle>Delete role?</DialogTitle>
             <p className="mt-1 text-sm text-muted-foreground">
               Role <span className="font-medium capitalize">{activeRole?.name}</span> will be removed.
             </p>
@@ -329,8 +324,8 @@ export function TeamRolesPage() {
                 Delete
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
     </div>
   );

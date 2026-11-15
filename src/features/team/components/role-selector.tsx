@@ -1,13 +1,17 @@
+import { FilterSelect } from "@/components/shared/filter-bar";
 import type { TeamRole } from "@/types/team";
 
 const ASSIGNABLE_ROLES: TeamRole[] = ["admin", "supervisor", "agent"];
 
 export function RoleSelector({
+  id,
   value,
   onChange,
   includeOwner = false,
   disabled,
 }: {
+  /** For a visible <label htmlFor>. */
+  id?: string;
   value: TeamRole;
   onChange: (role: TeamRole) => void;
   includeOwner?: boolean;
@@ -16,17 +20,14 @@ export function RoleSelector({
   const roles: TeamRole[] = includeOwner ? ["owner", ...ASSIGNABLE_ROLES] : ASSIGNABLE_ROLES;
 
   return (
-    <select
-      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm capitalize"
+    <FilterSelect
+      id={id}
+      label="Role"
       value={value}
       disabled={disabled}
-      onChange={(e) => onChange(e.target.value as TeamRole)}
-    >
-      {roles.map((role) => (
-        <option key={role} value={role}>
-          {role}
-        </option>
-      ))}
-    </select>
+      onChange={(role) => onChange(role as TeamRole)}
+      options={roles.map((role) => ({ value: role, label: role }))}
+      className="w-full capitalize"
+    />
   );
 }

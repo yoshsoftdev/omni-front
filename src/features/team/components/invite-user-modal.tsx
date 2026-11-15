@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RoleSelector } from "@/features/team/components/role-selector";
@@ -44,9 +45,9 @@ export function InviteUserModal({ open, onClose, onInvited, onSubmit }: InviteUs
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
-        <h2 className="text-lg font-semibold">Invite User</h2>
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-md" aria-describedby={undefined}>
+        <DialogTitle>Invite User</DialogTitle>
         <p className="mt-1 text-sm text-muted-foreground">
           Send workspace invitation to a new member.
         </p>
@@ -73,10 +74,10 @@ export function InviteUserModal({ open, onClose, onInvited, onSubmit }: InviteUs
             />
           </div>
           <div className="space-y-2">
-            <Label>Role</Label>
-            <RoleSelector value={role} onChange={setRole} includeOwner />
+            <Label htmlFor="invite-role">Role</Label>
+            <RoleSelector id="invite-role" value={role} onChange={setRole} includeOwner />
           </div>
-          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {error ? <p role="alert" className="text-sm text-error-foreground">{error}</p> : null}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
@@ -86,7 +87,7 @@ export function InviteUserModal({ open, onClose, onInvited, onSubmit }: InviteUs
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -12,6 +12,12 @@ import {
   DataTableHeaderCell,
   DataTableRow,
 } from "@/components/shared/data-table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { CampaignAudienceCell } from "@/features/broadcast/components/campaigns/campaign-audience-cell";
 import type { Campaign } from "@/features/broadcast/types/campaign";
@@ -116,48 +122,32 @@ export function CampaignTable({ campaigns, emptyMessage = "No campaigns found.",
                 </DataTableCell>
                 <DataTableCell className="text-right">
                   <div className="inline-flex items-center gap-1">
-                    <Button variant="ghost" size="sm" asChild title="View">
+                    <Button variant="ghost" size="sm" asChild aria-label={`View ${campaign.name}`}>
                       <Link href={`/broadcast/campaigns/${campaign.id}`}>
                         <Eye className="h-4 w-4" />
                       </Link>
                     </Button>
-                    <div className="relative">
-                      <select
-                        className="absolute inset-0 cursor-pointer opacity-0"
-                        defaultValue=""
-                        onChange={(e) => {
-                          const action = e.target.value;
-                          e.target.value = "";
-                          if (action === "edit") {
-                            window.location.href = `/broadcast/campaigns/${campaign.id}`;
-                          }
-                          if (action === "send" && onSend) {
-                            onSend(campaign);
-                          }
-                          if (action === "duplicate" && onDuplicate) {
-                            onDuplicate(campaign.id);
-                          }
-                          if (action === "cancel" && onCancel) {
-                            onCancel(campaign.id);
-                          }
-                        }}
-                      >
-                        <option value="" disabled>
-                          More
-                        </option>
-                        {campaign.status === "draft" ? (
-                          <option value="send">Send Campaign</option>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" aria-label={`More actions for ${campaign.name}`}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {campaign.status === "draft" && onSend ? (
+                          <DropdownMenuItem onSelect={() => onSend(campaign)}>Send Campaign</DropdownMenuItem>
                         ) : null}
-                        <option value="edit">Edit</option>
-                        <option value="duplicate">Duplicate</option>
-                        {campaign.status === "scheduled" || campaign.status === "draft" ? (
-                          <option value="cancel">Cancel</option>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/broadcast/campaigns/${campaign.id}`}>Edit</Link>
+                        </DropdownMenuItem>
+                        {onDuplicate ? (
+                          <DropdownMenuItem onSelect={() => onDuplicate(campaign.id)}>Duplicate</DropdownMenuItem>
                         ) : null}
-                      </select>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </div>
+                        {(campaign.status === "scheduled" || campaign.status === "draft") && onCancel ? (
+                          <DropdownMenuItem destructive onSelect={() => onCancel(campaign.id)}>Cancel</DropdownMenuItem>
+                        ) : null}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </DataTableCell>
               </DataTableRow>

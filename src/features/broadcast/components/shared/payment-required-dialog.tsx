@@ -3,6 +3,7 @@
 import { CreditCard } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 type PaymentRequiredDialogProps = {
   open: boolean;
@@ -20,17 +21,15 @@ export function PaymentRequiredDialog({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-lg">
+    <Dialog open onOpenChange={(next) => !next && !loading && onCancel()}>
+      <DialogContent className="max-w-md">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-warning-muted text-warning-foreground">
             <CreditCard className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold">Payment Required</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Marketing campaigns require a Meta payment method.
-            </p>
+            <DialogTitle>Payment Required</DialogTitle>
+            <DialogDescription className="mt-2">Marketing campaigns require a Meta payment method.</DialogDescription>
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-2">
@@ -41,7 +40,7 @@ export function PaymentRequiredDialog({
             {loading ? "Opening..." : "Add Payment"}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

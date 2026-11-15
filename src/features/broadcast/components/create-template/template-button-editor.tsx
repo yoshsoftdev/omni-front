@@ -2,6 +2,7 @@
 
 import { Plus, Trash2 } from "lucide-react";
 
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,18 +96,14 @@ export function TemplateButtonEditor({ buttonMode, buttons, onChange }: Template
 
       <div className="space-y-2">
         <Label htmlFor="button-mode">Tipe tombol</Label>
-        <select
+        <FilterSelect
           id="button-mode"
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+          label="Tipe tombol"
           value={buttonMode}
-          onChange={(e) => setMode(e.target.value as TemplateButtonMode)}
-        >
-          {buttonModeOptions.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => setMode(value as TemplateButtonMode)}
+          options={buttonModeOptions}
+          className="w-full"
+        />
         <p className="text-xs text-muted-foreground">
           {buttonModeOptions.find((opt) => opt.value === buttonMode)?.hint}
         </p>
@@ -138,12 +135,13 @@ export function TemplateButtonEditor({ buttonMode, buttons, onChange }: Template
               <div className="grid gap-3 sm:grid-cols-2">
                 {buttonMode === "cta" ? (
                   <div className="space-y-2">
-                    <Label>Aksi</Label>
-                    <select
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    <Label htmlFor={`button-type-${button.id}`}>Aksi</Label>
+                    <FilterSelect
+                      id={`button-type-${button.id}`}
+                      label="Aksi"
                       value={button.type}
-                      onChange={(e) => {
-                        const type = e.target.value as "url" | "phone_number";
+                      onChange={(value) => {
+                        const type = value as "url" | "phone_number";
                         updateButton(button.id, {
                           type,
                           url: type === "url" ? button.url ?? "https://example.com" : undefined,
@@ -151,10 +149,12 @@ export function TemplateButtonEditor({ buttonMode, buttons, onChange }: Template
                             type === "phone_number" ? button.phoneNumber ?? "+6281234567890" : undefined,
                         });
                       }}
-                    >
-                      <option value="url">Visit website</option>
-                      <option value="phone_number">Call phone number</option>
-                    </select>
+                      options={[
+                        { value: "url", label: "Visit website" },
+                        { value: "phone_number", label: "Call phone number" },
+                      ]}
+                      className="w-full"
+                    />
                   </div>
                 ) : null}
 

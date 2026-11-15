@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import {
@@ -72,20 +73,20 @@ export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="template-device">Channel WhatsApp</Label>
-          <select
+          <FilterSelect
             id="template-device"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            label="Channel WhatsApp"
             value={form.deviceId}
-            onChange={(e) => onChange({ deviceId: e.target.value })}
-          >
-            <option value="">Pilih channel WhatsApp...</option>
-            {channels.map((channel) => (
-              <option key={channel.id} value={channel.id}>
-                {channel.label}
-                {channel.phone_number ? ` (${channel.phone_number})` : ""}
-              </option>
-            ))}
-          </select>
+            onChange={(deviceId) => onChange({ deviceId })}
+            options={[
+              { value: "", label: "Pilih channel WhatsApp..." },
+              ...channels.map((channel) => ({
+                value: channel.id,
+                label: channel.phone_number ? `${channel.label} (${channel.phone_number})` : channel.label,
+              })),
+            ]}
+            className="w-full"
+          />
           {channelsStatus === "error" ? (
             <p role="alert" className="text-xs text-error-foreground">
               Gagal memuat channel. Muat ulang halaman untuk mencoba lagi.
@@ -115,18 +116,14 @@ export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
 
         <div className="space-y-2">
           <Label htmlFor="template-language">Bahasa</Label>
-          <select
+          <FilterSelect
             id="template-language"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            label="Bahasa"
             value={form.language}
-            onChange={(e) => onChange({ language: e.target.value })}
-          >
-            {createTemplateLanguageOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            onChange={(language) => onChange({ language })}
+            options={[...createTemplateLanguageOptions]}
+            className="w-full"
+          />
           <p className="text-xs text-muted-foreground">
             Bahasa tidak dapat diubah setelah disetujui Meta
           </p>
@@ -134,35 +131,27 @@ export function TemplateInfoCard({ form, onChange }: TemplateInfoCardProps) {
 
         <div className="space-y-2">
           <Label htmlFor="template-category">Kategori</Label>
-          <select
+          <FilterSelect
             id="template-category"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            label="Kategori"
             value={form.category}
-            onChange={(e) => onChange({ category: e.target.value })}
-          >
-            {createTemplateCategoryOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            onChange={(category) => onChange({ category })}
+            options={[...createTemplateCategoryOptions]}
+            className="w-full"
+          />
           <p className="text-xs text-muted-foreground">Sesuaikan dengan isi pesan</p>
         </div>
 
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="header-type">Header (Opsional)</Label>
-          <select
+          <FilterSelect
             id="header-type"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            label="Header"
             value={form.headerType}
-            onChange={(e) => handleHeaderTypeChange(e.target.value as HeaderType)}
-          >
-            {headerTypeOptions.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => handleHeaderTypeChange(value as HeaderType)}
+            options={[...headerTypeOptions]}
+            className="w-full"
+          />
           <p className="text-xs text-muted-foreground">
             Media header diunggah ke storage-service; saat submit, backend mengonversi ke Meta
             resumable upload handle.

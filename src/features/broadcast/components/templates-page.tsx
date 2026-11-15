@@ -18,6 +18,7 @@ import {
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,6 +63,7 @@ function formatLastSync(iso: string) {
 }
 
 export function TemplatesPage() {
+  const [confirm, confirmDialog] = useConfirm();
   const [search, setSearch] = useState("");
   const [language, setLanguage] = useState("all");
   const [category, setCategory] = useState("all");
@@ -129,9 +131,11 @@ export function TemplatesPage() {
       setDeleteError("Template tidak memiliki id lokal.");
       return;
     }
-    const confirmed = window.confirm(
-      `Hapus template "${template.name}" (${template.language})?\nTemplate akan dihapus dari Meta dan dari aplikasi.`,
-    );
+    const confirmed = await confirm({
+      title: "Hapus template?",
+      description: `"${template.name}" (${template.language}) akan dihapus dari Meta dan dari aplikasi.`,
+      confirmLabel: "Hapus",
+    });
     if (!confirmed) return;
 
     setDeletingId(template.id);
@@ -160,17 +164,13 @@ export function TemplatesPage() {
               </Link>
             </Button>
             {connectedChannels.length > 1 ? (
-              <select
-                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+              <FilterSelect
+                label="Channel to sync"
                 value={effectiveSyncChannelId}
-                onChange={(e) => setSyncChannelId(e.target.value)}
-              >
-                {connectedChannels.map((channel) => (
-                  <option key={channel.id} value={channel.id}>
-                    {channel.label}
-                  </option>
-                ))}
-              </select>
+                onChange={setSyncChannelId}
+                options={connectedChannels.map((channel) => ({ value: channel.id, label: channel.label }))}
+                className="h-9"
+              />
             ) : null}
             <Button
               type="button"
@@ -323,6 +323,7 @@ export function TemplatesPage() {
           Channel Instagram tidak mendukung message template.
         </p>
       ) : null}
+      {confirmDialog}
     </div>
   );
 }

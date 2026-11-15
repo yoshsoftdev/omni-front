@@ -20,9 +20,7 @@ export function WhatsAppMessagePreview({
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-center justify-between gap-2">
         <div className="text-sm font-semibold">{heading}</div>
-        <select className="rounded-md border bg-background px-2 py-1 text-xs" defaultValue="lang" disabled>
-          <option value="lang">{languageLabel}</option>
-        </select>
+        <span className="rounded-md border bg-background px-2 py-1 text-xs text-muted-foreground">{languageLabel}</span>
       </div>
 
       <div className="mt-3 overflow-hidden rounded-xl border bg-[#ECE5DD]">

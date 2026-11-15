@@ -16,6 +16,8 @@ export type CampaignWizardDraft = {
   variableMapping: Record<string, string>;
   sampleValues: Record<string, string>;
   headerMediaUrl: string;
+  /** Header file uploaded in the wizard; sent as `header.storage_object_id` (wins over the URL). */
+  headerMediaFile: { objectId: string; fileName: string } | null;
   headerVariableMapping: Record<string, string>;
   includeHeader: boolean;
   includeFooter: boolean;
@@ -36,6 +38,7 @@ interface CampaignWizardState extends CampaignWizardDraft {
   setVariableMapping: (value: Record<string, string>) => void;
   setSampleValues: (value: Record<string, string>) => void;
   setHeaderMediaUrl: (value: string) => void;
+  setHeaderMediaFile: (value: { objectId: string; fileName: string } | null) => void;
   setHeaderVariableMapping: (value: Record<string, string>) => void;
   setIncludeHeader: (value: boolean) => void;
   setIncludeFooter: (value: boolean) => void;
@@ -59,6 +62,7 @@ const initialState: CampaignWizardDraft & { step: WizardStep } = {
   variableMapping: {},
   sampleValues: {},
   headerMediaUrl: "",
+  headerMediaFile: null,
   headerVariableMapping: {},
   includeHeader: true,
   includeFooter: true,
@@ -88,6 +92,7 @@ export const useCampaignWizardStore = create<CampaignWizardState>((set) => ({
               variableMapping: {},
               sampleValues: {},
               headerMediaUrl: "",
+              headerMediaFile: null,
               headerVariableMapping: {},
               includeHeader: true,
               includeFooter: true,
@@ -105,6 +110,7 @@ export const useCampaignWizardStore = create<CampaignWizardState>((set) => ({
         variableMapping: {},
         sampleValues: {},
         headerMediaUrl: "",
+        headerMediaFile: null,
         headerVariableMapping: {},
         includeHeader: true,
         includeFooter: true,
@@ -113,6 +119,7 @@ export const useCampaignWizardStore = create<CampaignWizardState>((set) => ({
   setVariableMapping: (variableMapping) => set({ variableMapping }),
   setSampleValues: (sampleValues) => set({ sampleValues }),
   setHeaderMediaUrl: (headerMediaUrl) => set({ headerMediaUrl }),
+  setHeaderMediaFile: (headerMediaFile) => set({ headerMediaFile }),
   setHeaderVariableMapping: (headerVariableMapping) => set({ headerVariableMapping }),
   setIncludeHeader: (includeHeader) => set({ includeHeader }),
   setIncludeFooter: (includeFooter) => set({ includeFooter }),

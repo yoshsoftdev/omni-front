@@ -100,6 +100,8 @@ export interface CampaignDTO {
       text?: Record<string, string>;
       media_link?: string;
       media_id?: string;
+      /** Header file uploaded for this campaign; overrides the template's stored media. */
+      storage_object_id?: string;
     };
     buttons?: Record<string, { url?: Record<string, string>; copy_code?: string }>;
   };
@@ -127,6 +129,8 @@ export interface CreateCampaignInput {
       text?: Record<string, string>;
       media_link?: string;
       media_id?: string;
+      /** Header file uploaded for this campaign; overrides the template's stored media. */
+      storage_object_id?: string;
     };
     buttons?: Record<string, { url?: Record<string, string>; copy_code?: string }>;
   };

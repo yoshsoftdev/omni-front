@@ -9,7 +9,6 @@ export const legacyUiFiles = [
   "src/features/automation/components/wizard/create-endpoint-wizard.tsx",
   "src/features/automation/components/wizard/variable-mapping-table.tsx",
   "src/features/broadcast/components/campaigns/campaign-table.tsx",
-  "src/features/broadcast/components/campaigns/campaign-wizard.tsx",
   "src/features/broadcast/components/create-template/template-button-editor.tsx",
   "src/features/broadcast/components/create-template/template-info-card.tsx",
   "src/features/broadcast/components/shared/payment-required-dialog.tsx",

@@ -7,6 +7,15 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Check, Search } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
+import { ErrorState } from "@/components/shared/empty-state";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { Button } from "@/components/ui/button";
@@ -14,9 +23,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CampaignCard } from "@/features/broadcast/components/campaigns/campaign-card";
 import { CampaignChannelCard } from "@/features/broadcast/components/campaigns/campaign-channel-card";
+import { CampaignHeaderMedia } from "@/features/broadcast/components/campaigns/campaign-header-media";
 import { WhatsAppMessagePreview } from "@/features/broadcast/components/shared/whatsapp-message-preview";
 import { templateQueryService } from "@/features/broadcast/services/template-query.service";
 import type { Template } from "@/features/broadcast/types/template";
+import { headerMediaError } from "@/features/broadcast/utils/header-media";
 import { countTemplateVariables, templatePreviewHeaderType } from "@/features/broadcast/utils/template-preview";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
@@ -50,6 +61,12 @@ const templateLanguageOptions = [
   { value: "all", label: "Semua Bahasa" },
   { value: "id", label: "Indonesia" },
   { value: "en", label: "English" },
+];
+
+const TIMEZONE_OPTIONS = [
+  { value: "Asia/Jakarta", label: "Asia/Jakarta (WIB)" },
+  { value: "Asia/Makassar", label: "Asia/Makassar (WITA)" },
+  { value: "Asia/Jayapura", label: "Asia/Jayapura (WIT)" },
 ];
 
 const formControlClass =
@@ -118,6 +135,7 @@ export function CampaignWizard() {
     scheduleTime,
     timezone,
     headerMediaUrl,
+    headerMediaFile,
     setStep,
     setCampaignName,
     setDescription,
@@ -127,6 +145,7 @@ export function CampaignWizard() {
     setSampleValues,
     setHeaderVariableMapping,
     setHeaderMediaUrl,
+    setHeaderMediaFile,
     setIncludeHeader,
     setIncludeFooter,
     setSelectedTagIds,
@@ -140,9 +159,18 @@ export function CampaignWizard() {
   const [tags, setTags] = useState<ContactTag[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [channelsLoaded, setChannelsLoaded] = useState(false);
+  const [templateSearchInput, setTemplateSearchInput] = useState("");
   const [templateSearch, setTemplateSearch] = useState("");
   const [templateLanguage, setTemplateLanguage] = useState("all");
   const [templatePage, setTemplatePage] = useState(1);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setTemplateSearch(templateSearchInput);
+      setTemplatePage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [templateSearchInput]);
 
   const templateQueryParams = useMemo(
     () => ({
@@ -161,6 +189,7 @@ export function CampaignWizard() {
     isLoading: templatesLoading,
     isError: templatesError,
     error: templatesLoadError,
+    refetch: refetchTemplates,
   } = useQuery({
     queryKey: ["broadcast-templates", "campaign-wizard", templateQueryParams],
     queryFn: () => templateQueryService.getTemplatesPage(templateQueryParams),
@@ -183,6 +212,7 @@ export function CampaignWizard() {
   });
 
   useEffect(() => {
+    setTemplateSearchInput("");
     setTemplateSearch("");
     setTemplateLanguage("all");
     setTemplatePage(1);
@@ -205,12 +235,11 @@ export function CampaignWizard() {
       templatesLoadError instanceof Error
         ? templatesLoadError.message
         : "Failed to load templates";
+    // Other failures are shown inline with a retry; only an expired session leaves the wizard.
     if (message.toLowerCase().includes("unauthorized")) {
       notify("error", "Session expired. Please sign in again.");
       router.replace("/login");
-      return;
     }
-    notify("error", message);
   }, [templatesError, templatesLoadError, notify, router]);
 
   const selectedTemplate =
@@ -290,7 +319,7 @@ export function CampaignWizard() {
     if (step === 3) {
       if (!channelId) return "Select a channel before choosing a template";
       if (templatesLoading) return "Loading templates...";
-      if (templatesError) return "Could not load templates. Try again or sign in again.";
+      if (templatesError) return "Could not load templates. Try again.";
       if (!templateId) return "Select a template";
       if (templates.length === 0) {
         return "No templates available for the selected channel. Sync templates first.";
@@ -298,18 +327,14 @@ export function CampaignWizard() {
     }
     if (step === 4) {
       if (!fullTemplate) return "Select a template first";
-      if (hasMediaHeader && includeHeader && !hasStoredHeaderMedia && !headerMediaUrl.trim()) {
-        return "Header media URL is required for this template (no stored media from template upload)";
-      }
-      if (hasMediaHeader && includeHeader && headerMediaUrl.trim()) {
-        try {
-          const parsed = new URL(headerMediaUrl.trim());
-          if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-            return "Header media URL must be http(s)";
-          }
-        } catch {
-          return "Header media URL is invalid";
-        }
+      // The header is part of the approved template, so it is always sent ("Show in preview" is preview-only).
+      if (hasMediaHeader) {
+        const mediaError = headerMediaError({
+          storedOnTemplate: hasStoredHeaderMedia,
+          fileObjectId: headerMediaFile?.objectId,
+          url: headerMediaFile ? "" : headerMediaUrl,
+        });
+        if (mediaError) return mediaError;
       }
     }
     if (step === 5 && selectedTagIds.length === 0) {
@@ -342,12 +367,14 @@ export function CampaignWizard() {
         const variableMappingPayload: NonNullable<Parameters<typeof campaignService.create>[0]["variable_mapping"]> = {
           body: variableMapping,
         };
-        if (hasTemplateHeader && includeHeader) {
+        if (hasTemplateHeader) {
           variableMappingPayload.header = {
             ...(headerTextVariableCount > 0 ? { text: headerVariableMapping } : {}),
-            ...(hasMediaHeader && headerMediaUrl.trim()
-              ? { media_link: headerMediaUrl.trim() }
-              : {}),
+            ...(hasMediaHeader && headerMediaFile
+              ? { storage_object_id: headerMediaFile.objectId }
+              : hasMediaHeader && headerMediaUrl.trim()
+                ? { media_link: headerMediaUrl.trim() }
+                : {}),
           };
         }
         const created = await campaignService.create({
@@ -413,7 +440,7 @@ export function CampaignWizard() {
         </div>
       ) : null}
 
-      <div className="flex gap-6">
+      <div className="flex flex-col gap-6 lg:flex-row">
         <div className="min-w-0 flex-1 space-y-6">
           <Stepper activeStep={step} />
 
@@ -422,10 +449,11 @@ export function CampaignWizard() {
               <h2 className="text-sm font-semibold">Campaign Information</h2>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label>Campaign Name</Label>
+                  <Label htmlFor="campaign-name">Campaign Name</Label>
                   <span className="text-xs text-muted-foreground">{campaignName.length}/100</span>
                 </div>
                 <Input
+                  id="campaign-name"
                   value={campaignName}
                   maxLength={100}
                   onChange={(e) => setCampaignName(e.target.value)}
@@ -434,10 +462,11 @@ export function CampaignWizard() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label>Description</Label>
+                  <Label htmlFor="campaign-description">Description</Label>
                   <span className="text-xs text-muted-foreground">{description.length}/200</span>
                 </div>
                 <textarea
+                  id="campaign-description"
                   value={description}
                   maxLength={200}
                   onChange={(e) => setDescription(e.target.value)}
@@ -489,11 +518,9 @@ export function CampaignWizard() {
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           placeholder="Cari template..."
-                          value={templateSearch}
-                          onChange={(e) => {
-                            setTemplateSearch(e.target.value);
-                            setTemplatePage(1);
-                          }}
+                          aria-label="Search templates"
+                          value={templateSearchInput}
+                          onChange={(e) => setTemplateSearchInput(e.target.value)}
                           className="pl-9"
                         />
                       </div>
@@ -515,12 +542,11 @@ export function CampaignWizard() {
                   {templatesLoading ? (
                     <p className="text-sm text-muted-foreground">Loading templates...</p>
                   ) : templatesError ? (
-                    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-6 text-center text-sm text-destructive">
-                      <p>Could not load templates. Your session may have expired.</p>
-                      <Button variant="outline" size="sm" className="mt-3" asChild>
-                        <Link href="/login">Sign in again</Link>
-                      </Button>
-                    </div>
+                    <ErrorState
+                      message={formatApiErrorMessage(templatesLoadError) || "Could not load templates."}
+                      onRetry={() => void refetchTemplates()}
+                      className="p-6"
+                    />
                   ) : templates.length === 0 ? (
                     <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
                       <p>
@@ -594,76 +620,44 @@ export function CampaignWizard() {
                         </label>
                       </div>
 
-                      {includeHeader && hasMediaHeader ? (
-                        <div className="space-y-2">
-                          {hasStoredHeaderMedia ? (
-                            <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                              Media header memakai file yang diunggah saat membuat template
-                              (<code className="mx-1 rounded bg-muted px-1">storage_object_id</code>
-                              → Cloud media id via Media Manager). Handle Meta untuk review template
-                              (<code className="mx-1 rounded bg-muted px-1">header_handle</code>)
-                              tidak bisa dipakai ulang untuk kirim broadcast.
-                            </div>
-                          ) : null}
-                          <Label htmlFor="header-media-url">
-                            {hasStoredHeaderMedia
-                              ? "Override URL (opsional)"
-                              : "Header media URL"}
-                          </Label>
-                          <Input
-                            id="header-media-url"
-                            type="url"
-                            placeholder="https://cdn.example.com/promo.jpg"
-                            value={headerMediaUrl}
-                            onChange={(event) => setHeaderMediaUrl(event.target.value)}
-                          />
-                          <p className="text-xs leading-relaxed text-muted-foreground">
-                            {hasStoredHeaderMedia
-                              ? "Kosongkan untuk memakai media tersimpan. Isi URL hanya jika ingin mengganti."
-                              : "Template sync dari Meta hanya punya header_handle (untuk review), bukan media id kirim. Unggah ulang lewat Buat Template, atau isi URL publik di sini."}
-                          </p>
-                        </div>
+                      {hasMediaHeader ? (
+                        <CampaignHeaderMedia
+                          mediaType={headerType as "image" | "video" | "document"}
+                          storedOnTemplate={hasStoredHeaderMedia}
+                          file={headerMediaFile}
+                          url={headerMediaUrl}
+                          onFileChange={setHeaderMediaFile}
+                          onUrlChange={setHeaderMediaUrl}
+                        />
                       ) : null}
 
-                      {includeHeader && headerTextVariableCount > 0 ? (
-                        <div className="overflow-hidden rounded-md border">
-                          <table className="w-full text-sm">
-                            <thead className="bg-muted/50">
-                              <tr>
-                                <th className="px-3 py-2 text-left text-xs">Header Variable</th>
-                                <th className="px-3 py-2 text-left text-xs">Map To</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {Array.from({ length: headerTextVariableCount }, (_, i) => i + 1).map((n) => {
-                                const key = String(n);
-                                return (
-                                  <tr key={`header-${key}`} className="border-t">
-                                    <td className="px-3 py-3 font-medium">{`{{${key}}}`}</td>
-                                    <td className="px-3 py-3">
-                                      <select
-                                        className={cn(formControlClass, "h-9")}
-                                        value={headerVariableMapping[key] ?? "name"}
-                                        onChange={(event) =>
-                                          setHeaderVariableMapping({
-                                            ...headerVariableMapping,
-                                            [key]: event.target.value,
-                                          })
-                                        }
-                                      >
-                                        {FIELD_OPTIONS.map((opt) => (
-                                          <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                          </option>
-                                        ))}
-                                      </select>
-                                    </td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
+                      {headerTextVariableCount > 0 ? (
+                        <DataTable>
+                          <DataTableHead>
+                            <DataTableRow>
+                              <DataTableHeaderCell>Header Variable</DataTableHeaderCell>
+                              <DataTableHeaderCell>Map To</DataTableHeaderCell>
+                            </DataTableRow>
+                          </DataTableHead>
+                          <DataTableBody>
+                            {Array.from({ length: headerTextVariableCount }, (_, i) => String(i + 1)).map((key) => (
+                              <DataTableRow key={`header-${key}`}>
+                                <DataTableCell className="font-medium">{`{{${key}}}`}</DataTableCell>
+                                <DataTableCell>
+                                  <FilterSelect
+                                    label={`Header variable ${key} field`}
+                                    value={headerVariableMapping[key] ?? "name"}
+                                    onChange={(value) =>
+                                      setHeaderVariableMapping({ ...headerVariableMapping, [key]: value })
+                                    }
+                                    options={FIELD_OPTIONS}
+                                    className="h-9 w-full"
+                                  />
+                                </DataTableCell>
+                              </DataTableRow>
+                            ))}
+                          </DataTableBody>
+                        </DataTable>
                       ) : null}
                     </div>
                   ) : null}
@@ -697,48 +691,38 @@ export function CampaignWizard() {
                 {variableCount === 0 ? (
                   <p className="text-sm text-muted-foreground">This template has no body variables.</p>
                 ) : (
-                  <div className="overflow-hidden rounded-md border">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="px-3 py-2 text-left text-xs">Variable</th>
-                          <th className="px-3 py-2 text-left text-xs">Map To</th>
-                          <th className="px-3 py-2 text-left text-xs">Sample Value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Array.from({ length: variableCount }, (_, i) => i + 1).map((n) => {
-                          const key = String(n);
-                          return (
-                            <tr key={key} className="border-t">
-                              <td className="px-3 py-3 font-medium">{`{{${key}}}`}</td>
-                              <td className="px-3 py-3">
-                                <select
-                                  className={cn(formControlClass, "h-9")}
-                                  value={variableMapping[key] ?? "name"}
-                                  onChange={(e) =>
-                                    setVariableMapping({ ...variableMapping, [key]: e.target.value })
-                                  }
-                                >
-                                  {FIELD_OPTIONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>
-                                      {opt.label}
-                                    </option>
-                                  ))}
-                                </select>
-                              </td>
-                              <td className="px-3 py-3">
-                                <Input
-                                  value={sampleValues[key] ?? ""}
-                                  onChange={(e) => setSampleValues({ ...sampleValues, [key]: e.target.value })}
-                                />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                  <DataTable>
+                    <DataTableHead>
+                      <DataTableRow>
+                        <DataTableHeaderCell>Variable</DataTableHeaderCell>
+                        <DataTableHeaderCell>Map To</DataTableHeaderCell>
+                        <DataTableHeaderCell>Sample Value</DataTableHeaderCell>
+                      </DataTableRow>
+                    </DataTableHead>
+                    <DataTableBody>
+                      {Array.from({ length: variableCount }, (_, i) => String(i + 1)).map((key) => (
+                        <DataTableRow key={key}>
+                          <DataTableCell className="font-medium">{`{{${key}}}`}</DataTableCell>
+                          <DataTableCell>
+                            <FilterSelect
+                              label={`Body variable ${key} field`}
+                              value={variableMapping[key] ?? "name"}
+                              onChange={(value) => setVariableMapping({ ...variableMapping, [key]: value })}
+                              options={FIELD_OPTIONS}
+                              className="h-9 w-full"
+                            />
+                          </DataTableCell>
+                          <DataTableCell>
+                            <Input
+                              aria-label={`Body variable ${key} sample`}
+                              value={sampleValues[key] ?? ""}
+                              onChange={(e) => setSampleValues({ ...sampleValues, [key]: e.target.value })}
+                            />
+                          </DataTableCell>
+                        </DataTableRow>
+                      ))}
+                    </DataTableBody>
+                  </DataTable>
                 )}
               </div>
             </div>
@@ -802,24 +786,22 @@ export function CampaignWizard() {
               {sendMode === "later" ? (
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="space-y-2">
-                    <Label>Date</Label>
-                    <Input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
+                    <Label htmlFor="schedule-date">Date</Label>
+                    <Input id="schedule-date" type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Time</Label>
-                    <Input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
+                    <Label htmlFor="schedule-time">Time</Label>
+                    <Input id="schedule-time" type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Timezone</Label>
-                    <select
-                      className={cn(formControlClass, "h-10")}
+                    <FilterSelect
+                      label="Timezone"
                       value={timezone}
-                      onChange={(e) => setTimezone(e.target.value)}
-                    >
-                      <option value="Asia/Jakarta">Asia/Jakarta (WIB)</option>
-                      <option value="Asia/Makassar">Asia/Makassar (WITA)</option>
-                      <option value="Asia/Jayapura">Asia/Jayapura (WIT)</option>
-                    </select>
+                      onChange={setTimezone}
+                      options={TIMEZONE_OPTIONS}
+                      className="w-full"
+                    />
                   </div>
                 </div>
               ) : null}
@@ -834,6 +816,18 @@ export function CampaignWizard() {
                 <SummaryItem label="Channel" value={channelName || "—"} />
                 <SummaryItem label="Phone Number" value={phoneNumber || "—"} />
                 <SummaryItem label="Template" value={selectedTemplate?.name ?? "—"} />
+                {hasMediaHeader ? (
+                  <SummaryItem
+                    label="Header media"
+                    value={
+                      headerMediaFile
+                        ? `Uploaded: ${headerMediaFile.fileName}`
+                        : headerMediaUrl.trim()
+                          ? headerMediaUrl.trim()
+                          : "Stored on template"
+                    }
+                  />
+                ) : null}
                 <SummaryItem label="Audience" value={audienceSummary} />
                 <SummaryItem label="Estimated Recipients" value={estimatedRecipients.toLocaleString()} />
                 <SummaryItem
@@ -858,7 +852,7 @@ export function CampaignWizard() {
           </div>
         </div>
 
-        <div className="hidden w-[360px] shrink-0 lg:block">
+        <div className="w-full shrink-0 lg:w-[360px]">
           {fullTemplate ? (
             <WhatsAppMessagePreview
               heading="Template Preview"
@@ -894,7 +888,7 @@ function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border bg-muted/20 px-3 py-2">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="mt-1 font-medium">{value}</dd>
+      <dd className="mt-1 break-all font-medium">{value}</dd>
     </div>
   );
 }

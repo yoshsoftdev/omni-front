@@ -2,12 +2,6 @@
 // Phase 7 migrates them; remove an entry once its file uses the shared components.
 // Never add new entries: new code must use src/components/{ui,shared,layout}.
 export const legacyUiFiles = [
-  "src/features/automation/components/detail/endpoint-detail-page.tsx",
-  "src/features/automation/components/endpoints/endpoints-table.tsx",
-  "src/features/automation/components/keys/api-keys-page.tsx",
-  "src/features/automation/components/webhooks/webhooks-page.tsx",
-  "src/features/automation/components/wizard/create-endpoint-wizard.tsx",
-  "src/features/automation/components/wizard/variable-mapping-table.tsx",
   "src/features/broadcast/components/campaigns/campaign-table.tsx",
   "src/features/broadcast/components/create-template/template-button-editor.tsx",
   "src/features/broadcast/components/create-template/template-info-card.tsx",

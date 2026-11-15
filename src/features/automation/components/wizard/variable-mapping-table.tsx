@@ -1,8 +1,15 @@
 "use client";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import type { VariableMapping } from "@/features/automation/types/action";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { StatusBadge } from "@/components/shared/status-badge";
 
 export function VariableMappingTable({
@@ -28,69 +35,71 @@ export function VariableMappingTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border">
-      <table className="w-full min-w-[720px] text-left text-sm">
-        <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2.5 font-medium">Template Variable</th>
-            <th className="px-3 py-2.5 font-medium">API Parameter</th>
-            <th className="px-3 py-2.5 font-medium">Required</th>
-            <th className="px-3 py-2.5 font-medium">Default Value</th>
-            <th className="px-3 py-2.5 font-medium">Description</th>
-          </tr>
-        </thead>
-        <tbody>
+    <DataTable className="rounded-lg border">
+        <DataTableHead>
+          <DataTableRow>
+            <DataTableHeaderCell>Template Variable</DataTableHeaderCell>
+            <DataTableHeaderCell>API Parameter</DataTableHeaderCell>
+            <DataTableHeaderCell>Required</DataTableHeaderCell>
+            <DataTableHeaderCell>Default Value</DataTableHeaderCell>
+            <DataTableHeaderCell>Description</DataTableHeaderCell>
+          </DataTableRow>
+        </DataTableHead>
+        <DataTableBody>
           {mappings.map((row, index) => (
-            <tr key={`${row.templateVariable}-${index}`} className="border-b last:border-0 align-top">
-              <td className="px-3 py-3">
+            <DataTableRow key={`${row.templateVariable}-${index}`} className="align-top">
+              <DataTableCell>
                 <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
                   {/^\d+$/.test(row.templateVariable) ? `{{${row.templateVariable}}}` : row.templateVariable}
                 </code>
-              </td>
-              <td className="px-3 py-3">
+              </DataTableCell>
+              <DataTableCell>
                 {readOnly ? (
                   <code className="font-mono text-xs">{row.apiParameter}</code>
                 ) : (
                   <Input
+                    aria-label={`API parameter for ${row.templateVariable}`}
                     value={row.apiParameter}
                     onChange={(e) => update(index, { apiParameter: e.target.value.replace(/\s+/g, "") })}
                     className="h-8 font-mono text-xs"
                   />
                 )}
-              </td>
-              <td className="px-3 py-3">
+              </DataTableCell>
+              <DataTableCell>
                 {readOnly ? (
                   row.required ? <StatusBadge tone="warning">Required</StatusBadge> : <StatusBadge tone="neutral">Optional</StatusBadge>
                 ) : (
                   <label className="flex items-center gap-2 text-xs">
                     <input
                       type="checkbox"
+                      aria-label={`${row.templateVariable} required`}
                       checked={row.required}
                       onChange={(e) => update(index, { required: e.target.checked })}
                     />
                     Required
                   </label>
                 )}
-              </td>
-              <td className="px-3 py-3">
+              </DataTableCell>
+              <DataTableCell>
                 {readOnly ? (
                   <span className="text-muted-foreground">{row.defaultValue || "—"}</span>
                 ) : (
                   <Input
+                    aria-label={`Default value for ${row.templateVariable}`}
                     value={row.defaultValue ?? ""}
                     onChange={(e) => update(index, { defaultValue: e.target.value })}
                     placeholder="Optional"
                     className="h-8 text-xs"
                   />
                 )}
-              </td>
-              <td className="px-3 py-3">
+              </DataTableCell>
+              <DataTableCell>
                 {readOnly ? (
                   <span className="text-muted-foreground">{row.description || "—"}</span>
                 ) : (
                   <div className="space-y-1">
-                    <Label className="sr-only">Description</Label>
                     <Input
+                      aria-label={`Description for ${row.templateVariable}`}
                       value={row.description ?? ""}
                       onChange={(e) => update(index, { description: e.target.value })}
                       placeholder="Describe this parameter"
@@ -98,11 +107,10 @@ export function VariableMappingTable({
                     />
                   </div>
                 )}
-              </td>
-            </tr>
+              </DataTableCell>
+            </DataTableRow>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </DataTableBody>
+      </DataTable>
   );
 }

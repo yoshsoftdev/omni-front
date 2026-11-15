@@ -18,4 +18,28 @@ describe("generateSnippet", () => {
     expect(generateSnippet({ language: "csharp", url, body })).toContain("HttpClient");
     expect(generateSnippet({ language: "node_fetch", url, body })).toContain("node-fetch");
   });
+
+  it("keeps payload values with quotes, backslashes and backticks intact in every literal", () => {
+    const tricky = { to: "+62812", name: "O'Brien \"Bob\" C:\\tmp `x`" };
+    const json = JSON.stringify(tricky);
+    const between = (text: string, start: string, end: string) => {
+      const from = text.indexOf(start) + start.length;
+      return text.slice(from, text.indexOf(end, from));
+    };
+
+    const curl = generateSnippet({ language: "curl", url, body: tricky });
+    const shellArg = curl.slice(curl.indexOf("-d '") + 4, curl.length - 1);
+    expect(shellArg.replace(/'\\''/g, "'")).toBe(json);
+
+    const php = generateSnippet({ language: "php", url, body: tricky });
+    const phpLiteral = between(php, "CURLOPT_POSTFIELDS => '", "',\n");
+    expect(phpLiteral.replace(/\\(['\\])/g, "$1")).toBe(json);
+
+    const java = generateSnippet({ language: "java", url, body: tricky });
+    const javaLiteral = between(java, 'ofString("', '"))');
+    expect(javaLiteral.replace(/\\(["\\])/g, "$1")).toBe(json);
+
+    const go = generateSnippet({ language: "go", url, body: tricky });
+    expect(go).toContain('` + "`" + `x` + "`" + `');
+  });
 });

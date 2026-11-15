@@ -6,7 +6,17 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react
 import { ArrowLeft } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/page-header";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,10 +25,8 @@ import { AutomationNav } from "@/features/automation/components/automation-nav";
 import { CopyButton } from "@/features/automation/components/shared/copy-button";
 import { EndpointUrlField } from "@/features/automation/components/shared/endpoint-url-field";
 import { VariableMappingTable } from "@/features/automation/components/wizard/variable-mapping-table";
-import { apiKeyService } from "@/features/automation/services/api-key.service";
 import { endpointService } from "@/features/automation/services/endpoint.service";
 import type { EndpointAnalytics, InvokeResult } from "@/features/automation/types/analytics";
-import type { AutomationApiKey } from "@/features/automation/types/api-key";
 import type { AutomationEndpoint } from "@/features/automation/types/endpoint";
 import type { VariableMapping } from "@/features/automation/types/action";
 import {
@@ -57,13 +65,13 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { notify, Toast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
   const initialTab = (searchParams.get("tab") as DetailTab) || "overview";
   const [tab, setTab] = useState<DetailTab>(
     TABS.some((t) => t.id === initialTab) ? initialTab : "overview",
   );
   const [endpoint, setEndpoint] = useState<AutomationEndpoint | null>(null);
   const [analytics, setAnalytics] = useState<EndpointAnalytics | null>(null);
-  const [keys, setKeys] = useState<AutomationApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [editingVars, setEditingVars] = useState(false);
@@ -73,10 +81,7 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
     setLoading(true);
     setLoadError(null);
     try {
-      const [ep, keyList] = await Promise.all([
-        endpointService.getById(endpointId),
-        apiKeyService.list(),
-      ]);
+      const ep = await endpointService.getById(endpointId);
       if (!ep) {
         setEndpoint(null);
         return;
@@ -85,7 +90,6 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
       if (isSendTemplateConfig(ep.actionConfig)) {
         setDraftMappings(ep.actionConfig.variableMappings);
       }
-      setKeys(keyList.filter((k) => k.status === "active"));
     } catch (err) {
       if (isNotFound(err)) setEndpoint(null);
       else setLoadError(formatApiErrorMessage(err));
@@ -144,8 +148,7 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
 
   async function handleDelete() {
     if (!endpoint) return;
-    if (!window.confirm(`Delete "${endpoint.name}"? Type confirmation in the next dialog.`)) return;
-    if (!window.confirm("This permanently removes the endpoint configuration.")) return;
+    if (!(await confirm({ title: "Delete endpoint?", description: `"${endpoint.name}" and its configuration are removed permanently.` }))) return;
     await endpointService.remove(endpoint.id);
     notify("success", "Endpoint deleted");
     router.push("/automation/endpoints");
@@ -164,7 +167,8 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
     void load();
   }
 
-  if (loading) {
+  // A refresh (e.g. after a test send) keeps the page mounted so panels keep their state.
+  if (loading && !endpoint) {
     return (
       <div className="space-y-6">
         <AutomationNav />
@@ -278,7 +282,6 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
         <DocumentationPanel
           endpoint={endpoint}
           exampleBody={exampleBody}
-          keys={keys}
           onInvoked={() => void load()}
         />
       ) : null}
@@ -335,11 +338,11 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
         <TestEndpointPanel
           endpoint={endpoint}
           mappings={mappings}
-          keys={keys}
           onInvoked={() => void load()}
         />
       ) : null}
 
+      {confirmDialog}
       <Toast />
     </div>
   );
@@ -368,37 +371,36 @@ function StatCard({
 function DocumentationPanel({
   endpoint,
   exampleBody,
-  keys,
   onInvoked,
 }: {
   endpoint: AutomationEndpoint;
   exampleBody: Record<string, string>;
-  keys: AutomationApiKey[];
   onInvoked: () => void;
 }) {
   const [payload, setPayload] = useState(JSON.stringify(exampleBody, null, 2));
-  const [selectedKeyId, setSelectedKeyId] = useState(keys[0]?.id ?? "");
   const [result, setResult] = useState<InvokeResult | null>(null);
   const [running, setRunning] = useState(false);
+  const [confirmBody, setConfirmBody] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     setPayload(JSON.stringify(exampleBody, null, 2));
   }, [exampleBody]);
 
-  async function runTryIt() {
+  function askToRun() {
+    try {
+      setConfirmBody(JSON.parse(payload) as Record<string, unknown>);
+    } catch {
+      setResult({ success: false, statusCode: 400, latencyMs: 0, body: { success: false, message: "Invalid JSON payload" } });
+    }
+  }
+
+  async function run(body: Record<string, unknown>) {
     setRunning(true);
     try {
-      const body = JSON.parse(payload) as Record<string, unknown>;
-      const res = await endpointService.invokeTest(endpoint.id, body);
-      setResult(res);
+      setResult(await endpointService.invokeTest(endpoint.id, body));
       onInvoked();
-    } catch {
-      setResult({
-        success: false,
-        statusCode: 400,
-        latencyMs: 0,
-        body: { success: false, message: "Invalid JSON payload" },
-      });
+    } catch (err) {
+      setResult({ success: false, statusCode: 0, latencyMs: 0, body: { success: false, message: formatApiErrorMessage(err) } });
     } finally {
       setRunning(false);
     }
@@ -410,22 +412,22 @@ function DocumentationPanel({
         <EndpointUrlField endpointId={endpoint.id} />
         <div className="rounded-lg border bg-card p-4">
           <h3 className="mb-3 font-medium">Request schema</h3>
-          <table className="w-full text-sm">
-            <thead className="text-xs text-muted-foreground">
-              <tr>
-                <th className="pb-2 text-left font-medium">Field</th>
-                <th className="pb-2 text-left font-medium">Type</th>
-              </tr>
-            </thead>
-            <tbody>
+          <DataTable>
+            <DataTableHead>
+              <DataTableRow>
+                <DataTableHeaderCell>Field</DataTableHeaderCell>
+                <DataTableHeaderCell>Type</DataTableHeaderCell>
+              </DataTableRow>
+            </DataTableHead>
+            <DataTableBody>
               {Object.keys(exampleBody).map((key) => (
-                <tr key={key} className="border-t">
-                  <td className="py-2 font-mono text-xs">{key}</td>
-                  <td className="py-2 text-muted-foreground">string</td>
-                </tr>
+                <DataTableRow key={key}>
+                  <DataTableCell className="font-mono text-xs">{key}</DataTableCell>
+                  <DataTableCell className="text-muted-foreground">string</DataTableCell>
+                </DataTableRow>
               ))}
-            </tbody>
-          </table>
+            </DataTableBody>
+          </DataTable>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <h3 className="mb-3 font-medium">Success response</h3>
@@ -457,33 +459,23 @@ function DocumentationPanel({
           <h3 className="font-medium">Try It</h3>
           <CopyButton value={payload} label="Copy payload" />
         </div>
-        <div className="space-y-2">
-          <Label>API key</Label>
-          <select
-            className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-            value={selectedKeyId}
-            onChange={(e) => setSelectedKeyId(e.target.value)}
-          >
-            {keys.length === 0 ? <option value="">No active keys</option> : null}
-            {keys.map((key) => (
-              <option key={key.id} value={key.id}>
-                {key.name}
-              </option>
-            ))}
-          </select>
-        </div>
         <textarea
+          aria-label="Request payload"
           value={payload}
           onChange={(e) => setPayload(e.target.value)}
           rows={12}
           className="w-full rounded-md border bg-background p-3 font-mono text-xs"
         />
-        <div className="rounded-md border border-warning-border bg-warning-muted px-3 py-2 text-xs text-warning-foreground">
-          This sends a real test invocation against the mock executor. Production will deliver a WhatsApp message.
-        </div>
-        <Button type="button" disabled={running || !selectedKeyId} onClick={() => void runTryIt()}>
-          {running ? "Running…" : "Run request"}
+        <RealSendNotice />
+        <Button type="button" disabled={running} onClick={askToRun}>
+          {running ? "Sending…" : "Send real test message"}
         </Button>
+        <ConfirmRealSend
+          to={confirmBody ? String(confirmBody.to ?? "") : ""}
+          open={confirmBody !== null}
+          onOpenChange={(open) => !open && setConfirmBody(null)}
+          onConfirm={() => (confirmBody ? run(confirmBody) : undefined)}
+        />
         {result ? (
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm">
@@ -586,22 +578,22 @@ function AnalyticsPanel({ analytics }: { analytics: EndpointAnalytics | null }) 
 
       <div className="rounded-lg border bg-card p-4">
         <h3 className="mb-3 font-medium">Top client IPs</h3>
-        <table className="w-full text-sm">
-          <thead className="text-xs text-muted-foreground">
-            <tr>
-              <th className="pb-2 text-left font-medium">IP</th>
-              <th className="pb-2 text-right font-medium">Requests</th>
-            </tr>
-          </thead>
-          <tbody>
+        <DataTable>
+          <DataTableHead>
+            <DataTableRow>
+              <DataTableHeaderCell>IP</DataTableHeaderCell>
+              <DataTableHeaderCell className="text-right">Requests</DataTableHeaderCell>
+            </DataTableRow>
+          </DataTableHead>
+          <DataTableBody>
             {analytics.topClientIps.map((row) => (
-              <tr key={row.ip} className="border-t">
-                <td className="py-2 font-mono text-xs">{row.ip}</td>
-                <td className="py-2 text-right">{formatNumber(row.count)}</td>
-              </tr>
+              <DataTableRow key={row.ip}>
+                <DataTableCell className="font-mono text-xs">{row.ip}</DataTableCell>
+                <DataTableCell className="text-right">{formatNumber(row.count)}</DataTableCell>
+              </DataTableRow>
             ))}
-          </tbody>
-        </table>
+          </DataTableBody>
+        </DataTable>
       </div>
     </div>
   );
@@ -610,15 +602,14 @@ function AnalyticsPanel({ analytics }: { analytics: EndpointAnalytics | null }) 
 function TestEndpointPanel({
   endpoint,
   mappings,
-  keys,
   onInvoked,
 }: {
   endpoint: AutomationEndpoint;
   mappings: VariableMapping[];
-  keys: AutomationApiKey[];
   onInvoked: () => void;
 }) {
-  const [to, setTo] = useState("+6281234567890");
+  const [to, setTo] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const textParameter =
     isSendTextConfig(endpoint.actionConfig) && endpoint.actionConfig.textParameter.trim()
       ? endpoint.actionConfig.textParameter.trim()
@@ -628,17 +619,16 @@ function TestEndpointPanel({
       ? { [textParameter]: endpoint.actionConfig.defaultText ?? "" }
       : Object.fromEntries(mappings.map((m) => [m.apiParameter, m.defaultValue ?? ""])),
   );
-  const [selectedKeyId, setSelectedKeyId] = useState(keys[0]?.id ?? "");
   const [result, setResult] = useState<InvokeResult | null>(null);
   const [running, setRunning] = useState(false);
 
   async function sendTest() {
     setRunning(true);
     try {
-      const body: Record<string, unknown> = { to, ...values };
-      const res = await endpointService.invokeTest(endpoint.id, body);
-      setResult(res);
+      setResult(await endpointService.invokeTest(endpoint.id, { to, ...values }));
       onInvoked();
+    } catch (err) {
+      setResult({ success: false, statusCode: 0, latencyMs: 0, body: { success: false, message: formatApiErrorMessage(err) } });
     } finally {
       setRunning(false);
     }
@@ -653,27 +643,10 @@ function TestEndpointPanel({
             Fill the form generated from your variable mappings and send a test request.
           </p>
         </div>
-        <div className="rounded-md border border-warning-border bg-warning-muted px-3 py-2 text-xs text-warning-foreground">
-          Test invocations use the live executor path. In production this delivers a WhatsApp message.
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="test-key">API key</Label>
-          <select
-            id="test-key"
-            className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-            value={selectedKeyId}
-            onChange={(e) => setSelectedKeyId(e.target.value)}
-          >
-            {keys.map((key) => (
-              <option key={key.id} value={key.id}>
-                {key.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <RealSendNotice />
         <div className="space-y-2">
           <Label htmlFor="test-to">Phone Number</Label>
-          <Input id="test-to" value={to} onChange={(e) => setTo(e.target.value)} />
+          <Input id="test-to" placeholder="+6281234567890" value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         {isSendTextConfig(endpoint.actionConfig) ? (
           <div className="space-y-2">
@@ -703,9 +676,10 @@ function TestEndpointPanel({
             />
           </div>
         ))}
-        <Button type="button" disabled={running || !selectedKeyId} onClick={() => void sendTest()}>
-          {running ? "Sending…" : "Send Test"}
+        <Button type="button" disabled={running || !to.trim()} onClick={() => setConfirmOpen(true)}>
+          {running ? "Sending…" : "Send real test message"}
         </Button>
+        <ConfirmRealSend to={to} open={confirmOpen} onOpenChange={setConfirmOpen} onConfirm={sendTest} />
       </div>
       <div className="rounded-lg border bg-card p-4">
         <h3 className="mb-3 font-medium">Response</h3>
@@ -721,5 +695,38 @@ function TestEndpointPanel({
         )}
       </div>
     </div>
+  );
+}
+
+/** The test endpoints call the production invoker: a real message goes out. */
+function RealSendNotice() {
+  return (
+    <div className="rounded-md border border-warning-border bg-warning-muted px-3 py-2 text-xs text-warning-foreground">
+      This sends a real WhatsApp message to the phone number, through this endpoint&apos;s channel. Meta may bill it,
+      and it is recorded as an execution. Your session authorizes it; no API key is needed.
+    </div>
+  );
+}
+
+function ConfirmRealSend({
+  to,
+  open,
+  onOpenChange,
+  onConfirm,
+}: {
+  to: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => Promise<void> | void;
+}) {
+  return (
+    <ConfirmDialog
+      open={open}
+      title="Send a real message?"
+      description={`A real WhatsApp message goes to ${to.trim() || "the number in the payload"}.`}
+      confirmLabel="Send"
+      onOpenChange={onOpenChange}
+      onConfirm={onConfirm}
+    />
   );
 }

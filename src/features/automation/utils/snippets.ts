@@ -27,13 +27,18 @@ export function generateSnippet(opts: {
   const { language, url, body } = opts;
   const json = JSON.stringify(body, null, 2);
   const compact = JSON.stringify(body);
+  // Each language embeds the JSON in its own string literal; escape what would end it early.
+  const shellQuoted = compact.replace(/'/g, "'\\''");
+  const phpQuoted = compact.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  const goRaw = compact.replace(/`/g, "` + \"`\" + `");
+  const javaQuoted = compact.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
   switch (language) {
     case "curl":
       return `curl -X POST '${url}' \\
   -H 'Authorization: Bearer oc_auto_YOUR_KEY' \\
   -H 'Content-Type: application/json' \\
-  -d '${compact}'`;
+  -d '${shellQuoted}'`;
     case "javascript":
       return `const res = await fetch('${url}', {
   method: 'POST',
@@ -67,7 +72,7 @@ import (
 )
 
 func main() {
-  body := []byte(\`${compact}\`)
+  body := []byte(\`${goRaw}\`)
   req, _ := http.NewRequest("POST", "${url}", bytes.NewBuffer(body))
   req.Header.Set("Authorization", "Bearer oc_auto_YOUR_KEY")
   req.Header.Set("Content-Type", "application/json")
@@ -85,7 +90,7 @@ curl_setopt_array($ch, [
     'Authorization: Bearer oc_auto_YOUR_KEY',
     'Content-Type: application/json',
   ],
-  CURLOPT_POSTFIELDS => '${compact}',
+  CURLOPT_POSTFIELDS => '${phpQuoted}',
   CURLOPT_RETURNTRANSFER => true,
 ]);
 echo curl_exec($ch);
@@ -117,7 +122,7 @@ HttpRequest request = HttpRequest.newBuilder()
     .uri(URI.create("${url}"))
     .header("Authorization", "Bearer oc_auto_YOUR_KEY")
     .header("Content-Type", "application/json")
-    .POST(HttpRequest.BodyPublishers.ofString("${compact.replace(/"/g, '\\"')}"))
+    .POST(HttpRequest.BodyPublishers.ofString("${javaQuoted}"))
     .build();
 HttpResponse<String> res = client.send(request, HttpResponse.BodyHandlers.ofString());
 System.out.println(res.body());`;

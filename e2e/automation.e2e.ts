@@ -64,3 +64,53 @@ test("automation wizard never offers placeholder templates", async ({ page, api 
   await expect(page.getByText("No approved templates")).toBeVisible();
   await expect(page.getByRole("button", { name: /shipping_update|welcome_new_customer|flash_sale_reminder/ })).toHaveCount(0);
 });
+
+// 7.5: "Test" sends a real message, so it asks first, needs no API key, and reports the real response.
+test("endpoint test send asks for confirmation and shows the live response", async ({ page, api }) => {
+  const endpoint = {
+    id: ENDPOINT_ID,
+    workspaceId: "ws",
+    name: "Kirim OTP",
+    slug: "kirim-otp",
+    description: "",
+    method: "POST",
+    status: "active",
+    actionType: "send_template",
+    actionConfig: {
+      templateId: TEMPLATE.id,
+      templateName: "kode_otp",
+      recipientMode: "phone",
+      variableMappings: [{ templateVariable: "1", apiParameter: "kode", required: true }],
+    },
+    createdAt: new Date(0).toISOString(),
+    updatedAt: new Date(0).toISOString(),
+    lastUsedAt: null,
+    stats: { totalCalls: 0, successRate: 0, failedCalls: 0, callsToday: 0, averageLatencyMs: 0 },
+  };
+  await signIn(page);
+  mockShell(api);
+  api.ok("GET", `/automation/endpoints/${ENDPOINT_ID}`, endpoint);
+  api.on("POST", `/automation/endpoints/${ENDPOINT_ID}/test`, (route) =>
+    route.fulfill({ json: { success: true, data: { executionId: "exec_1", status: "sent" } } }),
+  );
+
+  await page.goto(`/automation/endpoints/${ENDPOINT_ID}?tab=test`);
+  await expect(page.getByText(/sends a real WhatsApp message/)).toBeVisible();
+  await expect(page.getByText(/mock/i)).toHaveCount(0);
+
+  await page.getByLabel("Phone Number").fill("+628123");
+  await page.getByLabel(/^kode/).fill("277353");
+  await page.getByRole("button", { name: "Send real test message" }).click();
+
+  // Nothing is sent until the user confirms.
+  const dialog = page.getByRole("dialog", { name: "Send a real message?" });
+  await expect(dialog.getByText(/goes to \+628123/)).toBeVisible();
+  expect(callsTo(api, "POST", `/automation/endpoints/${ENDPOINT_ID}/test`)).toHaveLength(0);
+  await dialog.getByRole("button", { name: "Send" }).click();
+
+  await expect(page.getByText('"executionId": "exec_1"')).toBeVisible();
+  const sent = callsTo(api, "POST", `/automation/endpoints/${ENDPOINT_ID}/test`);
+  expect(sent).toHaveLength(1);
+  expect(sent[0].body).toEqual({ to: "+628123", kode: "277353" });
+  expect(api.unmatched.map((c) => `${c.method} ${c.path}`)).toEqual([]);
+});

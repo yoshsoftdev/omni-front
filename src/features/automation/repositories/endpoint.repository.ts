@@ -22,7 +22,7 @@ export interface EndpointRepository {
   invokeTest(id: string, body: Record<string, unknown>): Promise<InvokeResult>;
 }
 
-/** Uses live Automation APIs. Mock remains available for local UI demos. */
+/** Live Automation APIs. */
 export function getEndpointRepository(): EndpointRepository {
   return endpointRepositoryApi;
 }

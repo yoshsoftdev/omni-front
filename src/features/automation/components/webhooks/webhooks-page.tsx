@@ -1,12 +1,23 @@
 "use client";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { ChevronDown, ChevronRight, Plus, Webhook } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { Alert } from "@/components/shared/alert";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { FilterSelect } from "@/components/shared/filter-bar";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutomationNav } from "@/features/automation/components/automation-nav";
@@ -64,6 +75,7 @@ function channelLabel(channels: Channel[], channelId?: string | null): string {
 
 export function WebhooksPage() {
   const { notify, Toast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
   const [webhooks, setWebhooks] = useState<ForwardWebhook[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -223,9 +235,7 @@ export function WebhooksPage() {
   }
 
   async function handleDelete(item: ForwardWebhook) {
-    if (!window.confirm(`Delete webhook "${item.name}"? Inbound messages will stop being forwarded.`)) {
-      return;
-    }
+    if (!(await confirm({ title: "Delete webhook?", description: `Inbound messages stop being forwarded to "${item.name}".` }))) return;
     try {
       await webhookService.remove(item.id);
       notify("success", "Webhook deleted");
@@ -351,27 +361,26 @@ export function WebhooksPage() {
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Forward URL</th>
-                  <th className="px-4 py-3 font-medium">Channel</th>
-                  <th className="px-4 py-3 font-medium">Event</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Last used</th>
-                  <th className="px-4 py-3 font-medium" />
-                </tr>
-              </thead>
-              <tbody>
+          <DataTable className="">
+              <DataTableHead>
+                <DataTableRow>
+                  <DataTableHeaderCell>Name</DataTableHeaderCell>
+                  <DataTableHeaderCell>Forward URL</DataTableHeaderCell>
+                  <DataTableHeaderCell>Channel</DataTableHeaderCell>
+                  <DataTableHeaderCell>Event</DataTableHeaderCell>
+                  <DataTableHeaderCell>Status</DataTableHeaderCell>
+                  <DataTableHeaderCell>Last used</DataTableHeaderCell>
+                  <DataTableHeaderCell><span className="sr-only">Actions</span></DataTableHeaderCell>
+                </DataTableRow>
+              </DataTableHead>
+              <DataTableBody>
                 {webhooks.map((item) => {
                   const expanded = expandedId === item.id;
                   const rows = deliveries[item.id] ?? [];
                   return (
                     <Fragment key={item.id}>
-                      <tr className="border-b last:border-0">
-                        <td className="px-4 py-3">
+                      <DataTableRow>
+                        <DataTableCell>
                           <button
                             type="button"
                             className="flex items-start gap-1 text-left"
@@ -387,14 +396,14 @@ export function WebhooksPage() {
                               <code className="font-mono text-xs text-muted-foreground">{item.id}</code>
                             </span>
                           </button>
-                        </td>
-                        <td className="px-4 py-3">
+                        </DataTableCell>
+                        <DataTableCell>
                           <code className="break-all font-mono text-xs">{item.url}</code>
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </DataTableCell>
+                        <DataTableCell className="text-muted-foreground">
                           {channelLabel(channels, item.channelId)}
-                        </td>
-                        <td className="px-4 py-3">
+                        </DataTableCell>
+                        <DataTableCell>
                           <div className="flex flex-wrap gap-1">
                             {(item.events?.length ? item.events : ["message.received"]).map((event) => (
                               <StatusBadge key={event} tone="neutral">
@@ -405,14 +414,14 @@ export function WebhooksPage() {
                               <StatusBadge tone="warning">Only open + unassigned</StatusBadge>
                             ) : null}
                           </div>
-                        </td>
-                        <td className="px-4 py-3">
+                        </DataTableCell>
+                        <DataTableCell>
                           <StatusBadge status={item.status} />
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
+                        </DataTableCell>
+                        <DataTableCell className="text-muted-foreground">
                           {formatRelativeTime(item.lastUsedAt)}
-                        </td>
-                        <td className="px-4 py-3">
+                        </DataTableCell>
+                        <DataTableCell>
                           <div className="flex flex-wrap justify-end gap-2">
                             <Button type="button" variant="outline" size="sm" onClick={() => openEdit(item)}>
                               Edit
@@ -434,11 +443,11 @@ export function WebhooksPage() {
                               Delete
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </DataTableCell>
+                      </DataTableRow>
                       {expanded ? (
-                        <tr className="border-b bg-muted/20 last:border-0">
-                          <td colSpan={7} className="px-4 py-3">
+                        <DataTableRow>
+                          <DataTableCell colSpan={7} className="px-4 py-3">
                             <p className="mb-2 text-xs font-medium text-muted-foreground">
                               Recent deliveries
                             </p>
@@ -449,54 +458,51 @@ export function WebhooksPage() {
                                 Belum ada delivery. Kirim pesan uji ke channel untuk melihat log.
                               </p>
                             ) : (
-                              <div className="overflow-x-auto rounded-md border bg-card">
-                                <table className="w-full text-left text-xs">
-                                  <thead className="border-b bg-muted/40 text-muted-foreground">
-                                    <tr>
-                                      <th className="px-3 py-2 font-medium">Time</th>
-                                      <th className="px-3 py-2 font-medium">Status</th>
-                                      <th className="px-3 py-2 font-medium">HTTP</th>
-                                      <th className="px-3 py-2 font-medium">Error</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
+                              <DataTable className="rounded-md text-xs">
+                                  <DataTableHead>
+                                    <DataTableRow>
+                                      <DataTableHeaderCell>Time</DataTableHeaderCell>
+                                      <DataTableHeaderCell>Status</DataTableHeaderCell>
+                                      <DataTableHeaderCell>HTTP</DataTableHeaderCell>
+                                      <DataTableHeaderCell>Error</DataTableHeaderCell>
+                                    </DataTableRow>
+                                  </DataTableHead>
+                                  <DataTableBody>
                                     {rows.map((row) => (
-                                      <tr key={row.id} className="border-b last:border-0">
-                                        <td className="px-3 py-2 text-muted-foreground">
+                                      <DataTableRow key={row.id}>
+                                        <DataTableCell className="text-muted-foreground">
                                           {formatRelativeTime(row.attemptedAt)}
-                                        </td>
-                                        <td className="px-3 py-2">
+                                        </DataTableCell>
+                                        <DataTableCell>
                                           <StatusBadge status={row.status} />
-                                        </td>
-                                        <td className="px-3 py-2 font-mono">{row.statusCode || "—"}</td>
-                                        <td className="px-3 py-2 text-muted-foreground">
+                                        </DataTableCell>
+                                        <DataTableCell className="font-mono">{row.statusCode || "—"}</DataTableCell>
+                                        <DataTableCell className="text-muted-foreground">
                                           {row.errorMessage || "—"}
-                                        </td>
-                                      </tr>
+                                        </DataTableCell>
+                                      </DataTableRow>
                                     ))}
-                                  </tbody>
-                                </table>
-                              </div>
+                                  </DataTableBody>
+                              </DataTable>
                             )}
-                          </td>
-                        </tr>
+                          </DataTableCell>
+                        </DataTableRow>
                       ) : null}
                     </Fragment>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </DataTableBody>
+            </DataTable>
         )}
       </div>
 
       {editor ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg space-y-4 rounded-lg border bg-card p-5 shadow-sm">
+        <Dialog open onOpenChange={(next) => !next && setEditor(null)}>
+          <DialogContent className="max-w-lg" aria-describedby={undefined}>
             <div>
-              <h2 className="text-lg font-semibold">
+              <DialogTitle>
                 {editor.mode === "create" ? "Register webhook" : "Edit webhook"}
-              </h2>
+              </DialogTitle>
               <p className="text-sm text-muted-foreground">
                 Omni Chan akan meneruskan pesan inbound ke URL ini.
               </p>
@@ -524,23 +530,22 @@ export function WebhooksPage() {
 
             <div className="space-y-2">
               <Label htmlFor="webhook-channel">Channel filter (optional)</Label>
-              <select
+              <FilterSelect
                 id="webhook-channel"
+                label="Channel filter"
                 value={editor.channelId}
-                onChange={(e) =>
-                  setEditor((prev) => (prev ? { ...prev, channelId: e.target.value } : prev))
-                }
-                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-              >
-                <option value="">All channels</option>
-                {channels.map((ch) => (
-                  <option key={ch.id} value={ch.id}>
-                    {ch.label || ch.phone_number || ch.id}
-                    {ch.channel_type ? ` · ${ch.channel_type}` : ""}
-                    {ch.status !== "connected" ? ` (${ch.status})` : ""}
-                  </option>
-                ))}
-              </select>
+                onChange={(value) => setEditor((prev) => (prev ? { ...prev, channelId: value } : prev))}
+                options={[
+                  { value: "", label: "All channels" },
+                  ...channels.map((ch) => ({
+                    value: ch.id,
+                    label: `${ch.label || ch.phone_number || ch.id}${ch.channel_type ? ` · ${ch.channel_type}` : ""}${
+                      ch.status !== "connected" ? ` (${ch.status})` : ""
+                    }`,
+                  })),
+                ]}
+                className="h-9 w-full"
+              />
               {channels.length === 0 ? (
                 <p className="text-xs text-muted-foreground">
                   Belum ada channel ter-load. Pastikan channel WhatsApp/Instagram sudah terhubung di Devices.
@@ -583,15 +588,15 @@ export function WebhooksPage() {
                 {saving ? "Saving…" : "Save"}
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {secretModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md space-y-4 rounded-lg border bg-card p-5 shadow-sm">
+        <Dialog open onOpenChange={() => undefined}>
+          <DialogContent className="max-w-md" aria-describedby={undefined} onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} hideClose>
             <div>
-              <h2 className="text-lg font-semibold">Signing secret</h2>
+              <DialogTitle>Signing secret</DialogTitle>
               <p className="text-sm text-muted-foreground">
                 Verifikasi header <code className="font-mono text-xs">X-Omni-Signature-256</code> untuk{" "}
                 <strong>{secretModal.name}</strong>.
@@ -606,10 +611,11 @@ export function WebhooksPage() {
                 Done
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
+      {confirmDialog}
       <Toast />
     </div>
   );

@@ -1,12 +1,22 @@
 "use client";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { KeyRound, Plus } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 import { PageHeader } from "@/components/layout/page-header";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { ErrorState } from "@/components/shared/empty-state";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AutomationNav } from "@/features/automation/components/automation-nav";
@@ -26,6 +36,7 @@ const SCOPE_OPTIONS: Array<{ value: ApiKeyScope; label: string; available: boole
 
 export function ApiKeysPage() {
   const { notify, Toast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
   const [keys, setKeys] = useState<AutomationApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -71,11 +82,20 @@ export function ApiKeysPage() {
   }
 
   async function handleRotate(id: string) {
-    if (!window.confirm("Rotate this key? The old secret will stop working immediately.")) return;
-    const result = await apiKeyService.rotate(id);
-    setSecretModal({ name: result.key.name, secret: result.secret });
-    notify("success", "API key rotated");
-    void load();
+    const ok = await confirm({
+      title: "Rotate API key?",
+      description: "The old secret stops working immediately; update every client that uses it.",
+      confirmLabel: "Rotate",
+    });
+    if (!ok) return;
+    try {
+      const result = await apiKeyService.rotate(id);
+      setSecretModal({ name: result.key.name, secret: result.secret });
+      notify("success", "API key rotated");
+      void load();
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    }
   }
 
   async function handleToggle(key: AutomationApiKey) {
@@ -90,10 +110,14 @@ export function ApiKeysPage() {
   }
 
   async function handleDelete(key: AutomationApiKey) {
-    if (!window.confirm(`Delete API key "${key.name}"?`)) return;
-    await apiKeyService.remove(key.id);
-    notify("success", "API key deleted");
-    void load();
+    if (!(await confirm({ title: "Delete API key?", description: `Clients using "${key.name}" will get 401.` }))) return;
+    try {
+      await apiKeyService.remove(key.id);
+      notify("success", "API key deleted");
+      void load();
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+    }
   }
 
   return (
@@ -131,27 +155,26 @@ export function ApiKeysPage() {
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Key</th>
-                  <th className="px-4 py-3 font-medium">Scopes</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Last used</th>
-                  <th className="px-4 py-3 font-medium">Created</th>
-                  <th className="px-4 py-3 font-medium" />
-                </tr>
-              </thead>
-              <tbody>
+          <DataTable className="">
+              <DataTableHead>
+                <DataTableRow>
+                  <DataTableHeaderCell>Name</DataTableHeaderCell>
+                  <DataTableHeaderCell>Key</DataTableHeaderCell>
+                  <DataTableHeaderCell>Scopes</DataTableHeaderCell>
+                  <DataTableHeaderCell>Status</DataTableHeaderCell>
+                  <DataTableHeaderCell>Last used</DataTableHeaderCell>
+                  <DataTableHeaderCell>Created</DataTableHeaderCell>
+                  <DataTableHeaderCell><span className="sr-only">Actions</span></DataTableHeaderCell>
+                </DataTableRow>
+              </DataTableHead>
+              <DataTableBody>
                 {keys.map((key) => (
-                  <tr key={key.id} className="border-b last:border-0">
-                    <td className="px-4 py-3 font-medium">{key.name}</td>
-                    <td className="px-4 py-3">
+                  <DataTableRow key={key.id}>
+                    <DataTableCell>{key.name}</DataTableCell>
+                    <DataTableCell>
                       <code className="font-mono text-xs">{maskApiKey(key.keyPrefix)}</code>
-                    </td>
-                    <td className="px-4 py-3">
+                    </DataTableCell>
+                    <DataTableCell>
                       <div className="flex flex-wrap gap-1">
                         {key.scopes.map((scope) => (
                           <StatusBadge key={scope} tone="neutral">
@@ -159,13 +182,13 @@ export function ApiKeysPage() {
                           </StatusBadge>
                         ))}
                       </div>
-                    </td>
-                    <td className="px-4 py-3">
+                    </DataTableCell>
+                    <DataTableCell>
                       <StatusBadge status={key.status} />
-                    </td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatRelativeTime(key.lastUsedAt)}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{formatRelativeTime(key.createdAt)}</td>
-                    <td className="px-4 py-3">
+                    </DataTableCell>
+                    <DataTableCell className="text-muted-foreground">{formatRelativeTime(key.lastUsedAt)}</DataTableCell>
+                    <DataTableCell className="text-muted-foreground">{formatRelativeTime(key.createdAt)}</DataTableCell>
+                    <DataTableCell>
                       <div className="flex flex-wrap justify-end gap-2">
                         <Button type="button" variant="outline" size="sm" onClick={() => void handleRotate(key.id)}>
                           Rotate
@@ -177,20 +200,19 @@ export function ApiKeysPage() {
                           Delete
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </DataTableCell>
+                  </DataTableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </DataTableBody>
+            </DataTable>
         )}
       </div>
 
       {createOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md space-y-4 rounded-lg border bg-card p-5 shadow-sm">
+        <Dialog open onOpenChange={(next) => !next && setCreateOpen(false)}>
+          <DialogContent className="max-w-md" aria-describedby={undefined}>
             <div>
-              <h2 className="text-lg font-semibold">Create API key</h2>
+              <DialogTitle>Create API key</DialogTitle>
               <p className="text-sm text-muted-foreground">The secret is shown only once after creation.</p>
             </div>
             <div className="space-y-2">
@@ -235,15 +257,15 @@ export function ApiKeysPage() {
                 {saving ? "Creating…" : "Create"}
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
       {secretModal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md space-y-4 rounded-lg border bg-card p-5 shadow-sm">
+        <Dialog open onOpenChange={() => undefined}>
+          <DialogContent className="max-w-md" aria-describedby={undefined} onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()} hideClose>
             <div>
-              <h2 className="text-lg font-semibold">Save your API key</h2>
+              <DialogTitle>Save your API key</DialogTitle>
               <p className="text-sm text-muted-foreground">
                 Copy the secret for <strong>{secretModal.name}</strong>. You will not be able to see it again.
               </p>
@@ -257,10 +279,11 @@ export function ApiKeysPage() {
                 Done
               </Button>
             </div>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
       ) : null}
 
+      {confirmDialog}
       <Toast />
     </div>
   );

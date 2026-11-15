@@ -95,6 +95,7 @@ class ApiEndpointRepository implements EndpointRepository {
   async invokeTest(id: string, body: Record<string, unknown>): Promise<InvokeResult> {
     const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/v1";
     const tokens = (await import("@/store/auth-store")).useAuthStore.getState().tokens;
+    const started = performance.now();
     const response = await fetch(`${API_BASE_URL}/automation/endpoints/${id}/test`, {
       method: "POST",
       headers: {
@@ -103,11 +104,11 @@ class ApiEndpointRepository implements EndpointRepository {
       },
       body: JSON.stringify(body),
     });
-    const json = (await response.json()) as Record<string, unknown>;
+    const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
     return {
       success: response.ok && json.success !== false,
       statusCode: response.status,
-      latencyMs: 0,
+      latencyMs: Math.round(performance.now() - started),
       body: json,
     };
   }

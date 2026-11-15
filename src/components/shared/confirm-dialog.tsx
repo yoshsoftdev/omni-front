@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -58,4 +58,33 @@ export function ConfirmDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+type ConfirmOptions = { title: string; description: string; confirmLabel?: string };
+
+/**
+ * Awaitable confirm: `if (!(await confirm({ title, description }))) return;`.
+ * Render the returned `dialog` once in the component.
+ */
+export function useConfirm(): [(options: ConfirmOptions) => Promise<boolean>, ReactNode] {
+  const [pending, setPending] = useState<(ConfirmOptions & { resolve: (ok: boolean) => void }) | null>(null);
+  const confirm = useCallback(
+    (options: ConfirmOptions) => new Promise<boolean>((resolve) => setPending({ ...options, resolve })),
+    [],
+  );
+  const dialog = (
+    <ConfirmDialog
+      open={pending !== null}
+      title={pending?.title ?? ""}
+      description={pending?.description ?? ""}
+      confirmLabel={pending?.confirmLabel}
+      onConfirm={() => pending?.resolve(true)}
+      onOpenChange={(open) => {
+        if (open) return;
+        pending?.resolve(false); // no-op after a confirm: a promise settles once
+        setPending(null);
+      }}
+    />
+  );
+  return [confirm, dialog];
 }

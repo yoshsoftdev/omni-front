@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode } from "react";
+import type { ReactNode, TdHTMLAttributes } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -48,11 +48,13 @@ export function DataTableHeaderCell({
 export function DataTableCell({
   children,
   className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return <td className={cn("px-4 py-3 align-middle", className)}>{children}</td>;
+  ...props
+}: TdHTMLAttributes<HTMLTableCellElement> & { children: ReactNode }) {
+  return (
+    <td className={cn("px-4 py-3 align-middle", className)} {...props}>
+      {children}
+    </td>
+  );
 }
 
 export function DataTableEmpty({ message }: { message: string }) {

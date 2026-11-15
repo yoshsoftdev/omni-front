@@ -9,6 +9,7 @@ import { ArrowLeft, ArrowRight, Check, Search } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { StatusBadge } from "@/components/shared/status-badge";
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -361,19 +362,17 @@ export function CreateEndpointWizard() {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="send-text-channel">WhatsApp Channel</Label>
-                  <select
+                  <FilterSelect
                     id="send-text-channel"
-                    className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                    label="WhatsApp Channel"
                     value={sendTextChannelId}
-                    onChange={(e) => setSendTextChannelId(e.target.value)}
-                  >
-                    <option value="">Select channel</option>
-                    {(channelsQuery.data ?? []).map((ch) => (
-                      <option key={ch.id} value={ch.id}>
-                        {ch.label}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSendTextChannelId}
+                    options={[
+                      { value: "", label: "Select channel" },
+                      ...(channelsQuery.data ?? []).map((ch) => ({ value: ch.id, label: ch.label })),
+                    ]}
+                    className="h-9 w-full"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="send-text-parameter">Text Parameter</Label>

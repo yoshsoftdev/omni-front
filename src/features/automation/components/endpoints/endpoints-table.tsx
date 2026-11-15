@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import Link from "next/link";
 import { MoreHorizontal } from "lucide-react";
 
@@ -43,58 +51,57 @@ export function EndpointsTable({
 
   return (
     <>
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[960px] text-left text-sm">
-          <thead className="border-b bg-muted/40 text-xs text-muted-foreground">
-            <tr>
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Method</th>
-              <th className="px-4 py-3 font-medium">Endpoint URL</th>
-              <th className="px-4 py-3 font-medium">Action</th>
-              <th className="px-4 py-3 font-medium">Config</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Last Used</th>
-              <th className="px-4 py-3 font-medium">Calls</th>
-              <th className="px-4 py-3 font-medium">Success</th>
-              <th className="px-4 py-3 font-medium" />
-            </tr>
-          </thead>
-          <tbody>
+      <DataTable className="hidden md:block">
+          <DataTableHead>
+            <DataTableRow>
+              <DataTableHeaderCell>Name</DataTableHeaderCell>
+              <DataTableHeaderCell>Method</DataTableHeaderCell>
+              <DataTableHeaderCell>Endpoint URL</DataTableHeaderCell>
+              <DataTableHeaderCell>Action</DataTableHeaderCell>
+              <DataTableHeaderCell>Config</DataTableHeaderCell>
+              <DataTableHeaderCell>Status</DataTableHeaderCell>
+              <DataTableHeaderCell>Last Used</DataTableHeaderCell>
+              <DataTableHeaderCell>Calls</DataTableHeaderCell>
+              <DataTableHeaderCell>Success</DataTableHeaderCell>
+              <DataTableHeaderCell><span className="sr-only">Actions</span></DataTableHeaderCell>
+            </DataTableRow>
+          </DataTableHead>
+          <DataTableBody>
             {endpoints.map((endpoint) => {
               const templateName = isSendTemplateConfig(endpoint.actionConfig)
                 ? endpoint.actionConfig.templateName
                 : "—";
               const url = endpointInvokeUrl(endpoint.id);
               return (
-                <tr key={endpoint.id} className="border-b last:border-0 hover:bg-muted/20">
-                  <td className="px-4 py-3">
+                <DataTableRow key={endpoint.id} className="hover:bg-muted/20">
+                  <DataTableCell>
                     <Link href={`/automation/endpoints/${endpoint.id}`} className="font-medium hover:underline">
                       {endpoint.name}
                     </Link>
                     <p className="text-xs text-muted-foreground">{endpoint.slug}</p>
-                  </td>
-                  <td className="px-4 py-3">
+                  </DataTableCell>
+                  <DataTableCell>
                     <StatusBadge tone="info" status="POST" />
-                  </td>
-                  <td className="px-4 py-3">
+                  </DataTableCell>
+                  <DataTableCell>
                     <div className="flex max-w-[220px] items-center gap-2">
                       <code className="truncate font-mono text-xs">{endpoint.id}</code>
                       <CopyButton value={url} iconOnly className="h-7 px-2" />
                     </div>
-                  </td>
-                  <td className="px-4 py-3">{actionTypeLabel(endpoint.actionType)}</td>
-                  <td className="max-w-[160px] truncate px-4 py-3 text-muted-foreground">{templateName}</td>
-                  <td className="px-4 py-3">
+                  </DataTableCell>
+                  <DataTableCell>{actionTypeLabel(endpoint.actionType)}</DataTableCell>
+                  <DataTableCell className="max-w-[160px] truncate text-muted-foreground">{templateName}</DataTableCell>
+                  <DataTableCell>
                     <StatusBadge status={endpoint.status} />
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{formatRelativeTime(endpoint.lastUsedAt)}</td>
-                  <td className="px-4 py-3">{formatNumber(endpoint.stats.totalCalls)}</td>
-                  <td className="px-4 py-3">
+                  </DataTableCell>
+                  <DataTableCell className="text-muted-foreground">{formatRelativeTime(endpoint.lastUsedAt)}</DataTableCell>
+                  <DataTableCell>{formatNumber(endpoint.stats.totalCalls)}</DataTableCell>
+                  <DataTableCell>
                     <StatusBadge tone={successRateTone(endpoint.stats.successRate)}>
                       {endpoint.stats.successRate}%
                     </StatusBadge>
-                  </td>
-                  <td className="px-4 py-3">
+                  </DataTableCell>
+                  <DataTableCell>
                     <EndpointRowMenu
                       endpoint={endpoint}
                       onDisable={onDisable}
@@ -102,13 +109,12 @@ export function EndpointsTable({
                       onDuplicate={onDuplicate}
                       onDelete={onDelete}
                     />
-                  </td>
-                </tr>
+                  </DataTableCell>
+                </DataTableRow>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+          </DataTableBody>
+        </DataTable>
 
       <div className="space-y-3 p-4 md:hidden">
         {endpoints.map((endpoint) => (

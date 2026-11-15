@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { FilterBar, FilterSelect } from "@/components/shared/filter-bar";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
+import { useConfirm } from "@/components/shared/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { AutomationNav } from "@/features/automation/components/automation-nav";
 import { AutomationSummaryCards } from "@/features/automation/components/automation-summary-cards";
@@ -36,6 +37,7 @@ const ACTION_OPTIONS = [
 
 export function AutomationLandingPage({ showSummary = true }: { showSummary?: boolean }) {
   const { notify, Toast } = useToast();
+  const [confirm, confirmDialog] = useConfirm();
   const [summary, setSummary] = useState<AutomationSummary | null>(null);
   const [endpoints, setEndpoints] = useState<AutomationEndpoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +104,7 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
   async function handleDelete(id: string) {
     const target = endpoints.find((e) => e.id === id);
     if (!target) return;
-    if (!window.confirm(`Delete endpoint "${target.name}"? This cannot be undone.`)) return;
+    if (!(await confirm({ title: "Delete endpoint?", description: `"${target.name}" stops accepting requests. This cannot be undone.` }))) return;
     await endpointService.remove(id);
     notify("success", "Endpoint deleted");
     void load();
@@ -197,6 +199,7 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
         ) : null}
       </div>
 
+      {confirmDialog}
       <Toast />
     </div>
   );

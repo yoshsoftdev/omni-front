@@ -32,6 +32,7 @@ import {
   isBusinessVerifiedStatus,
 } from "@/features/channels/services/channel-payment.service";
 import type { Channel } from "@/features/channels/types/channel";
+import { isReady, whatsappReadiness } from "@/features/channels/utils/channel-readiness";
 import {
   connectionStatusLabel,
   formatConnectionMethod,
@@ -74,17 +75,12 @@ export function WhatsAppChannelDetail({
   onDelete,
 }: WhatsAppChannelDetailProps) {
   const paymentOk = payment?.status === "configured";
-  const paymentRestricted = payment?.status === "restricted";
-  const paymentUnavailable = payment?.status === "unavailable";
   const businessVerified = isBusinessVerifiedStatus(payment?.business_verification_status);
   const businessVerificationLabel = paymentLoading
     ? "Checking..."
     : formatBusinessVerificationLabel(payment?.business_verification_status);
-  const isReady =
-    channel.status === "connected" &&
-    paymentOk &&
-    businessVerified &&
-    (health?.healthy ?? channel.status === "connected");
+  const readiness = whatsappReadiness({ channel, payment, health });
+  const ready = isReady(readiness);
 
   const phoneActive = Boolean(health?.checks?.phone || channel.phone_number);
 
@@ -94,17 +90,6 @@ export function WhatsAppChannelDetail({
     else if (payment.status === "restricted") paymentMetricValue = "Restricted";
     else if (payment.status === "unavailable") paymentMetricValue = "Unavailable";
     else paymentMetricValue = "Missing";
-  }
-
-  let incompleteMessage = "Lengkapi setup channel WhatsApp.";
-  if (paymentRestricted) {
-    incompleteMessage = payment.message;
-  } else if (paymentUnavailable) {
-    incompleteMessage = payment.message;
-  } else if (!paymentOk) {
-    incompleteMessage = payment?.message ?? "Metode pembayaran belum dikonfigurasi.";
-  } else if (!businessVerified) {
-    incompleteMessage = "Business verification belum verified di Meta Business Manager.";
   }
 
   return (
@@ -197,7 +182,11 @@ export function WhatsAppChannelDetail({
       }
       sidebar={
         <div className="space-y-4">
-          <ChannelReadyCard isReady={isReady} incompleteMessage={incompleteMessage} />
+          <ChannelReadyCard
+            isReady={ready}
+            items={readiness}
+            incompleteMessage="Fix the items marked above; the channel cannot send until they pass."
+          />
           <ChannelQuickActionsCard
             actions={[
               { href: "/inbox", icon: Inbox, label: "Go to Inbox" },

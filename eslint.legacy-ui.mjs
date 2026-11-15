@@ -14,7 +14,6 @@ export const legacyUiFiles = [
   "src/features/broadcast/components/shared/payment-required-dialog.tsx",
   "src/features/broadcast/components/shared/whatsapp-message-preview.tsx",
   "src/features/broadcast/components/templates-page.tsx",
-  "src/features/channels/components/add-channel-modal.tsx",
   "src/features/settings/components/quick-replies-page.tsx",
   "src/features/settings/components/quick-reply-form-modal.tsx",
   "src/features/team/components/invitation-success-dialog.tsx",

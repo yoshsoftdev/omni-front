@@ -3,7 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronRight, Plus } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProviderIcon } from "@/components/shared/provider-badge";
 import { AddChannelModal } from "@/features/channels/components/add-channel-modal";
 import { ChannelConnectionBadge } from "@/features/channels/components/detail/channel-detail-primitives";
@@ -74,6 +77,8 @@ export function ChannelsManagementPage() {
   const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null);
 
   const [connectOpen, setConnectOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showSyncSection, setShowSyncSection] = useState(false);
 
   const loadChannels = useCallback(async () => {
@@ -266,23 +271,32 @@ export function ChannelsManagementPage() {
     window.open("https://business.facebook.com/", "_blank", "noopener,noreferrer");
   }
 
-  async function handleDeleteChannel() {
+  async function deleteSelectedChannel() {
     if (!selectedChannel || !canManage) return;
-    if (!confirm(`Delete channel "${selectedChannel.label}"?`)) return;
-    await channelCommandService.deleteChannel(selectedChannel.id);
-    setSelectedChannelId(null);
-    await loadChannels();
+    try {
+      await channelCommandService.deleteChannel(selectedChannel.id);
+      setSelectedChannelId(null);
+      await loadChannels();
+    } catch (err) {
+      setDeleteError(formatApiErrorMessage(err));
+    }
   }
 
   const listKinds: ChannelKind[] =
     providerFilter === "all" ? ["whatsapp", "instagram", "messenger"] : [providerFilter];
 
   if (loading) {
-    return <p className="p-6 text-sm text-muted-foreground">Loading channels...</p>;
+    return (
+      <div className="space-y-3 p-6" aria-busy="true" aria-label="Loading channels">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full max-w-sm rounded-lg" />
+        ))}
+      </div>
+    );
   }
 
   if (error) {
-    return <p className="p-6 text-sm text-destructive">{error}</p>;
+    return <ErrorState message={error} onRetry={() => void loadChannels()} className="m-6" />;
   }
 
   if (channels.length === 0) {
@@ -406,7 +420,7 @@ export function ChannelsManagementPage() {
           onRefreshPayment={() => void refreshPaymentStatus(selectedChannel.id)}
           onOpenPayment={() => void handleOpenPayment()}
           onOpenMeta={handleOpenMeta}
-          onDelete={() => void handleDeleteChannel()}
+          onDelete={() => setDeleteOpen(true)}
         />
       ) : null}
 
@@ -420,7 +434,7 @@ export function ChannelsManagementPage() {
           showSyncSection={showSyncSection}
           onShowSync={() => setShowSyncSection(true)}
           onRefresh={() => void loadDetail(selectedChannel)}
-          onDelete={() => void handleDeleteChannel()}
+          onDelete={() => setDeleteOpen(true)}
         />
       ) : null}
 
@@ -433,7 +447,7 @@ export function ChannelsManagementPage() {
           showSyncSection={showSyncSection}
           onShowSync={() => setShowSyncSection(true)}
           onRefresh={() => void loadDetail(selectedChannel)}
-          onDelete={() => void handleDeleteChannel()}
+          onDelete={() => setDeleteOpen(true)}
         />
       ) : null}
 
@@ -452,6 +466,18 @@ export function ChannelsManagementPage() {
         }}
         canManage={canManage}
       />
+      <ConfirmDialog
+        open={deleteOpen}
+        title="Delete channel?"
+        description={`"${selectedChannel?.label ?? "This channel"}" stops receiving and sending messages. Conversations stay in the inbox.`}
+        onOpenChange={setDeleteOpen}
+        onConfirm={deleteSelectedChannel}
+      />
+      {deleteError ? (
+        <p role="alert" className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-md border border-error-border bg-error-muted px-3 py-2 text-sm text-error-foreground">
+          {deleteError}
+        </p>
+      ) : null}
     </div>
   );
 }

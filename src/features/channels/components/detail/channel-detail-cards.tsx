@@ -2,7 +2,7 @@
 
 import { useState, type ComponentType, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronRight, HelpCircle, RefreshCw } from "lucide-react";
+import { CheckCircle2, ChevronRight, HelpCircle, Loader2, RefreshCw, XCircle } from "lucide-react";
 
 import { Alert } from "@/components/shared/alert";
 import {
@@ -17,6 +17,7 @@ import {
   type ChannelKind,
 } from "@/features/channels/utils/channel-display";
 import type { Channel } from "@/features/channels/types/channel";
+import type { ReadinessItem } from "@/features/channels/utils/channel-readiness";
 import { cn } from "@/lib/utils";
 
 export type StatusMetricItem = {
@@ -264,14 +265,37 @@ export function ChannelReadyCard({
   isReady,
   readyMessage,
   incompleteMessage,
+  items,
 }: {
   isReady: boolean;
   readyMessage?: string;
   incompleteMessage?: string;
+  /** When given, every requirement is listed with its fix. */
+  items?: ReadinessItem[];
 }) {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <h3 className="text-sm font-semibold text-foreground">Readiness</h3>
+      {items ? (
+        <ul className="mt-3 space-y-2" aria-label="Readiness checklist">
+          {items.map((item) => (
+            <li key={item.key} className="flex items-start gap-2 text-sm">
+              {item.ok === null ? (
+                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-muted-foreground" aria-hidden />
+              ) : item.ok ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-success-foreground" aria-hidden />
+              ) : (
+                <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-error-foreground" aria-hidden />
+              )}
+              <span className="min-w-0">
+                <span className="font-medium">{item.label}</span>
+                <span className="sr-only">: {item.ok === null ? "checking" : item.ok ? "done" : "needs attention"}</span>
+                {item.ok === false ? <span className="block text-xs text-muted-foreground">{item.hint}</span> : null}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <div className="mt-3">
         {isReady ? (
           <Alert variant="success" title="Everything is Ready!">

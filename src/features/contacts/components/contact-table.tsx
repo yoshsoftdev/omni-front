@@ -8,7 +8,21 @@ import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { ProviderBadge } from "@/components/shared/provider-badge";
 import { SourceIcon, sourceLabel } from "@/components/shared/source-icon";
 import { TagBadgeList } from "@/components/shared/tag-badge";
+import {
+  DataTable,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+} from "@/components/shared/data-table";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { contactProviderKinds } from "@/features/contacts/utils/contact-identity";
 import type { Contact } from "@/types/contact";
 
@@ -26,110 +40,137 @@ function formatCreated(date: string) {
   return new Date(date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
+const COLUMNS = [
+  "Contact Name",
+  "Customer Name",
+  "Providers",
+  "Email",
+  "Subscription",
+  "Tags",
+  "Company",
+  "City",
+  "Source",
+  "Last Interaction",
+  "Created At",
+  "Actions",
+];
+
 export function ContactTable({
   contacts,
+  selectedIds,
+  onSelectionChange,
   onRowClick,
   onView,
   onEdit,
   onDelete,
 }: {
   contacts: Contact[];
+  /** Ids of contacts ticked for a bulk action. */
+  selectedIds: Set<string>;
+  onSelectionChange: (ids: Set<string>) => void;
   onRowClick: (contact: Contact) => void;
   onView?: (contact: Contact) => void;
   onEdit?: (contact: Contact) => void;
   onDelete?: (contact: Contact) => void;
 }) {
   const router = useRouter();
+  const allSelected = contacts.length > 0 && contacts.every((c) => selectedIds.has(c.id));
+  const someSelected = !allSelected && contacts.some((c) => selectedIds.has(c.id));
+
+  function toggle(id: string, checked: boolean) {
+    const next = new Set(selectedIds);
+    if (checked) next.add(id);
+    else next.delete(id);
+    onSelectionChange(next);
+  }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full min-w-[1200px] text-sm">
-        <thead>
-          <tr className="border-b text-left text-muted-foreground">
-            <th className="p-4 font-medium">Contact Name</th>
-            <th className="p-4 font-medium">Customer Name</th>
-            <th className="p-4 font-medium">Providers</th>
-            <th className="p-4 font-medium">Email</th>
-            <th className="p-4 font-medium">Subscription</th>
-            <th className="p-4 font-medium">Tags</th>
-            <th className="p-4 font-medium">Company</th>
-            <th className="p-4 font-medium">City</th>
-            <th className="p-4 font-medium">Source</th>
-            <th className="p-4 font-medium">Last Interaction</th>
-            <th className="p-4 font-medium">Created At</th>
-            <th className="p-4 font-medium">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {contacts.map((contact, index) => (
-            <tr
-              key={contact.id || `contact-${index}`}
-              className="cursor-pointer border-b last:border-0 hover:bg-muted/40"
-              onClick={() => onRowClick(contact)}
-            >
-              <td className="p-4">
-                <div className="flex items-center gap-3">
-                  <ContactAvatar name={contact.contact_name} src={contact.avatar_url} />
-                  <span className="font-medium">{contact.contact_name}</span>
-                </div>
-              </td>
-              <td className="p-4 text-muted-foreground">{contact.customer_name || "—"}</td>
-              <td className="p-4">
-                <div className="flex flex-wrap gap-1">
-                  {contactProviderKinds(contact).map((provider) => (
-                    <ProviderBadge key={provider} provider={provider} compact />
-                  ))}
-                </div>
-              </td>
-              <td className="p-4 text-muted-foreground">{contact.email ?? "—"}</td>
-              <td className="p-4"><ConsentBadge status={contact.consent_status} /></td>
-              <td className="p-4"><TagBadgeList tags={contact.tags} /></td>
-              <td className="p-4 text-muted-foreground">{contact.company ?? "—"}</td>
-              <td className="p-4 text-muted-foreground">{contact.city ?? "—"}</td>
-              <td className="p-4">
-                <span className="inline-flex items-center gap-1.5 text-muted-foreground">
-                  <SourceIcon source={contact.source} />
-                  {sourceLabel(contact.source)}
-                </span>
-              </td>
-              <td className="p-4 text-muted-foreground">{formatActivity(contact.last_activity_at)}</td>
-              <td className="p-4 text-muted-foreground">{formatCreated(contact.created_at)}</td>
-              <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => (onView ?? onRowClick)(contact)} title="View">
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => onEdit?.(contact)} title="Edit">
-                    <Edit3 className="h-4 w-4" />
-                  </Button>
-                  <div className="relative">
-                    <select
-                      className="absolute inset-0 cursor-pointer opacity-0"
-                      defaultValue=""
-                      onChange={(e) => {
-                        const action = e.target.value;
-                        e.target.value = "";
-                        if (action === "inbox") {
-                          router.push(`/inbox?contact=${contact.id}`);
-                        } else if (action === "delete") {
-                          onDelete?.(contact);
-                        }
-                      }}
-                    >
-                      <option value="" disabled>More</option>
-                      <option value="inbox">Open in Inbox</option>
-                      <option value="delete">Delete Contact</option>
-                    </select>
-                    <Button variant="ghost" size="sm" title="More actions">
+    <DataTable className="rounded-none border-0">
+      <DataTableHead>
+        <DataTableRow>
+          <DataTableHeaderCell className="w-10">
+            <input
+              type="checkbox"
+              aria-label="Select all contacts on this page"
+              checked={allSelected}
+              ref={(el) => {
+                if (el) el.indeterminate = someSelected;
+              }}
+              onChange={(e) => onSelectionChange(e.target.checked ? new Set(contacts.map((c) => c.id)) : new Set())}
+            />
+          </DataTableHeaderCell>
+          {COLUMNS.map((column) => (
+            <DataTableHeaderCell key={column} className="whitespace-nowrap">
+              {column}
+            </DataTableHeaderCell>
+          ))}
+        </DataTableRow>
+      </DataTableHead>
+      <DataTableBody>
+        {contacts.map((contact, index) => (
+          <DataTableRow
+            key={contact.id || `contact-${index}`}
+            className="cursor-pointer hover:bg-muted/40"
+          >
+            <DataTableCell>
+              <input
+                type="checkbox"
+                aria-label={`Select ${contact.contact_name}`}
+                checked={selectedIds.has(contact.id)}
+                onChange={(e) => toggle(contact.id, e.target.checked)}
+              />
+            </DataTableCell>
+            <DataTableCell>
+              <button type="button" className="flex items-center gap-3 text-left" onClick={() => onRowClick(contact)}>
+                <ContactAvatar name={contact.contact_name} src={contact.avatar_url} />
+                <span className="font-medium">{contact.contact_name}</span>
+              </button>
+            </DataTableCell>
+            <DataTableCell className="text-muted-foreground">{contact.customer_name || "—"}</DataTableCell>
+            <DataTableCell>
+              <div className="flex flex-wrap gap-1">
+                {contactProviderKinds(contact).map((provider) => (
+                  <ProviderBadge key={provider} provider={provider} compact />
+                ))}
+              </div>
+            </DataTableCell>
+            <DataTableCell className="text-muted-foreground">{contact.email ?? "—"}</DataTableCell>
+            <DataTableCell><ConsentBadge status={contact.consent_status} /></DataTableCell>
+            <DataTableCell><TagBadgeList tags={contact.tags} /></DataTableCell>
+            <DataTableCell className="text-muted-foreground">{contact.company ?? "—"}</DataTableCell>
+            <DataTableCell className="text-muted-foreground">{contact.city ?? "—"}</DataTableCell>
+            <DataTableCell>
+              <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-muted-foreground">
+                <SourceIcon source={contact.source} />
+                {sourceLabel(contact.source)}
+              </span>
+            </DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-muted-foreground">{formatActivity(contact.last_activity_at)}</DataTableCell>
+            <DataTableCell className="whitespace-nowrap text-muted-foreground">{formatCreated(contact.created_at)}</DataTableCell>
+            <DataTableCell>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="sm" onClick={() => (onView ?? onRowClick)(contact)} aria-label={`View ${contact.contact_name}`}>
+                  <Eye className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => onEdit?.(contact)} aria-label={`Edit ${contact.contact_name}`}>
+                  <Edit3 className="h-4 w-4" />
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" aria-label={`More actions for ${contact.contact_name}`}>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
-                  </div>
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onSelect={() => router.push(`/inbox?contact=${contact.id}`)}>Open in Inbox</DropdownMenuItem>
+                    <DropdownMenuItem destructive onSelect={() => onDelete?.(contact)}>Delete Contact</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </DataTableCell>
+          </DataTableRow>
+        ))}
+      </DataTableBody>
+    </DataTable>
   );
 }

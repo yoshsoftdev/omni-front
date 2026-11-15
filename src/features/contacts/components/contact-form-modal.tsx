@@ -1,8 +1,16 @@
 "use client";
 
-import { X } from "lucide-react";
 
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   ContactCustomFieldsForm,
@@ -53,27 +61,24 @@ export function ContactFormModal({
   saving = false,
 }: ContactFormModalProps) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border bg-card p-5 shadow-lg">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">{title}</h3>
-            <p className="text-sm text-muted-foreground">All fields are available for future segment rules.</p>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Close">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <Dialog open onOpenChange={(next) => !next && !saving && onClose()}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>All fields are available for future segment rules.</DialogDescription>
+        </DialogHeader>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-3 md:col-span-2">
             <Input
+              aria-label="Contact Name"
               placeholder="Contact Name (Inbox Display) *"
               value={values.contact_name}
               onChange={(e) => onChange({ ...values, contact_name: e.target.value })}
               data-segment-field="contact_name"
             />
             <Input
+              aria-label="Customer Name"
               placeholder="Customer Name (WhatsApp Profile)"
               value={values.customer_name}
               onChange={(e) => onChange({ ...values, customer_name: e.target.value })}
@@ -81,6 +86,7 @@ export function ContactFormModal({
             />
             <div className="grid gap-3 md:grid-cols-2">
               <Input
+                aria-label="Phone"
                 placeholder="Phone (E.164) *"
                 value={values.phone}
                 readOnly={phoneReadOnly}
@@ -88,6 +94,7 @@ export function ContactFormModal({
                 data-segment-field="phone"
               />
               <Input
+                aria-label="Email"
                 placeholder="Email"
                 value={values.email}
                 onChange={(e) => onChange({ ...values, email: e.target.value })}
@@ -97,20 +104,23 @@ export function ContactFormModal({
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Subscription</label>
-            <select
-              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            <label htmlFor="contact-form-subscription" className="text-xs text-muted-foreground">Subscription</label>
+            <FilterSelect
+              id="contact-form-subscription"
+              label="Subscription"
               value={values.consent_status}
-              onChange={(e) => onChange({ ...values, consent_status: e.target.value as ConsentStatus })}
-              data-segment-field="marketing_status"
-            >
-              <option value="opt_in">Subscribed</option>
-              <option value="opt_out">Unsubscribed</option>
-              <option value="unknown">Unknown</option>
-            </select>
+              onChange={(value) => onChange({ ...values, consent_status: value as ConsentStatus })}
+              options={[
+                { value: "opt_in", label: "Subscribed" },
+                { value: "opt_out", label: "Unsubscribed" },
+                { value: "unknown", label: "Unknown" },
+              ]}
+              className="w-full"
+            />
           </div>
 
           <Input
+            aria-label="Company"
             placeholder="Company"
             value={values.company}
             onChange={(e) => onChange({ ...values, company: e.target.value })}
@@ -118,6 +128,7 @@ export function ContactFormModal({
           />
 
           <Input
+            aria-label="Country"
             placeholder="Country (ISO, e.g. ID)"
             value={values.country}
             maxLength={2}
@@ -125,18 +136,21 @@ export function ContactFormModal({
             data-segment-field="country"
           />
           <Input
+            aria-label="Province"
             placeholder="Province"
             value={values.province}
             onChange={(e) => onChange({ ...values, province: e.target.value })}
             data-segment-field="province"
           />
           <Input
+            aria-label="City"
             placeholder="City"
             value={values.city}
             onChange={(e) => onChange({ ...values, city: e.target.value })}
             data-segment-field="city"
           />
           <Input
+            aria-label="Job Title"
             placeholder="Job Title"
             value={values.job_title}
             onChange={(e) => onChange({ ...values, job_title: e.target.value })}
@@ -155,6 +169,7 @@ export function ContactFormModal({
           <div className="md:col-span-2 space-y-2">
             <label className="text-xs font-medium text-muted-foreground">Notes</label>
             <textarea
+              aria-label="Notes"
               className="min-h-[88px] w-full rounded-md border bg-background p-3 text-sm"
               placeholder="Internal notes about this contact"
               value={values.notes}
@@ -173,16 +188,16 @@ export function ContactFormModal({
           </div>
         </div>
 
-        <div className="mt-5 flex justify-end gap-2">
+        <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>
             Cancel
           </Button>
           <Button onClick={onSubmit} disabled={saving}>
             {saving ? "Saving..." : submitLabel}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

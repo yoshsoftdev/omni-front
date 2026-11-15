@@ -11,6 +11,7 @@ import { RightDrawer, RightDrawerBody, RightDrawerHeader, RightDrawerTabs } from
 import { SourceIcon, sourceLabel } from "@/components/shared/source-icon";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ContactCustomFieldsReadOnly } from "@/features/contacts/components/contact-custom-fields-form";
 import { ContactChannels } from "@/features/contacts/components/contact-channels";
 import {
@@ -428,11 +429,12 @@ export function ContactDetailDrawer({
         </RightDrawerBody>
       </RightDrawer>
 
-      {consentOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-lg border bg-card p-5">
-            <h4 className="font-semibold">Change Subscription</h4>
-            <div className="mt-3 space-y-2">
+      <Dialog open={consentOpen} onOpenChange={(next) => !saving && setConsentOpen(next)}>
+        <DialogContent className="max-w-sm gap-3" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle className="text-base">Change Subscription</DialogTitle>
+          </DialogHeader>
+            <div className="space-y-2">
               {(["opt_in", "opt_out", "unknown"] as ConsentStatus[]).map((s) => (
                 <button
                   key={s}
@@ -446,16 +448,16 @@ export function ContactDetailDrawer({
                 </button>
               ))}
             </div>
-            <Button variant="outline" className="mt-3 w-full" onClick={() => setConsentOpen(false)}>Cancel</Button>
-          </div>
-        </div>
-      ) : null}
+            <Button variant="outline" className="w-full" onClick={() => setConsentOpen(false)}>Cancel</Button>
+        </DialogContent>
+      </Dialog>
 
-      {tagOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-lg border bg-card p-5">
-            <h4 className="font-semibold">Add Tag</h4>
-            <div className="mt-3 max-h-60 space-y-2 overflow-y-auto">
+      <Dialog open={tagOpen} onOpenChange={(next) => !saving && setTagOpen(next)}>
+        <DialogContent className="max-w-sm gap-3" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle className="text-base">Add Tag</DialogTitle>
+          </DialogHeader>
+            <div className="max-h-60 space-y-2 overflow-y-auto">
               {tags.filter((t) => !contact.tags.some((ct) => ct.id === t.id)).length === 0 ? (
                 <p className="text-sm text-muted-foreground">No tags available to add.</p>
               ) : (
@@ -473,10 +475,9 @@ export function ContactDetailDrawer({
                 ))
               )}
             </div>
-            <Button variant="outline" className="mt-3 w-full" onClick={() => setTagOpen(false)}>Cancel</Button>
-          </div>
-        </div>
-      ) : null}
+            <Button variant="outline" className="w-full" onClick={() => setTagOpen(false)}>Cancel</Button>
+        </DialogContent>
+      </Dialog>
 
       {editOpen ? (
         <ContactFormModal

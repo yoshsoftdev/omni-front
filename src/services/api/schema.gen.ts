@@ -519,6 +519,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/contacts/import/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import contacts from a CSV file
+         * @description Synchronous, up to 5000 rows and 10 MB. Existing phone numbers are updated with the non-empty fields of the row; new ones are created with source `import`. Bad rows are skipped and reported by file line.
+         */
+        post: operations["contactsImportCsv"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/contacts/import/excel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import contacts from the first sheet of an .xlsx file
+         * @description Synchronous, up to 5000 rows and 10 MB. Existing phone numbers are updated with the non-empty fields of the row; new ones are created with source `import`. Bad rows are skipped and reported by file line.
+         */
+        post: operations["contactsImportExcel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/contacts/{id}": {
         parameters: {
             query?: never;
@@ -2795,6 +2835,16 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        ContactImportResult: {
+            created: number;
+            updated: number;
+            skipped: number;
+            errors?: {
+                /** @description 1-based line in the uploaded file */
+                line: number;
+                message: string;
+            }[];
+        };
         ContactLastCampaignRef: {
             /** Format: uuid */
             id: string;
@@ -4806,6 +4856,9 @@ export interface operations {
                 page_size?: components["parameters"]["PageSizeParam"];
                 consent_status?: string;
                 marketing_status?: string;
+                source?: "whatsapp" | "import" | "manual" | "api" | "meta_inbound" | "ig";
+                /** @description Case-insensitive substring match */
+                city?: string;
                 search?: string;
                 tag_id?: string;
             };
@@ -4861,6 +4914,72 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             default: components["responses"]["Error"];
+        };
+    };
+    contactsImportCsv: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** @description JSON object of file column header to field (name, phone, email, notes, city, company; empty string skips the column). Without it, common header names are recognised, and a file without a header is read as name, phone, email, notes. */
+                    mapping?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ContactImportResult"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    contactsImportExcel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                    /** @description JSON object of file column header to field (name, phone, email, notes, city, company; empty string skips the column). Without it, common header names are recognised, and a file without a header is read as name, phone, email, notes. */
+                    mapping?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["ContactImportResult"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
         };
     };
     contactsGet: {

@@ -1,8 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { MessageSquare, Split } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { ProviderBadge, SourceOfTruthBadge } from "@/components/shared/provider-badge";
 import { Button } from "@/components/ui/button";
@@ -81,11 +83,9 @@ export function ContactChannels({
 }) {
   const router = useRouter();
 
+  const [pendingSeparate, setPendingSeparate] = useState<ProviderProfile | null>(null);
+
   async function separateChannel(profile: ProviderProfile) {
-    const confirmed = window.confirm(
-      `Separate this ${profile.provider} channel into its own contact? Conversation history will remain unchanged.`,
-    );
-    if (!confirmed) return;
     await contactService.unlinkProvider(profile.id);
     await onRefresh();
   }
@@ -169,7 +169,7 @@ export function ContactChannels({
                 size="sm"
                 variant="ghost"
                 className="text-destructive"
-                onClick={() => void separateChannel(profile)}
+                onClick={() => setPendingSeparate(profile)}
               >
                 <Split className="mr-1.5 h-3.5 w-3.5" />
                 Separate Contact
@@ -178,6 +178,14 @@ export function ContactChannels({
           </div>
         ))}
       </div>
+      <ConfirmDialog
+        open={pendingSeparate !== null}
+        title="Separate channel?"
+        description={`Separate this ${pendingSeparate?.provider ?? ""} channel into its own contact? Conversation history will remain unchanged.`}
+        confirmLabel="Separate"
+        onOpenChange={(open) => !open && setPendingSeparate(null)}
+        onConfirm={() => (pendingSeparate ? separateChannel(pendingSeparate) : undefined)}
+      />
     </section>
   );
 }

@@ -3,4 +3,6 @@ export const CONTACT_SOURCES: { value: string; label: string }[] = [
   { value: "import", label: "Import" },
   { value: "manual", label: "Manual" },
   { value: "api", label: "API" },
+  { value: "meta_inbound", label: "Inbound message" },
+  { value: "ig", label: "Instagram" },
 ];

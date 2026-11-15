@@ -71,6 +71,8 @@ export const contactService = {
     if (params?.search) query.set("search", params.search);
     if (params?.tag_id) query.set("tag_id", params.tag_id);
     if (params?.consent_status) query.set("consent_status", params.consent_status);
+    if (params?.source) query.set("source", params.source);
+    if (params?.city) query.set("city", params.city);
     const response = await apiClient.get<PageResponse<Contact>>(`/contacts?${query.toString()}`);
     const rows = response.data?.items ?? response.data?.contacts ?? [];
     return {
@@ -175,13 +177,15 @@ export const contactService = {
     emitContactsUpdated(id);
   },
 
-  async importCSV(file: File) {
-    const response = await apiClient.upload<ContactImportResult>("/contacts/import/csv", file);
-    return response.data!;
-  },
-
-  async importExcel(file: File) {
-    const response = await apiClient.upload<ContactImportResult>("/contacts/import/excel", file);
+  /** `mapping` is file column header → contact field ("" skips the column). */
+  async importFile(file: File, mapping?: Record<string, string>) {
+    const path = file.name.toLowerCase().endsWith(".xlsx") ? "/contacts/import/excel" : "/contacts/import/csv";
+    const response = await apiClient.upload<ContactImportResult>(
+      path,
+      file,
+      mapping && Object.keys(mapping).length > 0 ? { mapping: JSON.stringify(mapping) } : undefined,
+    );
+    emitContactsUpdated();
     return response.data!;
   },
 };

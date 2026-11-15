@@ -6,6 +6,14 @@ import { ArrowLeftRight, Search } from "lucide-react";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { ProviderBadge } from "@/components/shared/provider-badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { contactService } from "@/features/contacts/services/contact.service";
 import type { Contact } from "@/types/contact";
@@ -54,18 +62,21 @@ export function LinkContactDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-xl border bg-card p-5 shadow-xl">
-        <h3 className="font-semibold">Link Contact</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Create a shortcut between two contacts. No channels, conversations, or CRM fields are moved or merged.
-        </p>
+    <Dialog open onOpenChange={(next) => !next && !saving && onClose()}>
+      <DialogContent className="max-w-lg gap-0">
+        <DialogHeader>
+          <DialogTitle className="text-base">Link Contact</DialogTitle>
+          <DialogDescription className="text-xs">
+            Create a shortcut between two contacts. No channels, conversations, or CRM fields are moved or merged.
+          </DialogDescription>
+        </DialogHeader>
         <div className="relative mt-4">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             className="pl-9"
+            aria-label="Search contacts"
             placeholder="Search contacts"
           />
         </div>
@@ -112,13 +123,13 @@ export function LinkContactDialog({
           </div>
         ) : null}
 
-        <div className="mt-5 flex justify-end gap-2">
+        <DialogFooter className="mt-5">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button disabled={!selected || saving} onClick={() => void confirm()}>
             {saving ? "Linking..." : "Confirm Link"}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

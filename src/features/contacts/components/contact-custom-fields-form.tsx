@@ -1,5 +1,6 @@
 "use client";
 
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Input } from "@/components/ui/input";
 import type { ContactFieldDefinition } from "@/types/contact";
 
@@ -51,17 +52,17 @@ export function ContactCustomFieldsForm({
           return (
             <div key={field.id} className="space-y-1">
               <label htmlFor={inputId} className="text-xs text-muted-foreground">{field.label}</label>
-              <select
+              <FilterSelect
                 id={inputId}
-                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                label={field.label}
                 value={String(current ?? "")}
-                onChange={(e) => update(field.field_key, e.target.value || null)}
-              >
-                <option value="">Select {field.label}</option>
-                {(field.options ?? []).map((option) => (
-                  <option key={option} value={option}>{option}</option>
-                ))}
-              </select>
+                onChange={(value) => update(field.field_key, value || null)}
+                options={[
+                  { value: "", label: `Select ${field.label}` },
+                  ...(field.options ?? []).map((option) => ({ value: option, label: option })),
+                ]}
+                className="w-full"
+              />
             </div>
           );
         }

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { SegmentTable } from "@/features/contacts/components/segments/segment-table";
@@ -22,6 +24,7 @@ export function SegmentsListPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const sorted = useMemo(() => [...segments].sort((a, b) => a.name.localeCompare(b.name)), [segments]);
 
   useEffect(() => {
@@ -76,33 +79,41 @@ export function SegmentsListPage() {
         ) : (
           <SegmentTable
             segments={sorted}
-            onDelete={async (id) => {
-              if (!id) return notify("error", "Segment id is missing");
-              if (!confirm("Delete segment?")) return;
-              try {
-                await segmentService.remove(id);
-                setSegments((prev) => prev.filter((segment) => segment.id !== id));
-                notify("success", "Segment deleted");
-              } catch (err) {
-                notify("error", formatApiErrorMessage(err));
-              }
-            }}
-            onMore={() => notify("success", "More actions")}
+            onDelete={(id) => (id ? setDeleteId(id) : notify("error", "Segment id is missing"))}
           />
         )}
       </section>
-      {createOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-semibold">Create Segment</h3><button type="button" onClick={() => setCreateOpen(false)}><X className="h-4 w-4" /></button></div>
-            <div className="space-y-3">
-              <Input placeholder="Segment Name" value={name} onChange={(e) => setName(e.target.value)} />
-              <Input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-            </div>
-            <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button><Button onClick={handleCreate}>Create</Button></div>
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Create Segment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input aria-label="Segment name" placeholder="Segment Name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input aria-label="Description" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
           </div>
-        </div>
-      ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreate}>Create</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Delete segment?"
+        description="The segment is removed; its contacts are kept."
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          try {
+            await segmentService.remove(deleteId);
+            setSegments((prev) => prev.filter((segment) => segment.id !== deleteId));
+            notify("success", "Segment deleted");
+          } catch (err) {
+            notify("error", formatApiErrorMessage(err));
+          }
+        }}
+      />
     </div>
   );
 }

@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Pencil, X } from "lucide-react";
+import { ArrowLeft, Pencil } from "lucide-react";
 
 import { ColorDot } from "@/components/shared/color-dot";
 import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
-import { SegmentAnalyticsPanel } from "@/features/contacts/components/segments/segment-analytics";
 import { SegmentRuleBuilder } from "@/features/contacts/components/segments/segment-rule-builder";
 import { segmentService } from "@/features/segments/services/segment.service";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +27,8 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
+  const [rulesDirty, setRulesDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -41,12 +43,29 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
           return;
         }
         setSegment({ ...data, rules: [...data.rules] });
+        setRulesDirty(false);
         setName(data.name);
         setDescription(data.description);
       })
       .catch((err) => (isNotFound(err) ? setSegment(null) : setLoadError(formatApiErrorMessage(err))))
       .finally(() => setLoading(false));
   }, [segmentId, attempt]);
+
+  async function save(input: Parameters<typeof segmentService.update>[1]): Promise<boolean> {
+    setSaving(true);
+    try {
+      const saved = await segmentService.update(segmentId, input);
+      setSegment({ ...saved, rules: [...saved.rules] });
+      setRulesDirty(false);
+      notify("success", "Segment saved");
+      return true;
+    } catch (err) {
+      notify("error", formatApiErrorMessage(err));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) {
     return <EmptyState message="Loading segment..." className="m-8" />;
@@ -90,25 +109,45 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
       <section className="rounded-xl border bg-card p-5 shadow-sm">
         <h3 className="font-semibold">Segment Rules</h3>
         <div className="mt-4">
-          <SegmentRuleBuilder rules={segment.rules} onChange={(rules) => setSegment({ ...segment, rules })} />
+          <SegmentRuleBuilder
+            rules={segment.rules}
+            onChange={(rules) => {
+              setSegment({ ...segment, rules });
+              setRulesDirty(true);
+            }}
+          />
         </div>
-      </section>
-      <SegmentAnalyticsPanel />
-      {editOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-semibold">Edit Segment</h3><button type="button" onClick={() => setEditOpen(false)}><X className="h-4 w-4" /></button></div>
-            <div className="space-y-3">
-              <Input value={name} onChange={(e) => setName(e.target.value)} />
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} />
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
-              <Button onClick={() => { setSegment({ ...segment, name: name.trim(), description: description.trim(), updated_at: new Date().toISOString() }); setEditOpen(false); notify("success", "Segment updated locally — API update pending"); }}>Save</Button>
-            </div>
+        {rulesDirty ? (
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" disabled={saving} onClick={() => setAttempt((n) => n + 1)}>
+              Discard changes
+            </Button>
+            <Button disabled={saving} onClick={() => void save({ rules: segment.rules })}>
+              {saving ? "Saving..." : "Save rules"}
+            </Button>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </section>
+      <Dialog open={editOpen} onOpenChange={(next) => !saving && setEditOpen(next)}>
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>Edit Segment</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input aria-label="Segment name" value={name} onChange={(e) => setName(e.target.value)} />
+            <Input aria-label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" disabled={saving} onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button
+              disabled={saving || !name.trim()}
+              onClick={() => void save({ name: name.trim(), description: description.trim() }).then((ok) => ok && setEditOpen(false))}
+            >
+              {saving ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

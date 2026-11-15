@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Upload } from "lucide-react";
+import { Plus, Tag, Trash2, Upload } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState, ErrorState } from "@/components/shared/empty-state";
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { PaginationFooter } from "@/components/shared/pagination-footer";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ContactDetailDrawer } from "@/features/contacts/components/contact-detail-drawer";
 import { ContactFilterBar } from "@/features/contacts/components/contact-filter-bar";
 import {
@@ -21,6 +25,7 @@ import { ContactTable } from "@/features/contacts/components/contact-table";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { contactFieldService, contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
+import { runBulk } from "@/features/contacts/utils/bulk";
 import { useToast } from "@/hooks/use-toast";
 import type { ConsentStatus, Contact, ContactFieldDefinition, ContactStats, ContactTag } from "@/types/contact";
 import { formatApiErrorMessage } from "@/services/api/errors";
@@ -48,6 +53,10 @@ export function ContactsListPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<ContactFormValues>(emptyContactFormValues());
   const [editForm, setEditForm] = useState<ContactFormValues>(emptyContactFormValues());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkTagId, setBulkTagId] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+  const [confirm, setConfirm] = useState<{ title: string; description: string; run: () => Promise<void> } | null>(null);
 
   const loadPage = useCallback(async () => {
     setLoading(true);
@@ -60,20 +69,15 @@ export function ContactsListPage() {
           search: search.trim() || undefined,
           tag_id: tagFilter || undefined,
           consent_status: (consentFilter as ConsentStatus) || undefined,
+          source: sourceFilter || undefined,
+          city: cityFilter.trim() || undefined,
         }),
         tagService.list(),
         contactService.stats(),
         contactFieldService.listDefinitions(),
       ]);
-      let items = listResult.items;
-      if (sourceFilter) {
-        items = items.filter((contact) => contact.source === sourceFilter);
-      }
-      if (cityFilter.trim()) {
-        const city = cityFilter.trim().toLowerCase();
-        items = items.filter((contact) => (contact.city ?? "").toLowerCase().includes(city));
-      }
-      setContacts(items);
+      setContacts(listResult.items);
+      setSelectedIds(new Set());
       setTotal(listResult.total);
       setTags(tagItems);
       setStats(statsResult);
@@ -138,16 +142,66 @@ export function ContactsListPage() {
     setEditForm(contactToFormValues(contact));
   }
 
-  async function handleDeleteContact(contact: Contact) {
-    if (!confirm(`Delete contact "${contact.contact_name}"?`)) return;
-    try {
-      await contactService.remove(contact.id);
-      if (selectedContact?.id === contact.id) setSelectedContact(null);
-      await loadPage();
-      notify("success", "Contact deleted");
-    } catch (err) {
-      notify("error", formatApiErrorMessage(err));
+  function handleDeleteContact(contact: Contact) {
+    setConfirm({
+      title: "Delete contact?",
+      description: `"${contact.contact_name}" will be removed from your contacts.`,
+      run: async () => {
+        try {
+          await contactService.remove(contact.id);
+          if (selectedContact?.id === contact.id) setSelectedContact(null);
+          await loadPage();
+          notify("success", "Contact deleted");
+        } catch (err) {
+          notify("error", formatApiErrorMessage(err));
+        }
+      },
+    });
+  }
+
+  function reportBulk(verb: string, result: { ok: number; failed: number }) {
+    if (result.failed > 0) {
+      notify("error", `${verb} ${result.ok} contacts; ${result.failed} failed. Try again for the rest.`);
+    } else {
+      notify("success", `${verb} ${result.ok} contacts`);
     }
+  }
+
+  async function bulkAddTag() {
+    const tag = tags.find((t) => t.id === bulkTagId);
+    if (!tag) return;
+    setBulkBusy(true);
+    try {
+      const byId = new Map(contacts.map((c) => [c.id, c]));
+      const result = await runBulk([...selectedIds], (id) => {
+        const existing = byId.get(id)?.tags.map((t) => t.id) ?? [];
+        return existing.includes(tag.id)
+          ? Promise.resolve()
+          : contactService.update(id, { tag_ids: [...existing, tag.id] });
+      });
+      reportBulk(`Tagged "${tag.name}" on`, result);
+      setBulkTagId("");
+      await loadPage();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
+
+  function bulkDelete() {
+    const ids = [...selectedIds];
+    setConfirm({
+      title: `Delete ${ids.length} contacts?`,
+      description: "The selected contacts will be removed from your contacts.",
+      run: async () => {
+        setBulkBusy(true);
+        try {
+          reportBulk("Deleted", await runBulk(ids, (id) => contactService.remove(id)));
+          await loadPage();
+        } finally {
+          setBulkBusy(false);
+        }
+      },
+    });
   }
 
   return (
@@ -190,12 +244,43 @@ export function ContactsListPage() {
         ) : contacts.length === 0 ? (
           <EmptyState message="No contacts found." className="m-4" />
         ) : (
+          <>
+            {selectedIds.size > 0 ? (
+              <div
+                role="toolbar"
+                aria-label="Bulk actions"
+                className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2 text-sm"
+              >
+                <span className="font-medium">{selectedIds.size} selected</span>
+                <FilterSelect
+                  label="Tag to add"
+                  value={bulkTagId}
+                  onChange={setBulkTagId}
+                  options={[{ value: "", label: "Add tag…" }, ...tags.map((t) => ({ value: t.id, label: t.name }))]}
+                  className="h-9"
+                />
+                <Button size="sm" variant="outline" disabled={!bulkTagId || bulkBusy} onClick={() => void bulkAddTag()}>
+                  <Tag className="h-4 w-4" />
+                  Apply tag
+                </Button>
+                <Button size="sm" variant="destructive" disabled={bulkBusy} onClick={bulkDelete}>
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </Button>
+                <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelectedIds(new Set())}>
+                  Clear selection
+                </Button>
+              </div>
+            ) : null}
           <ContactTable
             contacts={contacts}
+            selectedIds={selectedIds}
+            onSelectionChange={setSelectedIds}
             onRowClick={setSelectedContact}
             onEdit={openEdit}
             onDelete={handleDeleteContact}
           />
+          </>
         )}
         <PaginationFooter
           start={total === 0 ? 0 : start + 1}
@@ -266,33 +351,48 @@ export function ContactsListPage() {
         />
       ) : null}
 
-      {moreFiltersOpen ? (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">More Filters</h3>
-              <button type="button" onClick={() => setMoreFiltersOpen(false)}>×</button>
-            </div>
-            <div className="space-y-3">
-              <select
-                className="h-10 w-full rounded-md border px-3 text-sm"
-                value={consentFilter}
-                onChange={(e) => setConsentFilter(e.target.value)}
-              >
-                <option value="">All Subscriptions</option>
-                <option value="opt_in">Subscribed</option>
-                <option value="opt_out">Unsubscribed</option>
-                <option value="unknown">Unknown</option>
-              </select>
-              <Input placeholder="City" value={cityFilter} onChange={(e) => setCityFilter(e.target.value)} />
-            </div>
-            <div className="mt-4 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => { setConsentFilter(""); setCityFilter(""); setPage(1); }}>Reset</Button>
-              <Button onClick={() => { setMoreFiltersOpen(false); setPage(1); }}>Apply Filters</Button>
+      <Dialog open={moreFiltersOpen} onOpenChange={setMoreFiltersOpen}>
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
+          <DialogHeader>
+            <DialogTitle>More Filters</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <FilterSelect
+              label="Subscription"
+              value={consentFilter}
+              onChange={(v) => { setConsentFilter(v); setPage(1); }}
+              options={[
+                { value: "", label: "All Subscriptions" },
+                { value: "opt_in", label: "Subscribed" },
+                { value: "opt_out", label: "Unsubscribed" },
+                { value: "unknown", label: "Unknown" },
+              ]}
+              className="w-full"
+            />
+            <div className="space-y-1.5">
+              <Label htmlFor="contacts-city-filter">City</Label>
+              <Input
+                id="contacts-city-filter"
+                placeholder="e.g. Bandung"
+                value={cityFilter}
+                onChange={(e) => { setCityFilter(e.target.value); setPage(1); }}
+              />
             </div>
           </div>
-        </div>
-      ) : null}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setConsentFilter(""); setCityFilter(""); setPage(1); }}>Reset</Button>
+            <Button onClick={() => setMoreFiltersOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={confirm !== null}
+        title={confirm?.title ?? ""}
+        description={confirm?.description ?? ""}
+        onConfirm={() => confirm?.run()}
+        onOpenChange={(open) => !open && setConfirm(null)}
+      />
     </div>
   );
 }

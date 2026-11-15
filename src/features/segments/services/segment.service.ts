@@ -4,7 +4,7 @@ import {
   normalizeSegment,
   normalizeSegmentGetResponse,
 } from "@/features/segments/mappers/segment.mapper";
-import type { Segment } from "@/features/segments/types/segment";
+import type { Segment, SegmentRule } from "@/features/segments/types/segment";
 
 type PageResponse<T> = {
   items?: T[];
@@ -50,6 +50,24 @@ export const segmentService = {
           sort_order: 0,
         },
       ],
+    });
+    return normalizeSegmentGetResponse(response.data as Parameters<typeof normalizeSegmentGetResponse>[0]);
+  },
+
+  /** PATCH; `rules`, when given, replaces the whole rule list. */
+  async update(
+    id: string,
+    input: { name?: string; description?: string; rules?: SegmentRule[] },
+  ): Promise<Segment> {
+    const response = await apiClient.patch(`/segments/${id}`, {
+      name: input.name,
+      description: input.description,
+      rules: input.rules?.map((rule, index) => ({
+        field: rule.field,
+        operator: rule.operator,
+        value: rule.value,
+        sort_order: index,
+      })),
     });
     return normalizeSegmentGetResponse(response.data as Parameters<typeof normalizeSegmentGetResponse>[0]);
   },

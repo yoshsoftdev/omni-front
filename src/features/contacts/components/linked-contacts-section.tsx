@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Link2, Unlink } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { ProviderBadge } from "@/components/shared/provider-badge";
 import { Button } from "@/components/ui/button";
@@ -21,11 +23,9 @@ export function LinkedContactsSection({
   onOpenContact: (linkedContactId: string) => void;
   onRefresh: () => Promise<void>;
 }) {
+  const [pendingUnlink, setPendingUnlink] = useState<LinkedContact | null>(null);
+
   async function unlink(peer: LinkedContact) {
-    const confirmed = window.confirm(
-      `Remove link to ${peer.contact_name}? Neither contact's data or channels will change.`,
-    );
-    if (!confirmed) return;
     await contactService.unlinkContact(contactId, peer.id);
     await onRefresh();
   }
@@ -80,7 +80,7 @@ export function LinkedContactsSection({
                   size="sm"
                   variant="ghost"
                   className="text-destructive"
-                  onClick={() => void unlink(peer)}
+                  onClick={() => setPendingUnlink(peer)}
                 >
                   <Unlink className="mr-1.5 h-3.5 w-3.5" />
                   Unlink
@@ -90,6 +90,14 @@ export function LinkedContactsSection({
           ))
         )}
       </div>
+      <ConfirmDialog
+        open={pendingUnlink !== null}
+        title="Remove link?"
+        description={`Remove the link to ${pendingUnlink?.contact_name ?? "this contact"}? Neither contact's data or channels will change.`}
+        confirmLabel="Remove link"
+        onOpenChange={(open) => !open && setPendingUnlink(null)}
+        onConfirm={() => (pendingUnlink ? unlink(pendingUnlink) : undefined)}
+      />
     </section>
   );
 }

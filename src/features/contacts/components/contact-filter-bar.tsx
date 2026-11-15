@@ -34,6 +34,7 @@ export function ContactFilterBar({
         <Input
           className="pl-9"
           placeholder="Search by name, phone or email..."
+          aria-label="Search contacts"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
         />
@@ -42,7 +43,7 @@ export function ContactFilterBar({
         label="Source"
         value={sourceFilter}
         onChange={onSourceChange}
-        options={CONTACT_SOURCES}
+        options={[{ value: "", label: "All Sources" }, ...CONTACT_SOURCES]}
       />
       <FilterSelect
         label="Tags"

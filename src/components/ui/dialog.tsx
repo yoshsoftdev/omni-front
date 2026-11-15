@@ -6,7 +6,8 @@ import { forwardRef, type ComponentPropsWithoutRef, type ElementRef, type HTMLAt
 
 import { cn } from "@/lib/utils";
 
-/** Modal dialog: focus trap, Escape to close, scroll lock and aria wiring come from Radix. */
+/** Modal dialog: focus trap, Escape to close, scroll lock and aria wiring come from Radix.
+ * Layers: sheet/drawer 60 < dialog 65 < menu/select 70 < tooltip/toast 80, so a dialog can open from a drawer. */
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
@@ -16,7 +17,7 @@ export const DialogOverlay = forwardRef<
   ElementRef<typeof DialogPrimitive.Overlay>,
   ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
 >(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-50 bg-black/40", className)} {...props} />
+  <DialogPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-[65] bg-black/40", className)} {...props} />
 ));
 DialogOverlay.displayName = "DialogOverlay";
 
@@ -29,7 +30,7 @@ export const DialogContent = forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed left-1/2 top-1/2 z-50 grid max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-lg border bg-card p-6 text-card-foreground shadow-lg",
+        "fixed left-1/2 top-1/2 z-[65] grid max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto rounded-lg border bg-card p-6 text-card-foreground shadow-lg",
         className,
       )}
       {...props}

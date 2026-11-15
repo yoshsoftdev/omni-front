@@ -3,6 +3,7 @@
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { FilterSelect } from "@/components/shared/filter-bar";
 import { Input } from "@/components/ui/input";
 import type { SegmentRule, SegmentRuleField, SegmentRuleOperator } from "@/types/segment";
 
@@ -46,31 +47,28 @@ export function SegmentRuleBuilder({
       {rules.map((rule, index) => (
         <div key={rule.id} className="flex flex-wrap items-center gap-2 rounded-lg border bg-background p-3">
           {index > 0 ? <span className="text-xs font-medium text-muted-foreground">AND</span> : null}
-          <select
-            className="h-9 rounded-md border px-2 text-sm"
+          <FilterSelect
+            label={`Rule ${index + 1} field`}
             value={rule.field}
-            onChange={(e) => updateRule(rule.id, { field: e.target.value as SegmentRuleField })}
-          >
-            {FIELD_OPTIONS.map((f) => (
-              <option key={f.value} value={f.value}>{f.label}</option>
-            ))}
-          </select>
-          <select
-            className="h-9 rounded-md border px-2 text-sm"
+            onChange={(value) => updateRule(rule.id, { field: value as SegmentRuleField })}
+            options={FIELD_OPTIONS}
+            className="h-9 min-w-0"
+          />
+          <FilterSelect
+            label={`Rule ${index + 1} operator`}
             value={rule.operator}
-            onChange={(e) => updateRule(rule.id, { operator: e.target.value as SegmentRuleOperator })}
-          >
-            {OPERATOR_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+            onChange={(value) => updateRule(rule.id, { operator: value as SegmentRuleOperator })}
+            options={OPERATOR_OPTIONS}
+            className="h-9 min-w-0"
+          />
           <Input
+            aria-label={`Rule ${index + 1} value`}
             className="h-9 w-40"
             value={rule.value}
             onChange={(e) => updateRule(rule.id, { value: e.target.value })}
             placeholder="Value"
           />
-          <Button variant="ghost" size="sm" onClick={() => removeRule(rule.id)}>
+          <Button variant="ghost" size="sm" onClick={() => removeRule(rule.id)} aria-label={`Remove rule ${index + 1}`}>
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>
         </div>

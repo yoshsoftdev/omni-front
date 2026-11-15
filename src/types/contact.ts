@@ -125,7 +125,8 @@ export interface ContactImportResult {
   created: number;
   updated: number;
   skipped: number;
-  errors?: string[];
+  /** Why each skipped row was skipped, by 1-based line in the file. */
+  errors?: { line: number; message: string }[];
 }
 
 export interface ContactFormInput {
@@ -157,6 +158,9 @@ export interface ContactListParams {
   search?: string;
   tag_id?: string;
   consent_status?: ConsentStatus;
+  source?: string;
+  /** Case-insensitive substring. */
+  city?: string;
   page?: number;
   page_size?: number;
 }

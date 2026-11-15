@@ -13,12 +13,15 @@ export function FilterBar({ children, className }: { children: ReactNode; classN
 }
 
 export function FilterSelect({
+  id,
   label,
   value,
   onChange,
   options,
   className,
 }: {
+  /** Lets a visible <label htmlFor> point at the select. */
+  id?: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -27,6 +30,7 @@ export function FilterSelect({
 }) {
   return (
     <select
+      id={id}
       aria-label={label}
       value={value}
       onChange={(e) => onChange(e.target.value)}

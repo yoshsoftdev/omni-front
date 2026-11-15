@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { EmptyState, ErrorState } from "@/components/shared/empty-state";
 import { Button } from "@/components/ui/button";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
@@ -20,6 +21,7 @@ export function TagsListPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const [createOpen, setCreateOpen] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [color, setColor] = useState(TAG_COLORS[0]);
@@ -74,21 +76,26 @@ export function TagsListPage() {
         ) : (
           <TagTable
             tags={sorted}
-            onDelete={async (id) => {
-              if (!id) return notify("error", "Tag id is missing");
-              if (!confirm("Delete tag?")) return;
-              try {
-                await tagService.remove(id);
-                setTags((p) => p.filter((t) => t.id !== id));
-                notify("success", "Tag deleted");
-              } catch (err) {
-                notify("error", formatApiErrorMessage(err));
-              }
-            }}
-            onMore={() => notify("success", "More actions")}
+            onDelete={(id) => (id ? setDeleteId(id) : notify("error", "Tag id is missing"))}
           />
         )}
       </section>
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Delete tag?"
+        description="The tag is removed from every contact that has it."
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        onConfirm={async () => {
+          if (!deleteId) return;
+          try {
+            await tagService.remove(deleteId);
+            setTags((p) => p.filter((t) => t.id !== deleteId));
+            notify("success", "Tag deleted");
+          } catch (err) {
+            notify("error", formatApiErrorMessage(err));
+          }
+        }}
+      />
       <TagFormModal open={createOpen} title="Create Tag" name={name} description={description} color={color} onNameChange={setName} onDescriptionChange={setDescription} onColorChange={setColor} onClose={() => setCreateOpen(false)} onSubmit={handleCreate} submitLabel="Create" />
     </div>
   );

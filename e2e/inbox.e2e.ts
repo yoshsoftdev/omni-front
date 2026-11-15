@@ -124,3 +124,66 @@ test("inbox resyncs the open thread after the realtime socket reconnects", async
   await expect(page.getByText("Kalau warna merah ada?")).toBeVisible({ timeout: 10_000 });
   expect(callsTo(api, "GET", `/conversations/${CONV_ID}/messages`).length).toBeGreaterThan(before);
 });
+
+// 7.1: keyboard navigation, a failed thread load that can be retried, and the 24h reply window.
+test("inbox keyboard navigation, thread error retry and reply window", async ({ page, api }) => {
+  const OTHER_ID = "99999999-9999-4999-8999-999999999999";
+  const older = new Date(Date.now() - 60_000).toISOString();
+  const other = {
+    ...conversation(),
+    id: OTHER_ID,
+    contact_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    contact_name: "Sari Dewi",
+    unread_count: 0,
+    last_message_at: older,
+    last_customer_message_at: older,
+    last_message_preview: "Terima kasih",
+  };
+  await signIn(page);
+  mockInbox(api);
+  api.ok("GET", "/inbox", { conversations: [conversation(), other], has_more: false });
+  api.ok("GET", `/conversations/${OTHER_ID}`, other);
+  api.fail("GET", `/conversations/${OTHER_ID}/messages`, "thread unavailable", 500);
+  api.ok("GET", `/conversations/${OTHER_ID}/activities`, []);
+  api.ok("GET", `/conversations/${OTHER_ID}/notes`, []);
+  const presence = { conversation_id: OTHER_ID, viewers: [], typing: [] };
+  api.ok("GET", `/conversations/${OTHER_ID}/presence`, presence);
+  api.ok("POST", `/conversations/${OTHER_ID}/presence/open`, presence);
+  api.ok("POST", `/conversations/${OTHER_ID}/presence/close`, presence);
+
+  await page.goto("/inbox");
+  await expect(page.getByText("Sari Dewi").first()).toBeVisible();
+
+  // j from nothing selected opens the first (most recent) conversation.
+  await page.keyboard.press("j");
+  await expect(page.getByRole("heading", { name: "Budi Santoso" })).toBeVisible();
+  await expect(page.getByText(/24h window · 2[34]h left/)).toBeVisible();
+
+  // j again moves to the next one, whose thread fails to load: an error, not "No messages yet".
+  await page.keyboard.press("j");
+  await expect(page.getByRole("heading", { name: "Sari Dewi" })).toBeVisible();
+  const alert = page.getByRole("alert").filter({ hasText: "thread unavailable" });
+  await expect(alert).toBeVisible();
+  await expect(page.getByText("No messages yet.")).toHaveCount(0);
+
+  api.ok("GET", `/conversations/${OTHER_ID}/messages`, {
+    items: [{ ...inbound(), id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", conversation_id: OTHER_ID, content: "Terima kasih" }],
+  });
+  await alert.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("log").getByText("Terima kasih")).toBeVisible();
+
+  // k goes back; r focuses the composer.
+  await page.keyboard.press("k");
+  await expect(page.getByRole("heading", { name: "Budi Santoso" })).toBeVisible();
+  await page.keyboard.press("r");
+  await expect(page.getByLabel("Message", { exact: true })).toBeFocused();
+
+  // Design-system dialogs/menus: Assign opens a modal, Escape closes it; More lists the actions.
+  await page.getByRole("button", { name: "Assign" }).click();
+  await expect(page.getByRole("dialog", { name: "Assign Conversation" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Assign Conversation" })).toHaveCount(0);
+  await page.getByRole("button", { name: "More conversation actions" }).click();
+  await expect(page.getByRole("menuitem", { name: "Close conversation" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Mark as unread" })).toBeVisible();
+});

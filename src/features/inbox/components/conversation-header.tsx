@@ -5,15 +5,18 @@ import { ArrowLeft, Instagram, Mail, MessageCircle, MoreHorizontal, PanelRight, 
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { TagBadgeList } from "@/components/shared/tag-badge";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ChannelPlatformBadge } from "@/features/inbox/components/shared/channel-platform-badge";
 import {
   AssigneeChip,
   ConversationStatusChip,
   PriorityChip,
+  ReplyWindowChip,
   WaitingChip,
 } from "@/features/inbox/components/shared/conversation-meta-chips";
 import { useWaitingClock } from "@/features/inbox/hooks/use-waiting-label";
 import type { InboxChannel, InboxConversation } from "@/features/inbox/types";
+import type { FreeTextWindowState } from "@/features/inbox/utils/free-text-window";
 import { resolvePriorityLabel } from "@/features/inbox/utils/priority-label";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +32,7 @@ interface ConversationHeaderProps {
   conversation: InboxConversation;
   channelLabel?: string;
   presenceLabel?: string | null;
+  replyWindow?: FreeTextWindowState;
   onAssignClick: () => void;
   onTagClick?: () => void;
   onMoreAction: (action: string) => void;
@@ -40,6 +44,7 @@ export function ConversationHeader({
   conversation,
   channelLabel,
   presenceLabel,
+  replyWindow,
   onAssignClick,
   onTagClick,
   onMoreAction,
@@ -90,6 +95,9 @@ export function ConversationHeader({
               </span>
               {priority ? <PriorityChip label={priority} /> : null}
               {waitingClock ? <WaitingChip label={waitingClock} /> : null}
+              {replyWindow?.applies ? (
+                <ReplyWindowChip allowed={replyWindow.allowed} remainingMs={replyWindow.remainingMs} />
+              ) : null}
             </div>
 
             {conversation.tags.length > 0 ? (
@@ -103,7 +111,7 @@ export function ConversationHeader({
             <Button
               size="sm"
               variant="outline"
-              className="h-8 w-8 p-0 xl:hidden"
+              className="h-8 w-8 p-0 2xl:hidden"
               onClick={onOpenContext}
               aria-label="Open conversation context"
             >
@@ -120,29 +128,21 @@ export function ConversationHeader({
               <span className="hidden sm:inline">Tag</span>
             </Button>
           ) : null}
-          <div className="relative">
-            <select
-              className="absolute inset-0 cursor-pointer opacity-0"
-              defaultValue=""
-              aria-label="More conversation actions"
-              onChange={(e) => {
-                if (e.target.value) {
-                  onMoreAction(e.target.value);
-                  e.target.value = "";
-                }
-              }}
-            >
-              <option value="" disabled>
-                More
-              </option>
-              <option value="close">Close conversation</option>
-              <option value="reopen">Reopen conversation</option>
-              <option value="mark_unread">Mark as unread</option>
-            </select>
-            <Button size="sm" variant="outline" className="h-8 w-8 p-0" aria-hidden tabIndex={-1}>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant="outline" className="h-8 w-8 p-0" aria-label="More conversation actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {conversation.status === "closed" ? (
+                <DropdownMenuItem onSelect={() => onMoreAction("reopen")}>Reopen conversation</DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onSelect={() => onMoreAction("close")}>Close conversation</DropdownMenuItem>
+              )}
+              <DropdownMenuItem onSelect={() => onMoreAction("mark_unread")}>Mark as unread</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

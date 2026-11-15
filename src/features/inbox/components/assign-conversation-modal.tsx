@@ -1,10 +1,11 @@
 "use client";
 
-import { Search, X } from "lucide-react";
+import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { ContactAvatar } from "@/components/shared/contact-avatar";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { InboxAgent } from "@/features/inbox/types";
 import { cn } from "@/lib/utils";
 
@@ -46,17 +47,12 @@ export function AssignConversationModal({
     [agents, search],
   );
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-lg border bg-card shadow-xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="font-semibold">Assign Conversation</h3>
-          <button type="button" onClick={onClose} className="rounded-md p-1 hover:bg-muted">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="max-w-md gap-0 p-0" aria-describedby={undefined}>
+        <DialogHeader className="border-b px-4 py-3">
+          <DialogTitle className="text-base">Assign Conversation</DialogTitle>
+        </DialogHeader>
 
         <div className="p-4">
           <div className="relative mb-3">
@@ -65,6 +61,7 @@ export function AssignConversationModal({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search agent..."
+              aria-label="Search agent"
               className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-3 text-sm"
             />
           </div>
@@ -121,15 +118,15 @@ export function AssignConversationModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t px-4 py-3">
+        <DialogFooter className="border-t px-4 py-3">
           <Button size="sm" variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button size="sm" disabled={!pickedId} onClick={() => onAssign(pickedId)}>
             Assign
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

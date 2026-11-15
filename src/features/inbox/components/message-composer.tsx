@@ -411,6 +411,7 @@ export function MessageComposer({
           <div className="relative">
             <textarea
               ref={textareaRef}
+              id="inbox-composer"
               value={content}
               onChange={(event) => handleContentChange(event.target.value, event.target.selectionStart ?? event.target.value.length)}
               onClick={(event) => updateSlashState(content, event.currentTarget.selectionStart ?? content.length)}

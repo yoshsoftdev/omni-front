@@ -3,6 +3,7 @@
 import { Check, CheckCheck, CornerUpLeft, Download, ExternalLink, FileText, Image as ImageIcon, Loader2, MoreHorizontal, Trash2, Video, Volume2 } from "lucide-react";
 import { useEffect, useRef, useState, forwardRef } from "react";
 
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AuthenticatedAudio } from "@/features/inbox/components/authenticated-audio";
 import {
   downloadAuthenticatedMedia,
@@ -106,11 +107,12 @@ function AuthenticatedImage({ objectId, alt }: { objectId: string; alt: string }
       <button type="button" onClick={() => setOpen(true)} className="block overflow-hidden rounded-md">
         <img src={url} alt={alt} className="max-h-48 w-full object-cover" />
       </button>
-      {open ? (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 p-4" onClick={() => setOpen(false)}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="w-auto max-w-[calc(100vw-2rem)] border-0 bg-transparent p-0 shadow-none" aria-describedby={undefined}>
+          <DialogTitle className="sr-only">{alt}</DialogTitle>
           <img src={url} alt={alt} className="max-h-[90vh] max-w-full rounded-md object-contain" />
-        </div>
-      ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

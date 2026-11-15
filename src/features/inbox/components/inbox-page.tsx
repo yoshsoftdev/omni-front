@@ -1,86 +1,48 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { CONTACTS_UPDATED_EVENT, contactService } from "@/features/contacts/services/contact.service";
 import { ChannelSidebar } from "@/features/inbox/components/channel-sidebar/channel-sidebar";
 import { ContactSidebar } from "@/features/inbox/components/contact-sidebar";
 import { ConversationDetail } from "@/features/inbox/components/conversation-detail";
-import type { ComposerSendInput } from "@/features/inbox/components/message-composer";
 import { ConversationList } from "@/features/inbox/components/conversation-list";
 import {
   InboxLayout,
   type InboxMobilePane,
 } from "@/features/inbox/components/layout/inbox-layout";
+import { useConversationPresence } from "@/features/inbox/hooks/use-conversation-presence";
+import { useConversationThread } from "@/features/inbox/hooks/use-conversation-thread";
 import { useInboxAgents } from "@/features/inbox/hooks/use-inbox-agents";
 import { useInboxChannels } from "@/features/inbox/hooks/use-inbox-channels";
 import { useInboxList } from "@/features/inbox/hooks/use-inbox-list";
-import { useConversationPresence } from "@/features/inbox/hooks/use-conversation-presence";
 import { useInboxRealtime } from "@/features/inbox/hooks/use-inbox-realtime";
 import { useInboxRealtimeCache } from "@/features/inbox/hooks/use-inbox-realtime-cache";
 import { useInboxSelection } from "@/features/inbox/hooks/use-inbox-selection";
+import { useInboxShortcuts } from "@/features/inbox/hooks/use-inbox-shortcuts";
 import { useInboxUnreadCount } from "@/features/inbox/hooks/use-inbox-unread-count";
 import { useIsNarrowViewport } from "@/features/inbox/hooks/use-is-narrow-viewport";
-import {
-  applyMessageStatusUpdate,
-  markMessageFailed,
-  markMessageSending,
-  reconcileApiMessage,
-  upsertOptimisticMessage,
-} from "@/features/inbox/lib/message-reconcile";
-import { mapContactToInboxContact, mapMessageToInbox } from "@/features/inbox/mappers/inbox.mapper";
-import { contentTypeFromMime, normalizeMessage } from "@/features/inbox/mappers/message.mapper";
+import { mapContactToInboxContact } from "@/features/inbox/mappers/inbox.mapper";
+import { normalizeMessage } from "@/features/inbox/mappers/message.mapper";
 import { inboxUnreadCountQueryKey } from "@/features/inbox/query-keys";
 import { conversationService } from "@/features/inbox/services/conversation.service";
-import { messageService } from "@/features/inbox/services/message.service";
-import { computeInboxTabCounts } from "@/features/inbox/utils/conversation-filters";
-import { applyMessageDateLabels } from "@/features/inbox/utils/message-date";
-import { withResolvedAssignee } from "@/features/inbox/utils/resolve-assignee";
-import { generateUUID } from "@/lib/uuid";
 import type {
-  InboxActivityEvent,
   InboxChannel,
-  InboxChatMessage,
   InboxContact,
   InboxConversation,
   InboxTab,
-  InboxWorkspaceNote,
 } from "@/features/inbox/types";
+import { computeInboxTabCounts } from "@/features/inbox/utils/conversation-filters";
+import { withResolvedAssignee } from "@/features/inbox/utils/resolve-assignee";
+import {
+  sortConversations,
+  type ConversationListSort,
+} from "@/features/inbox/utils/sort-conversations";
 import { useToast } from "@/hooks/use-toast";
 import { formatApiErrorMessage } from "@/services/api/errors";
 import { useAuthStore } from "@/store/auth-store";
 import type { ConsentStatus } from "@/types/contact";
-import type { Message } from "@/types/message";
-import { websocketClient } from "@/services/websocket/client";
-
-function toMillis(value?: string): number {
-  if (!value) return 0;
-  const t = new Date(value).getTime();
-  return Number.isNaN(t) ? 0 : t;
-}
-
-function optimisticAttachmentPreview(input: ComposerSendInput): string {
-  if (input.content.trim()) return input.content.trim();
-  const mimeType = input.attachment?.mime_type ?? "";
-  const type = mimeType ? contentTypeFromMime(mimeType) : "text";
-  switch (type) {
-    case "audio":
-      return "Voice note";
-    case "image":
-      return "Photo";
-    case "video":
-      return "Video";
-    case "document":
-      return input.attachment?.filename || "Document";
-    default:
-      return "Media";
-  }
-}
-
-function sortMessagesAsc(messages: InboxChatMessage[]) {
-  return [...messages].sort((a, b) => toMillis(a.sent_at) - toMillis(b.sent_at));
-}
 
 const CHANNEL_NOTIFY_PREFIX: Partial<Record<InboxChannel, string>> = {
   whatsapp: "🟢 WhatsApp",
@@ -104,24 +66,16 @@ export function InboxPage() {
   const { notify, Toast } = useToast();
   const { count: totalUnreadCount } = useInboxUnreadCount();
 
-  const [messagesByConversation, setMessagesByConversation] = useState<Record<string, InboxChatMessage[]>>({});
-  // Bumped when the realtime socket reconnects so the open thread is reloaded (D9).
-  const [resyncTick, setResyncTick] = useState(0);
-  useEffect(() => websocketClient.onReconnect(() => setResyncTick((n) => n + 1)), []);
   const [contacts, setContacts] = useState<Record<string, InboxContact>>({});
-  const [activitiesByConversation, setActivitiesByConversation] = useState<Record<string, InboxActivityEvent[]>>({});
-  const [workspaceNotes, setWorkspaceNotes] = useState<Record<string, InboxWorkspaceNote[]>>({});
   const [unreadByChannelId, setUnreadByChannelId] = useState<Record<string, number>>({});
 
   const [activeTab, setActiveTab] = useState<InboxTab>("open");
   const [agentFilter, setAgentFilter] = useState("all");
+  const [sort, setSort] = useState<ConversationListSort>("recent");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [mobilePane, setMobilePane] = useState<InboxMobilePane>("list");
   const isNarrow = useIsNarrowViewport(768);
-  const pendingMessagesRef = useRef<
-    Record<string, { conversationId: string; input: ComposerSendInput; preview: string }>
-  >({});
 
   const loadContacts = useCallback(async () => {
     const result = await contactService.list({ page_size: 100 });
@@ -180,11 +134,6 @@ export function InboxPage() {
     }
   }, [conversations, contactParam, selectedId, replaceParams]);
 
-  const toInboxMessage = useCallback(
-    (message: Message) => mapMessageToInbox(message, agentName),
-    [agentName],
-  );
-
   const markConversationAsRead = useCallback(
     async (conversationId: string) => {
       try {
@@ -196,49 +145,6 @@ export function InboxPage() {
     },
     [queryClient],
   );
-
-  useEffect(() => {
-    if (!selectedId) return;
-    let cancelled = false;
-    messageService
-      .list(selectedId)
-      .then((messages) => {
-        if (cancelled) return;
-        const mappedMessages = applyMessageDateLabels(sortMessagesAsc(messages.map(toInboxMessage)));
-        setMessagesByConversation((prev) => ({
-          ...prev,
-          [selectedId]: mappedMessages,
-        }));
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setMessagesByConversation((prev) => ({ ...prev, [selectedId]: [] }));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId, toInboxMessage, resyncTick]);
-
-  useEffect(() => {
-    if (!selectedId) return;
-    let cancelled = false;
-    Promise.all([conversationService.listActivities(selectedId), conversationService.listNotes(selectedId)])
-      .then(([activities, notes]) => {
-        if (cancelled) return;
-        setActivitiesByConversation((prev) => ({ ...prev, [selectedId]: activities }));
-        setWorkspaceNotes((prev) => ({ ...prev, [selectedId]: notes }));
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setActivitiesByConversation((prev) => ({ ...prev, [selectedId]: [] }));
-          setWorkspaceNotes((prev) => ({ ...prev, [selectedId]: [] }));
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId, resyncTick]);
 
   const resolvedConversations = useMemo(
     () =>
@@ -295,13 +201,12 @@ export function InboxPage() {
     notifyTypingStop,
   } = useConversationPresence(selectedId);
   const selectedUnreadCount = selectedConversation?.unread_count ?? 0;
-  const selectedMessages = useMemo(
-    () => (selectedId ? (messagesByConversation[selectedId] ?? []) : []),
-    [messagesByConversation, selectedId],
-  );
   const selectedContact = selectedConversation ? contacts[selectedConversation.contact_id] ?? null : null;
-  const selectedActivities = selectedId ? (activitiesByConversation[selectedId] ?? []) : [];
-  const selectedNotes = selectedId ? (workspaceNotes[selectedId] ?? []) : [];
+  const thread = useConversationThread({ selectedId, agentName, notify, applyListDelta });
+  const sortedConversations = useMemo(
+    () => sortConversations(resolvedConversations, sort),
+    [resolvedConversations, sort],
+  );
 
   useEffect(() => {
     if (!selectedId || selectedUnreadCount <= 0) return;
@@ -348,35 +253,22 @@ export function InboxPage() {
     setMobilePane((prev) => (prev === "list" ? "workspace" : prev));
   }, [selectedId]);
 
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      const target = event.target as HTMLElement | null;
-      const tag = target?.tagName?.toLowerCase();
-      const isTypingTarget =
-        tag === "input" || tag === "textarea" || tag === "select" || target?.isContentEditable;
-
-      if (event.key === "/" && !isTypingTarget) {
-        event.preventDefault();
-        document.getElementById("inbox-search")?.focus();
-        return;
+  useInboxShortcuts({
+    orderedIds: useMemo(() => sortedConversations.map((c) => c.id), [sortedConversations]),
+    selectedId,
+    onSelect: handleSelect,
+    onEscape: () => {
+      if (mobilePane === "context") {
+        handleCloseContext();
+        return true;
       }
-
-      if (event.key === "Escape") {
-        if (mobilePane === "context") {
-          event.preventDefault();
-          handleCloseContext();
-          return;
-        }
-        if (isNarrow && mobilePane === "workspace" && selectedId) {
-          event.preventDefault();
-          handleBackToList();
-        }
+      if (isNarrow && mobilePane === "workspace" && selectedId) {
+        handleBackToList();
+        return true;
       }
-    }
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleBackToList, handleCloseContext, isNarrow, mobilePane, selectedId]);
+      return false;
+    },
+  });
 
   const handleConversationUpdate = useCallback(
     (updated: InboxConversation) => {
@@ -393,145 +285,6 @@ export function InboxPage() {
       });
     },
     [applyListDelta],
-  );
-
-  const dispatchSend = useCallback(
-    async (conversationId: string, clientMessageId: string, input: ComposerSendInput) => {
-      try {
-        const sent = await messageService.send(conversationId, {
-          content: input.content,
-          storage_object_id: input.storageObjectId,
-          reply_to_message_id: input.replyToMessageId,
-          client_message_id: clientMessageId,
-        });
-        setMessagesByConversation((prev) => ({
-          ...prev,
-          [conversationId]: applyMessageDateLabels(
-            sortMessagesAsc(reconcileApiMessage(prev[conversationId] ?? [], sent, agentName)),
-          ),
-        }));
-        if (sent.delivery_notice) {
-          notify("success", sent.delivery_notice);
-        }
-        delete pendingMessagesRef.current[clientMessageId];
-      } catch (error) {
-        console.error("[Inbox] Send message failed", {
-          conversationId,
-          error: formatApiErrorMessage(error),
-          raw: error,
-        });
-        setMessagesByConversation((prev) => ({
-          ...prev,
-          [conversationId]: applyMessageDateLabels(
-            sortMessagesAsc(
-              markMessageFailed(
-                prev[conversationId] ?? [],
-                clientMessageId,
-                formatApiErrorMessage(error),
-              ),
-            ),
-          ),
-        }));
-      }
-    },
-    [agentName, notify],
-  );
-
-  const handleSendMessage = useCallback(
-    (input: ComposerSendInput) => {
-      if (!selectedId || !selectedConversation) return;
-      const clientMessageId = generateUUID();
-      const messageType = input.attachment
-        ? contentTypeFromMime(input.attachment.mime_type)
-        : "text";
-      const preview = optimisticAttachmentPreview(input);
-      const optimistic: InboxChatMessage = {
-        id: clientMessageId,
-        client_message_id: clientMessageId,
-        conversation_id: selectedId,
-        direction: "outbound",
-        type: messageType,
-        content: input.content || (messageType === "audio" ? "Voice note" : preview),
-        sent_at: new Date().toISOString(),
-        send_status: "sending",
-        sender_name: agentName,
-        reply_to_message_id: input.replyToMessageId,
-        attachment: input.attachment,
-      };
-
-      pendingMessagesRef.current[clientMessageId] = {
-        conversationId: selectedId,
-        input,
-        preview,
-      };
-
-      setMessagesByConversation((prev) => ({
-        ...prev,
-        [selectedId]: applyMessageDateLabels(
-          sortMessagesAsc(upsertOptimisticMessage(prev[selectedId] ?? [], optimistic)),
-        ),
-      }));
-
-      applyListDelta({
-        conversation_id: selectedId,
-        last_message: preview,
-        last_message_at: optimistic.sent_at,
-        unread_count: 0,
-      });
-
-      void dispatchSend(selectedId, clientMessageId, input);
-    },
-    [selectedConversation, selectedId, agentName, applyListDelta, dispatchSend],
-  );
-
-  const handleRetryMessage = useCallback(
-    (clientMessageId: string) => {
-      const pending = pendingMessagesRef.current[clientMessageId];
-      if (!pending) return;
-      setMessagesByConversation((prev) => ({
-        ...prev,
-        [pending.conversationId]: applyMessageDateLabels(
-          sortMessagesAsc(markMessageSending(prev[pending.conversationId] ?? [], clientMessageId)),
-        ),
-      }));
-      void dispatchSend(pending.conversationId, clientMessageId, pending.input);
-    },
-    [dispatchSend],
-  );
-
-  const handleSaveNote = useCallback(
-    async (content: string) => {
-      if (!selectedId) return;
-      try {
-        const note = await conversationService.createNote(selectedId, content);
-        setWorkspaceNotes((prev) => ({
-          ...prev,
-          [selectedId]: [note, ...(prev[selectedId] ?? [])],
-        }));
-        notify("success", "Internal note saved");
-      } catch (err) {
-        notify("error", formatApiErrorMessage(err));
-      }
-    },
-    [selectedId, notify],
-  );
-
-  const handleDeleteMessage = useCallback(
-    async (messageId: string) => {
-      if (!selectedId) return;
-      const updated = await messageService.remove(selectedId, messageId);
-      const mapped = toInboxMessage(updated);
-      setMessagesByConversation((prev) => {
-        const existing = prev[selectedId] ?? [];
-        return {
-          ...prev,
-          [selectedId]: applyMessageDateLabels(
-            sortMessagesAsc(existing.map((item) => (item.id === messageId ? { ...item, ...mapped } : item))),
-          ),
-        };
-      });
-    },
-    [selectedId, toInboxMessage],
   );
 
   const handleToggleSubscription = useCallback(async () => {
@@ -580,27 +333,10 @@ export function InboxPage() {
 
   useInboxRealtime({
     onCollisionUpdate: applySnapshot,
-    onMessageStatusUpdated: (payload) => {
-      if (!payload.conversation_id) return;
-      setMessagesByConversation((prev) => ({
-        ...prev,
-        [payload.conversation_id!]: applyMessageDateLabels(
-          sortMessagesAsc(applyMessageStatusUpdate(prev[payload.conversation_id!] ?? [], payload)),
-        ),
-      }));
-    },
+    onMessageStatusUpdated: thread.applyStatus,
     onMessageCreated: (rawMessage) => {
       const message = normalizeMessage(rawMessage);
-
-      setMessagesByConversation((prev) => {
-        const existing = prev[message.conversation_id] ?? [];
-        return {
-          ...prev,
-          [message.conversation_id]: applyMessageDateLabels(
-            sortMessagesAsc(reconcileApiMessage(existing, message, agentName)),
-          ),
-        };
-      });
+      thread.applyMessage(message);
 
       const currentConversation = conversations.find((item) => item.id === message.conversation_id);
       const currentUnread = currentConversation?.unread_count ?? 0;
@@ -633,46 +369,17 @@ export function InboxPage() {
     },
     onActivityCreated: (activity, conversationId) => {
       const targetId = conversationId ?? selectedId;
-      if (!targetId) return;
-      setActivitiesByConversation((prev) => {
-        const existing = prev[targetId] ?? [];
-        if (existing.some((item) => item.id === activity.id)) {
-          return prev;
-        }
-        return { ...prev, [targetId]: [activity, ...existing] };
-      });
+      if (targetId) thread.applyActivity(activity, targetId);
     },
     onNoteCreated: (note, conversationId) => {
       const targetId = conversationId ?? selectedId;
-      if (!targetId) return;
-      setWorkspaceNotes((prev) => {
-        const existing = prev[targetId] ?? [];
-        if (existing.some((item) => item.id === note.id)) {
-          return prev;
-        }
-        return { ...prev, [targetId]: [note, ...existing] };
-      });
-      setActivitiesByConversation((prev) => ({
-        ...prev,
-        [targetId]: [
-          {
-            id: `activity-note-${note.id}`,
-            type: "note_added",
-            description: `Internal note added by ${note.author}`,
-            created_at: note.created_at,
-          },
-          ...(prev[targetId] ?? []),
-        ],
-      }));
+      if (targetId) thread.applyNote(note, targetId);
     },
   });
 
   return (
     <div className="flex h-full flex-col">
-      {error ? (
-        <div className="flex flex-1 items-center justify-center p-8 text-sm text-destructive">{error}</div>
-      ) : (
-        <InboxLayout
+      <InboxLayout
           mobilePane={mobilePane}
           onCloseContext={handleCloseContext}
           channelSidebar={
@@ -686,7 +393,10 @@ export function InboxPage() {
           }
           conversationList={
             <ConversationList
-              conversations={resolvedConversations}
+              conversations={sortedConversations}
+              sort={sort}
+              onSortChange={setSort}
+              error={error}
               selectedId={selectedId}
               activeTab={activeTab}
               tabCounts={tabCounts}
@@ -717,14 +427,17 @@ export function InboxPage() {
             <ConversationDetail
               conversation={selectedConversation}
               channelLabel={selectedChannelLabel}
-              messages={selectedMessages}
-              activities={selectedActivities}
+              messages={thread.messages}
+              messagesLoading={thread.loading}
+              messagesError={thread.error}
+              onRetryLoad={thread.reload}
+              activities={thread.activities}
               presenceLabel={typingLabel ?? viewerLabel}
-              onSendMessage={handleSendMessage}
-              onDeleteMessage={handleDeleteMessage}
-              onRetryMessage={handleRetryMessage}
+              onSendMessage={thread.send}
+              onDeleteMessage={thread.deleteMessage}
+              onRetryMessage={thread.retry}
               onConversationUpdate={handleConversationUpdate}
-              onSaveNote={handleSaveNote}
+              onSaveNote={thread.saveNote}
               onAddTag={handleAddTag}
               onBack={isNarrow ? handleBackToList : undefined}
               onOpenContext={handleOpenContext}
@@ -738,8 +451,8 @@ export function InboxPage() {
               contact={selectedContact}
               conversation={selectedConversation}
               channelLabel={selectedChannelLabel}
-              activities={selectedActivities}
-              notes={selectedNotes}
+              activities={thread.activities}
+              notes={thread.notes}
               onSendMessage={() => notify("success", "Focus moved to message composer")}
               onAddTag={handleAddTag}
               onToggleSubscription={() => void handleToggleSubscription()}
@@ -747,7 +460,6 @@ export function InboxPage() {
             />
           }
         />
-      )}
 
       <Toast />
     </div>

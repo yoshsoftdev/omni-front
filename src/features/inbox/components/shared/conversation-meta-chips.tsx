@@ -106,3 +106,44 @@ export function WaitingChip({
     </span>
   );
 }
+
+/** "5h left" / "12m left" for the Meta 24h reply window. */
+export function formatWindowRemaining(remainingMs: number): string {
+  const hours = Math.floor(remainingMs / 3_600_000);
+  return hours >= 1 ? `${hours}h left` : `${Math.max(1, Math.floor(remainingMs / 60_000))}m left`;
+}
+
+const WINDOW_WARN_MS = 2 * 3_600_000;
+
+/** Meta 24h customer-care window: free-text replies only while it is open. */
+export function ReplyWindowChip({
+  allowed,
+  remainingMs,
+  className,
+}: {
+  allowed: boolean;
+  remainingMs: number;
+  className?: string;
+}) {
+  const tone = !allowed
+    ? "border-error-border bg-error-muted text-error-foreground"
+    : remainingMs < WINDOW_WARN_MS
+      ? "border-warning-border bg-warning-muted text-warning-foreground"
+      : "border-border bg-background text-muted-foreground dark:bg-muted";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium tabular-nums",
+        tone,
+        className,
+      )}
+      title={
+        allowed
+          ? "Free-text replies are allowed until 24 hours after the customer's last message"
+          : "24-hour window closed: only approved templates can be sent"
+      }
+    >
+      {allowed ? `24h window · ${formatWindowRemaining(remainingMs)}` : "24h window closed"}
+    </span>
+  );
+}

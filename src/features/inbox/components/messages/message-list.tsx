@@ -2,6 +2,8 @@
 
 import { useLayoutEffect, useRef, useState } from "react";
 
+import { ErrorState } from "@/components/shared/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { MessageBubble } from "@/features/inbox/components/message-bubble";
 import { SystemEvent } from "@/features/inbox/components/messages/system-event";
 import { useThreadTimeline } from "@/features/inbox/hooks/use-thread-timeline";
@@ -13,6 +15,10 @@ interface MessageListProps {
   /** Conversation channel, used to tint outbound bubbles. */
   channel?: InboxChannel;
   activities?: InboxActivityEvent[];
+  loading?: boolean;
+  /** Failed to load the thread; shown instead of "No messages yet" so it never looks empty. */
+  error?: string | null;
+  onRetryLoad?: () => void;
   onReply?: (message: InboxChatMessage) => void;
   onDelete?: (message: InboxChatMessage) => void;
   onRetry?: (clientMessageId: string) => void;
@@ -22,6 +28,9 @@ export function MessageList({
   messages,
   channel,
   activities = [],
+  loading = false,
+  error,
+  onRetryLoad,
   onReply,
   onDelete,
   onRetry,
@@ -60,7 +69,15 @@ export function MessageList({
       aria-relevant="additions"
       className="inbox-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto bg-background p-4 dark:bg-muted/20"
     >
-      {timeline.length === 0 ? (
+      {error && messages.length === 0 ? (
+        <ErrorState message={error} onRetry={onRetryLoad} className="p-6" />
+      ) : loading ? (
+        <div className="space-y-3" aria-busy="true" aria-label="Loading messages">
+          {["w-2/5", "ml-auto w-1/2", "w-3/5", "ml-auto w-1/3"].map((width) => (
+            <Skeleton key={width} className={`h-12 rounded-lg ${width}`} />
+          ))}
+        </div>
+      ) : timeline.length === 0 ? (
         <p className="text-center text-sm text-muted-foreground">No messages yet.</p>
       ) : (
         timeline.map((item) => {

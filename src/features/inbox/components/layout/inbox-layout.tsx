@@ -68,9 +68,9 @@ export function InboxLayout({
         {workspace}
       </section>
 
-      {/* Desktop context column */}
+      {/* Desktop context column: only from 2xl, below that it would squeeze the thread (opens as a drawer instead) */}
       <aside
-        className="hidden min-h-0 w-[360px] shrink-0 border-l border-border bg-card xl:flex xl:flex-col"
+        className="hidden min-h-0 w-[360px] shrink-0 border-l border-border bg-card 2xl:flex 2xl:flex-col"
         aria-label="Conversation context"
       >
         {contextSidebar}
@@ -78,7 +78,7 @@ export function InboxLayout({
 
       {/* Tablet/mobile context drawer */}
       {showContextOverlay ? (
-        <div className="absolute inset-0 z-40 flex xl:hidden" role="dialog" aria-modal="true" aria-label="Conversation context">
+        <div className="absolute inset-0 z-40 flex 2xl:hidden" role="dialog" aria-modal="true" aria-label="Conversation context">
           <button
             type="button"
             className="absolute inset-0 bg-black/40"

@@ -20,10 +20,17 @@ import type {
 } from "@/features/inbox/types";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
+function Kbd({ children }: { children: string }) {
+  return <kbd className="rounded border border-border bg-card px-1.5 py-0.5 font-mono text-xs text-foreground">{children}</kbd>;
+}
+
 interface ConversationDetailProps {
   conversation: InboxConversation | null;
   channelLabel?: string;
   messages: InboxChatMessage[];
+  messagesLoading?: boolean;
+  messagesError?: string | null;
+  onRetryLoad?: () => void;
   activities?: InboxActivityEvent[];
   presenceLabel?: string | null;
   onSendMessage: (input: ComposerSendInput) => void;
@@ -43,6 +50,9 @@ export function ConversationDetail({
   conversation,
   channelLabel,
   messages,
+  messagesLoading,
+  messagesError,
+  onRetryLoad,
   activities = [],
   presenceLabel,
   onSendMessage,
@@ -157,8 +167,11 @@ export function ConversationDetail({
 
   if (!conversation) {
     return (
-      <div className="flex h-full flex-1 items-center justify-center bg-background text-sm text-muted-foreground dark:bg-muted/10">
-        Select a conversation to open the workspace.
+      <div className="flex h-full flex-1 flex-col items-center justify-center gap-2 bg-background p-6 text-center text-sm text-muted-foreground dark:bg-muted/10">
+        <p>Select a conversation to open the workspace.</p>
+        <p className="text-xs">
+          <Kbd>j</Kbd> / <Kbd>k</Kbd> next / previous · <Kbd>/</Kbd> search · <Kbd>r</Kbd> reply · <Kbd>Esc</Kbd> back
+        </p>
       </div>
     );
   }
@@ -169,6 +182,7 @@ export function ConversationDetail({
         conversation={conversation}
         channelLabel={channelLabel}
         presenceLabel={presenceLabel}
+        replyWindow={freeTextWindow}
         onAssignClick={() => setAssignOpen(true)}
         onTagClick={onAddTag}
         onMoreAction={handleMoreAction}
@@ -180,6 +194,9 @@ export function ConversationDetail({
         messages={messages}
         channel={conversation.channel}
         activities={activities}
+        loading={messagesLoading}
+        error={messagesError}
+        onRetryLoad={onRetryLoad}
         onReply={setReplyToMessage}
         onDelete={handleDelete}
         onRetry={onRetryMessage}

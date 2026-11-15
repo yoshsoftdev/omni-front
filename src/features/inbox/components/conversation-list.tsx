@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { RefreshCw, Search } from "lucide-react";
 
+import { EmptyState, ErrorState } from "@/components/shared/empty-state";
+import { FilterSelect } from "@/components/shared/filter-bar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ConversationCard } from "@/features/inbox/components/conversation-card";
 import type { InboxChannelNavItem, InboxConversation, InboxTab } from "@/features/inbox/types";
-import {
-  sortConversations,
-  type ConversationListSort,
-} from "@/features/inbox/utils/sort-conversations";
+import type { ConversationListSort } from "@/features/inbox/utils/sort-conversations";
 import { cn } from "@/lib/utils";
 
 const TABS: { id: InboxTab; label: string }[] = [
@@ -21,7 +21,11 @@ const TABS: { id: InboxTab; label: string }[] = [
 ];
 
 interface ConversationListProps {
+  /** Already sorted by `sort`; the page owns the order so keyboard navigation matches it. */
   conversations: InboxConversation[];
+  sort: ConversationListSort;
+  onSortChange: (sort: ConversationListSort) => void;
+  error?: string | null;
   selectedId: string | null;
   activeTab: InboxTab;
   tabCounts: Record<InboxTab, number>;
@@ -44,11 +48,16 @@ interface ConversationListProps {
   onLoadMore: () => void;
 }
 
+const COMPACT_SELECT = "h-8 min-w-0 w-full flex-1 px-2 text-xs";
+
 /** Initial estimate only — real row heights are measured because cards wrap. */
 const ROW_HEIGHT = 104;
 
 export function ConversationList({
-  conversations,
+  conversations: sortedConversations,
+  sort,
+  onSortChange,
+  error,
   selectedId,
   activeTab,
   tabCounts,
@@ -70,7 +79,6 @@ export function ConversationList({
   onLoadMore,
 }: ConversationListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const [sort, setSort] = useState<ConversationListSort>("recent");
 
   const channelLabelById = useMemo(() => {
     const map = new Map<string, string>();
@@ -79,11 +87,6 @@ export function ConversationList({
     }
     return map;
   }, [channels]);
-
-  const sortedConversations = useMemo(
-    () => sortConversations(conversations, sort),
-    [conversations, sort],
-  );
 
   const activeChannelLabel =
     activeChannelId !== "all"
@@ -153,49 +156,44 @@ export function ConversationList({
         </div>
 
         <div className="pb-2 lg:hidden">
-          <select
+          <FilterSelect
+            label="Channel account"
             value={activeChannelId}
-            onChange={(e) => onChannelSelect(e.target.value)}
-            className="h-8 w-full rounded-md border border-border bg-card px-2 text-xs dark:bg-background"
-            aria-label="Channel account"
-          >
-            <option value="all">All Inbox</option>
-            {channels.map((channel) => (
-              <option key={channel.id} value={channel.id}>
-                {channel.label}
-                {channel.unread_count > 0 ? ` (${channel.unread_count})` : ""}
-              </option>
-            ))}
-          </select>
+            onChange={onChannelSelect}
+            options={[
+              { value: "all", label: "All Inbox" },
+              ...channels.map((channel) => ({
+                value: channel.id,
+                label: channel.unread_count > 0 ? `${channel.label} (${channel.unread_count})` : channel.label,
+              })),
+            ]}
+            className={COMPACT_SELECT}
+          />
         </div>
 
         <div className="flex items-center gap-2 pb-3">
-          <select
+          <FilterSelect
+            label="Sort conversations"
             value={sort}
-            onChange={(e) => setSort(e.target.value as ConversationListSort)}
-            className="h-8 min-w-0 flex-1 rounded-md border border-border bg-card px-2 text-xs dark:bg-background"
-            aria-label="Sort conversations"
-          >
-            <option value="recent">Sort: Recent</option>
-            <option value="waiting">Sort: Waiting longest</option>
-          </select>
-          <select
-            value={agentFilter}
-            onChange={(e) => onAgentFilterChange(e.target.value)}
-            className={cn(
-              "h-8 min-w-0 flex-1 rounded-md border border-border bg-card px-2 text-xs dark:bg-background",
-              !showAgentFilter && "hidden",
-            )}
-            disabled={!showAgentFilter}
-            aria-hidden={!showAgentFilter}
-          >
-            <option value="all">All Agents</option>
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name}
-              </option>
-            ))}
-          </select>
+            onChange={(value) => onSortChange(value as ConversationListSort)}
+            options={[
+              { value: "recent", label: "Sort: Recent" },
+              { value: "waiting", label: "Sort: Waiting longest" },
+            ]}
+            className={COMPACT_SELECT}
+          />
+          {showAgentFilter ? (
+            <FilterSelect
+              label="Filter by agent"
+              value={agentFilter}
+              onChange={onAgentFilterChange}
+              options={[
+                { value: "all", label: "All Agents" },
+                ...agents.map((agent) => ({ value: agent.id, label: agent.name })),
+              ]}
+              className={COMPACT_SELECT}
+            />
+          ) : null}
           <button
             type="button"
             onClick={onRefresh}
@@ -224,14 +222,16 @@ export function ConversationList({
         onScroll={handleScroll}
         className="inbox-scrollbar min-h-0 flex-1 overflow-y-auto pr-1"
       >
-        {loading && sortedConversations.length === 0 ? (
-          <div className="space-y-2 p-3">
+        {error && sortedConversations.length === 0 ? (
+          <ErrorState message={error} onRetry={onRefresh} className="m-3 p-6" />
+        ) : loading && sortedConversations.length === 0 ? (
+          <div className="space-y-2 p-3" aria-busy="true" aria-label="Loading conversations">
             {Array.from({ length: 6 }).map((_, index) => (
-              <div key={index} className="h-20 animate-pulse rounded-lg bg-background dark:bg-muted" />
+              <Skeleton key={index} className="h-20 rounded-lg" />
             ))}
           </div>
         ) : sortedConversations.length === 0 ? (
-          <p className="p-4 text-sm text-muted-foreground">{emptyMessage}</p>
+          <EmptyState message={emptyMessage} className="m-3 p-6" />
         ) : (
           <div style={{ height: `${virtualizer.getTotalSize()}px`, position: "relative" }}>
             {virtualItems.map((virtualRow) => {

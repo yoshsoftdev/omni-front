@@ -6,6 +6,7 @@ const TABS: RouteTab[] = [
   { href: "/settings/appearance", label: "Appearance" },
   { href: "/settings/quick-replies", label: "Quick Replies" },
   { href: "/settings/window-recontact", label: "Window Recontact" },
+  { href: "/settings/auto-reply", label: "Auto Reply" },
 ];
 
 export function SettingsNav() {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ComponentType } from "react";
 import {
+  Bot,
   LayoutDashboard,
   Inbox,
   Megaphone,
@@ -54,6 +55,7 @@ const navItems: Array<{
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/settings/quick-replies", label: "Quick Replies", icon: MessageSquareQuote, permission: PERM.quickReplyView },
   { href: "/settings/window-recontact", label: "Window Recontact", icon: Clock3 },
+  { href: "/settings/auto-reply", label: "Auto Reply", icon: Bot, permission: PERM.automationView },
   { href: "/integrations", label: "Integrations", icon: PlugZap },
   { href: "/billing", label: "Billing", icon: CreditCard, permission: PERM.billingView },
 ];

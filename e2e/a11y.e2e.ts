@@ -80,6 +80,10 @@ function mockAll(api: ApiMock) {
   api.ok("GET", "/teams/roles", { roles: [] });
   api.ok("GET", "/teams/permissions", { matrix: [] });
   api.ok("GET", "/quick-replies", []);
+  api.ok("GET", "/inbox/settings/welcome", { enabled: true, text: "Halo!" });
+  api.ok("GET", "/inbox/keyword-rules", {
+    items: [{ id: "r1", keywords: ["harga"], match_type: "contains", reply_text: "Daftar harga", enabled: true, sort_order: 1, created_at: "", updated_at: "" }],
+  });
   api.ok("GET", "/automation/settings", { enabled: false, hasWebhook: false });
   api.ok("GET", "/automation/summary", {});
   api.ok("GET", "/automation/endpoints", { items: [], total: 0 });
@@ -101,6 +105,7 @@ const PAGES: { name: string; path: string; ready: (page: Page) => Promise<void> 
   { name: "automation", path: "/automation/endpoints", ready: (p) => expect(p.getByRole("heading", { name: "API Endpoints" })).toBeVisible() },
   { name: "team users", path: "/team/users", ready: (p) => expect(p.getByRole("button", { name: "Invite User" })).toBeVisible() },
   { name: "quick replies", path: "/settings/quick-replies", ready: (p) => expect(p.locator("main")).toBeVisible() },
+  { name: "auto reply", path: "/settings/auto-reply", ready: (p) => expect(p.getByRole("cell", { name: "harga", exact: true })).toBeVisible() },
 ];
 
 for (const theme of ["light", "dark"] as const) {

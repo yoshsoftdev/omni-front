@@ -25,6 +25,8 @@ import { authService } from "@/features/auth/services/auth.service";
 import { useInboxUnreadCount } from "@/features/inbox/hooks/use-inbox-unread-count";
 import { cn } from "@/lib/utils";
 import { websocketClient } from "@/services/websocket/client";
+import { usePermission } from "@/features/team/hooks/use-permission";
+import { PERM } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth-store";
 
 const broadcastItems = [
@@ -39,19 +41,21 @@ const navItems: Array<{
   label: string;
   icon: ComponentType<{ className?: string }>;
   isBroadcastParent?: boolean;
+  /** Hidden when the user lacks this permission (TEAM-04). */
+  permission?: string;
 }> = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/devices", label: "Channels", icon: Smartphone },
-  { href: "/broadcast/campaigns", label: "Broadcast", icon: Megaphone, isBroadcastParent: true },
-  { href: "/automation", label: "Automation", icon: Sparkles },
-  { href: "/team/users", label: "Team", icon: UsersRound },
+  { href: "/inbox", label: "Inbox", icon: Inbox, permission: PERM.conversationView },
+  { href: "/contacts", label: "Contacts", icon: Users, permission: PERM.contactView },
+  { href: "/devices", label: "Channels", icon: Smartphone, permission: PERM.deviceView },
+  { href: "/broadcast/campaigns", label: "Broadcast", icon: Megaphone, isBroadcastParent: true, permission: PERM.campaignView },
+  { href: "/automation", label: "Automation", icon: Sparkles, permission: PERM.automationView },
+  { href: "/team/users", label: "Team", icon: UsersRound, permission: PERM.userView },
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/settings/quick-replies", label: "Quick Replies", icon: MessageSquareQuote },
+  { href: "/settings/quick-replies", label: "Quick Replies", icon: MessageSquareQuote, permission: PERM.quickReplyView },
   { href: "/settings/window-recontact", label: "Window Recontact", icon: Clock3 },
   { href: "/integrations", label: "Integrations", icon: PlugZap },
-  { href: "/billing", label: "Billing", icon: CreditCard },
+  { href: "/billing", label: "Billing", icon: CreditCard, permission: PERM.billingView },
 ];
 
 export function Sidebar() {
@@ -60,6 +64,7 @@ export function Sidebar() {
   const user = useAuthStore((state) => state.user);
   const team = useAuthStore((state) => state.team);
   const { badge: inboxUnreadBadge } = useInboxUnreadCount();
+  const { can } = usePermission();
 
   async function handleLogout() {
     await authService.logout();
@@ -74,7 +79,7 @@ export function Sidebar() {
         {team ? <span className="truncate text-xs text-muted-foreground">{team.name}</span> : null}
       </div>
       <nav className="flex flex-1 flex-col gap-1 p-3">
-        {navItems.map((item) => {
+        {navItems.filter((item) => !item.permission || can(item.permission)).map((item) => {
           const Icon = item.icon;
           // Special-case "Settings" so it doesn't stay selected for nested routes like
           // "/settings/quick-replies" (otherwise both "Settings" and "Quick Replies" become active).

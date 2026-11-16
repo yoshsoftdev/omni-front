@@ -2,6 +2,7 @@
 
 import { useAuthStore } from "@/store/auth-store";
 
+// shortcut: fallback until /auth/me answers; the server list wins as soon as it loads.
 const ROLE_PERMISSIONS: Record<string, string[]> = {
   owner: ["*"],
   admin: [
@@ -22,10 +23,17 @@ const ROLE_PERMISSIONS: Record<string, string[]> = {
   ],
 };
 
+/**
+ * `can(code)` answers from the permissions the API returned for this session (GET /auth/me),
+ * so custom roles and role edits are respected. The role map above is only used until that
+ * list has loaded.
+ */
 export function usePermission() {
   const role = useAuthStore((state) => state.role) ?? "agent";
+  const granted = useAuthStore((state) => state.permissions);
 
   function can(permission: string) {
+    if (granted) return granted.includes(permission);
     const perms = ROLE_PERMISSIONS[role] ?? [];
     return perms.includes("*") || perms.includes(permission);
   }

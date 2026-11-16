@@ -12,7 +12,9 @@ import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { SegmentRuleBuilder } from "@/features/contacts/components/segments/segment-rule-builder";
 import { segmentService } from "@/features/segments/services/segment.service";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import type { ContactSegment } from "@/types/segment";
 import { formatApiErrorMessage, isNotFound } from "@/services/api/errors";
 
@@ -28,6 +30,7 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
   const [attempt, setAttempt] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [rulesDirty, setRulesDirty] = useState(false);
+  const canUpdate = usePermission().can(PERM.contactUpdate);
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -102,14 +105,17 @@ export function SegmentDetailPage({ segmentId }: { segmentId: string }) {
             <span>Last updated {formatDate(segment.updated_at)}</span>
           </div>
         </div>
+{canUpdate ? (
         <Button variant="outline" onClick={() => { setName(segment.name); setDescription(segment.description); setEditOpen(true); }}>
           <Pencil className="mr-2 h-4 w-4" />Edit Segment
         </Button>
+        ) : null}
       </div>
       <section className="rounded-xl border bg-card p-5 shadow-sm">
         <h3 className="font-semibold">Segment Rules</h3>
         <div className="mt-4">
           <SegmentRuleBuilder
+            readOnly={!canUpdate}
             rules={segment.rules}
             onChange={(rules) => {
               setSegment({ ...segment, rules });

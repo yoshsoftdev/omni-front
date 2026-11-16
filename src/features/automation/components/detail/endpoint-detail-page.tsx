@@ -45,7 +45,9 @@ import {
   isSendTemplateConfig,
   isSendTextConfig,
 } from "@/features/automation/utils/variable-defaults";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 import { ErrorState } from "@/components/shared/empty-state";
 import { formatApiErrorMessage, isNotFound } from "@/services/api/errors";
@@ -66,6 +68,8 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
   const searchParams = useSearchParams();
   const { notify, Toast } = useToast();
   const [confirm, confirmDialog] = useConfirm();
+  const { can } = usePermission();
+  const canUpdate = can(PERM.automationUpdate);
   const initialTab = (searchParams.get("tab") as DetailTab) || "overview";
   const [tab, setTab] = useState<DetailTab>(
     TABS.some((t) => t.id === initialTab) ? initialTab : "overview",
@@ -224,7 +228,7 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {endpoint.status === "active" ? (
+          {!canUpdate ? null : endpoint.status === "active" ? (
             <Button type="button" variant="outline" onClick={() => void handleDisable()}>
               Disable
             </Button>
@@ -233,14 +237,16 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
               Enable
             </Button>
           )}
-          <Button type="button" variant="outline" onClick={() => void handleDelete()}>
-            Delete
-          </Button>
+          {can(PERM.automationDelete) ? (
+            <Button type="button" variant="outline" onClick={() => void handleDelete()}>
+              Delete
+            </Button>
+          ) : null}
         </div>
       </div>
 
       <div className="flex gap-4 overflow-x-auto border-b">
-        {TABS.map((item) => (
+        {TABS.filter((item) => item.id !== "test" || can(PERM.automationInvoke)).map((item) => (
           <button
             key={item.id}
             type="button"
@@ -310,11 +316,11 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
                   Save
                 </Button>
               </div>
-            ) : (
+            ) : canUpdate ? (
               <Button type="button" variant="outline" onClick={() => setEditingVars(true)}>
                 Edit
               </Button>
-            )}
+            ) : null}
           </div>
           <VariableMappingTable
             mappings={editingVars ? draftMappings : mappings}
@@ -334,7 +340,7 @@ export function EndpointDetailPage({ endpointId }: { endpointId: string }) {
         <AnalyticsPanel analytics={analytics} />
       ) : null}
 
-      {tab === "test" ? (
+      {tab === "test" && can(PERM.automationInvoke) ? (
         <TestEndpointPanel
           endpoint={endpoint}
           mappings={mappings}

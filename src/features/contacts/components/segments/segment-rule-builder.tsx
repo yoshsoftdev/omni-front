@@ -26,9 +26,12 @@ const OPERATOR_OPTIONS: { value: SegmentRuleOperator; label: string }[] = [
 export function SegmentRuleBuilder({
   rules,
   onChange,
+  readOnly = false,
 }: {
   rules: SegmentRule[];
   onChange: (rules: SegmentRule[]) => void;
+  /** Without permission to change the segment the rules are shown but not editable. */
+  readOnly?: boolean;
 }) {
   function addRule() {
     onChange([...rules, { id: `r-${Date.now()}`, field: "tag", operator: "equals", value: "" }]);
@@ -52,6 +55,7 @@ export function SegmentRuleBuilder({
             value={rule.field}
             onChange={(value) => updateRule(rule.id, { field: value as SegmentRuleField })}
             options={FIELD_OPTIONS}
+            disabled={readOnly}
             className="h-9 min-w-0"
           />
           <FilterSelect
@@ -59,6 +63,7 @@ export function SegmentRuleBuilder({
             value={rule.operator}
             onChange={(value) => updateRule(rule.id, { operator: value as SegmentRuleOperator })}
             options={OPERATOR_OPTIONS}
+            disabled={readOnly}
             className="h-9 min-w-0"
           />
           <Input
@@ -67,16 +72,21 @@ export function SegmentRuleBuilder({
             value={rule.value}
             onChange={(e) => updateRule(rule.id, { value: e.target.value })}
             placeholder="Value"
+            readOnly={readOnly}
           />
-          <Button variant="ghost" size="sm" onClick={() => removeRule(rule.id)} aria-label={`Remove rule ${index + 1}`}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
+          {readOnly ? null : (
+            <Button variant="ghost" size="sm" onClick={() => removeRule(rule.id)} aria-label={`Remove rule ${index + 1}`}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
         </div>
       ))}
-      <Button variant="outline" size="sm" onClick={addRule}>
-        <Plus className="mr-1.5 h-3.5 w-3.5" />
-        Add Rule
-      </Button>
+      {readOnly ? null : (
+        <Button variant="outline" size="sm" onClick={addRule}>
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+          Add Rule
+        </Button>
+      )}
     </div>
   );
 }

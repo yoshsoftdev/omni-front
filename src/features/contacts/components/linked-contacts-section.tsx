@@ -19,7 +19,8 @@ export function LinkedContactsSection({
 }: {
   contactId: string;
   linkedContacts: LinkedContact[];
-  onLink: () => void;
+  /** Omit when the user may not change contacts: Link and Unlink are hidden. */
+  onLink?: () => void;
   onOpenContact: (linkedContactId: string) => void;
   onRefresh: () => Promise<void>;
 }) {
@@ -39,10 +40,12 @@ export function LinkedContactsSection({
             Shortcuts only — linked contacts stay independent.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={onLink}>
-          <Link2 className="mr-1.5 h-3.5 w-3.5" />
-          Link Contact
-        </Button>
+        {onLink ? (
+          <Button variant="outline" size="sm" onClick={onLink}>
+            <Link2 className="mr-1.5 h-3.5 w-3.5" />
+            Link Contact
+          </Button>
+        ) : null}
       </div>
       <div className="mt-3 space-y-2">
         {linkedContacts.length === 0 ? (
@@ -76,15 +79,17 @@ export function LinkedContactsSection({
                 <Button size="sm" variant="outline" onClick={() => onOpenContact(peer.id)}>
                   Open Contact
                 </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive"
-                  onClick={() => setPendingUnlink(peer)}
-                >
-                  <Unlink className="mr-1.5 h-3.5 w-3.5" />
-                  Unlink
-                </Button>
+                {onLink ? (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive"
+                    onClick={() => setPendingUnlink(peer)}
+                  >
+                    <Unlink className="mr-1.5 h-3.5 w-3.5" />
+                    Unlink
+                  </Button>
+                ) : null}
               </div>
             </div>
           ))

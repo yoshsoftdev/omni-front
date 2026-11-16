@@ -39,4 +39,6 @@ export interface MeResponse {
   user: AuthUser;
   team: AuthTeam;
   role: string;
+  /** Permission codes the role grants (TEAM-04); the API enforces the same codes. */
+  permissions: string[];
 }

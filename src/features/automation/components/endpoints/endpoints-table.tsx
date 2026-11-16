@@ -13,6 +13,12 @@ import { MoreHorizontal } from "lucide-react";
 
 import { StatusBadge } from "@/components/shared/status-badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { actionTypeLabel } from "@/features/automation/actions/registry";
 import { CopyButton } from "@/features/automation/components/shared/copy-button";
 import type { AutomationEndpoint } from "@/features/automation/types/endpoint";
@@ -34,10 +40,11 @@ export function EndpointsTable({
 }: {
   endpoints: AutomationEndpoint[];
   loading?: boolean;
-  onDisable: (id: string) => void;
-  onEnable: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onDelete: (id: string) => void;
+  /** Each action is optional: omit it when the user lacks the permission. */
+  onDisable?: (id: string) => void;
+  onEnable?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
   if (loading) {
     return (
@@ -148,55 +155,40 @@ function EndpointRowMenu({
   onDelete,
 }: {
   endpoint: AutomationEndpoint;
-  onDisable: (id: string) => void;
-  onEnable: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDisable?: (id: string) => void;
+  onEnable?: (id: string) => void;
+  onDuplicate?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }) {
+  const toggle = endpoint.status === "active" ? onDisable : onEnable;
   return (
-    <details className="relative">
-      <summary className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-md border hover:bg-accent">
-        <MoreHorizontal className="h-4 w-4" />
-      </summary>
-      <div className="absolute right-0 z-10 mt-1 w-48 rounded-md border bg-card p-1 shadow-sm">
-        <Button asChild variant="ghost" className="h-8 w-full justify-start px-2 text-sm font-normal">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="h-8 w-8 p-0" aria-label={`More actions for ${endpoint.name}`}>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-48">
+        <DropdownMenuItem asChild>
           <Link href={`/automation/endpoints/${endpoint.id}`}>View Documentation</Link>
-        </Button>
-        <Button asChild variant="ghost" className="h-8 w-full justify-start px-2 text-sm font-normal">
-          <Link href={`/automation/endpoints/${endpoint.id}?tab=variables`}>Edit</Link>
-        </Button>
-        <button
-          type="button"
-          className="flex h-8 w-full items-center rounded-md px-2 text-left text-sm hover:bg-accent"
-          onClick={() => onDuplicate(endpoint.id)}
-        >
-          Duplicate
-        </button>
-        {endpoint.status === "active" ? (
-          <button
-            type="button"
-            className="flex h-8 w-full items-center rounded-md px-2 text-left text-sm hover:bg-accent"
-            onClick={() => onDisable(endpoint.id)}
-          >
-            Disable
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="flex h-8 w-full items-center rounded-md px-2 text-left text-sm hover:bg-accent"
-            onClick={() => onEnable(endpoint.id)}
-          >
-            Enable
-          </button>
-        )}
-        <button
-          type="button"
-          className="flex h-8 w-full items-center rounded-md px-2 text-left text-sm text-destructive hover:bg-accent"
-          onClick={() => onDelete(endpoint.id)}
-        >
-          Delete
-        </button>
-      </div>
-    </details>
+        </DropdownMenuItem>
+        {onDisable || onEnable ? (
+          <DropdownMenuItem asChild>
+            <Link href={`/automation/endpoints/${endpoint.id}?tab=variables`}>Edit</Link>
+          </DropdownMenuItem>
+        ) : null}
+        {onDuplicate ? <DropdownMenuItem onSelect={() => onDuplicate(endpoint.id)}>Duplicate</DropdownMenuItem> : null}
+        {toggle ? (
+          <DropdownMenuItem onSelect={() => toggle(endpoint.id)}>
+            {endpoint.status === "active" ? "Disable" : "Enable"}
+          </DropdownMenuItem>
+        ) : null}
+        {onDelete ? (
+          <DropdownMenuItem destructive onSelect={() => onDelete(endpoint.id)}>
+            Delete
+          </DropdownMenuItem>
+        ) : null}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

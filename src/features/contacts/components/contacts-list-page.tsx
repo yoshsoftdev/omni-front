@@ -26,12 +26,19 @@ import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { contactFieldService, contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
 import { runBulk } from "@/features/contacts/utils/bulk";
+import { usePermission } from "@/features/team/hooks/use-permission";
+import { PERM } from "@/lib/permissions";
 import { useToast } from "@/hooks/use-toast";
 import type { ConsentStatus, Contact, ContactFieldDefinition, ContactStats, ContactTag } from "@/types/contact";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function ContactsListPage() {
   const { notify, Toast } = useToast();
+  const { can } = usePermission();
+  const canCreate = can(PERM.contactCreate);
+  const canUpdate = can(PERM.contactUpdate);
+  const canDelete = can(PERM.contactDelete);
+  const canBulk = canUpdate || canDelete;
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [tags, setTags] = useState<ContactTag[]>([]);
   const [fieldDefinitions, setFieldDefinitions] = useState<ContactFieldDefinition[]>([]);
@@ -224,14 +231,16 @@ export function ContactsListPage() {
           tags={tags}
           onMoreFilters={() => setMoreFiltersOpen(true)}
         />
-        <div className="flex gap-2">
-          <Button onClick={() => { setForm(emptyContactFormValues()); setAddOpen(true); }}>
-            <Plus className="mr-2 h-4 w-4" />Add Contact
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/contacts/import"><Upload className="mr-2 h-4 w-4" />Import Contacts</Link>
-          </Button>
-        </div>
+        {canCreate ? (
+          <div className="flex gap-2">
+            <Button onClick={() => { setForm(emptyContactFormValues()); setAddOpen(true); }}>
+              <Plus className="mr-2 h-4 w-4" />Add Contact
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/contacts/import"><Upload className="mr-2 h-4 w-4" />Import Contacts</Link>
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <ContactStatsRow stats={stats} />
@@ -252,21 +261,27 @@ export function ContactsListPage() {
                 className="flex flex-wrap items-center gap-2 border-b bg-muted/30 px-4 py-2 text-sm"
               >
                 <span className="font-medium">{selectedIds.size} selected</span>
-                <FilterSelect
-                  label="Tag to add"
-                  value={bulkTagId}
-                  onChange={setBulkTagId}
-                  options={[{ value: "", label: "Add tag…" }, ...tags.map((t) => ({ value: t.id, label: t.name }))]}
-                  className="h-9"
-                />
-                <Button size="sm" variant="outline" disabled={!bulkTagId || bulkBusy} onClick={() => void bulkAddTag()}>
-                  <Tag className="h-4 w-4" />
-                  Apply tag
-                </Button>
-                <Button size="sm" variant="destructive" disabled={bulkBusy} onClick={bulkDelete}>
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </Button>
+                {canUpdate ? (
+                  <>
+                    <FilterSelect
+                      label="Tag to add"
+                      value={bulkTagId}
+                      onChange={setBulkTagId}
+                      options={[{ value: "", label: "Add tag…" }, ...tags.map((t) => ({ value: t.id, label: t.name }))]}
+                      className="h-9"
+                    />
+                    <Button size="sm" variant="outline" disabled={!bulkTagId || bulkBusy} onClick={() => void bulkAddTag()}>
+                      <Tag className="h-4 w-4" />
+                      Apply tag
+                    </Button>
+                  </>
+                ) : null}
+                {canDelete ? (
+                  <Button size="sm" variant="destructive" disabled={bulkBusy} onClick={bulkDelete}>
+                    <Trash2 className="h-4 w-4" />
+                    Delete
+                  </Button>
+                ) : null}
                 <Button size="sm" variant="ghost" disabled={bulkBusy} onClick={() => setSelectedIds(new Set())}>
                   Clear selection
                 </Button>
@@ -274,11 +289,11 @@ export function ContactsListPage() {
             ) : null}
           <ContactTable
             contacts={contacts}
-            selectedIds={selectedIds}
-            onSelectionChange={setSelectedIds}
+            selectedIds={canBulk ? selectedIds : undefined}
+            onSelectionChange={canBulk ? setSelectedIds : undefined}
             onRowClick={setSelectedContact}
-            onEdit={openEdit}
-            onDelete={handleDeleteContact}
+            onEdit={canUpdate ? openEdit : undefined}
+            onDelete={canDelete ? handleDeleteContact : undefined}
           />
           </>
         )}

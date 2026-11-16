@@ -11,12 +11,15 @@ import { Input } from "@/components/ui/input";
 import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { SegmentTable } from "@/features/contacts/components/segments/segment-table";
 import { segmentService } from "@/features/segments/services/segment.service";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import type { ContactSegment } from "@/types/segment";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function SegmentsListPage() {
   const { notify, Toast } = useToast();
+  const { can } = usePermission();
   const [segments, setSegments] = useState<ContactSegment[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -67,7 +70,9 @@ export function SegmentsListPage() {
           <h2 className="text-lg font-semibold">Segments</h2>
           <p className="text-sm text-muted-foreground">Dynamic audiences based on saved filter rules.</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Create Segment</Button>
+        {can(PERM.contactCreate) ? (
+          <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Create Segment</Button>
+        ) : null}
       </div>
       <section className="rounded-xl border bg-card shadow-sm">
         {loading ? (
@@ -79,7 +84,7 @@ export function SegmentsListPage() {
         ) : (
           <SegmentTable
             segments={sorted}
-            onDelete={(id) => (id ? setDeleteId(id) : notify("error", "Segment id is missing"))}
+            onDelete={can(PERM.contactDelete) ? (id) => (id ? setDeleteId(id) : notify("error", "Segment id is missing")) : undefined}
           />
         )}
       </section>

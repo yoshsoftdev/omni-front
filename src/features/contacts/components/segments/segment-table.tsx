@@ -24,7 +24,8 @@ export function SegmentTable({
   onDelete,
 }: {
   segments: ContactSegment[];
-  onDelete: (id: string) => void;
+  /** Omit to hide Delete (no permission). */
+  onDelete?: (id: string) => void;
 }) {
   return (
     <DataTable className="rounded-none border-0">
@@ -57,15 +58,17 @@ export function SegmentTable({
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/contacts/segments/${segment.id}`} aria-label={`Edit ${segment.name}`}><Edit3 className="h-4 w-4" /></Link>
                   </Button>
+                  {onDelete ? (
                   <Button
                     variant="ghost"
                     size="sm"
                     disabled={!segment.id}
-                    onClick={() => segment.id && onDelete(segment.id)}
+                    onClick={() => segment.id && onDelete?.(segment.id)}
                     aria-label={`Delete ${segment.name}`}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
+                  ) : null}
                 </div>
               </DataTableCell>
             </DataTableRow>

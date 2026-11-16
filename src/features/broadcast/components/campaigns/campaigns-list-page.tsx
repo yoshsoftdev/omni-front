@@ -16,6 +16,8 @@ import type { Campaign, CampaignStatus } from "@/features/broadcast/types/campai
 import type { Template } from "@/features/broadcast/types/template";
 import { useToast } from "@/hooks/use-toast";
 import { formatApiErrorMessage } from "@/services/api/errors";
+import { usePermission } from "@/features/team/hooks/use-permission";
+import { PERM } from "@/lib/permissions";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Status" },
@@ -29,6 +31,7 @@ const STATUS_OPTIONS = [
 
 export function CampaignsListPage() {
   const { notify, Toast } = useToast();
+  const { can } = usePermission();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -117,12 +120,14 @@ export function CampaignsListPage() {
         title="Campaigns"
         description="Create and manage WhatsApp broadcast campaigns."
         right={
-          <Button asChild>
-            <Link href="/broadcast/campaigns/create">
-              <Plus className="h-4 w-4" />
-              Create Campaign
-            </Link>
-          </Button>
+          can(PERM.campaignCreate) ? (
+            <Button asChild>
+              <Link href="/broadcast/campaigns/create">
+                <Plus className="h-4 w-4" />
+                Create Campaign
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 
@@ -155,9 +160,9 @@ export function CampaignsListPage() {
         <CampaignTable
           campaigns={filtered}
           emptyMessage={loading ? "Loading campaigns..." : loadError ? "Campaigns could not be loaded." : undefined}
-          onCancel={handleCancel}
-          onDuplicate={handleDuplicate}
-          onSend={handleSend}
+          onCancel={can(PERM.campaignCancel) ? handleCancel : undefined}
+          onDuplicate={can(PERM.campaignCreate) ? handleDuplicate : undefined}
+          onSend={can(PERM.campaignSend) ? handleSend : undefined}
         />
       </div>
 

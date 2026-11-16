@@ -10,12 +10,15 @@ import { ContactsNav } from "@/features/contacts/components/contacts-nav";
 import { TagFormModal, TAG_COLORS } from "@/features/contacts/components/tags/tag-form-modal";
 import { TagTable } from "@/features/contacts/components/tags/tag-table";
 import { tagService } from "@/features/contacts/services/tag.service";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import type { ContactTag } from "@/types/contact";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
 export function TagsListPage() {
   const { notify, Toast } = useToast();
+  const { can } = usePermission();
   const [tags, setTags] = useState<ContactTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -64,7 +67,9 @@ export function TagsListPage() {
           <h2 className="text-lg font-semibold">Tags</h2>
           <p className="text-sm text-muted-foreground">Manual labels assigned to contacts.</p>
         </div>
-        <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Create Tag</Button>
+        {can(PERM.tagCreate) ? (
+          <Button onClick={() => setCreateOpen(true)}><Plus className="mr-2 h-4 w-4" />Create Tag</Button>
+        ) : null}
       </div>
       <section className="rounded-xl border bg-card shadow-sm">
         {loading ? (
@@ -76,7 +81,7 @@ export function TagsListPage() {
         ) : (
           <TagTable
             tags={sorted}
-            onDelete={(id) => (id ? setDeleteId(id) : notify("error", "Tag id is missing"))}
+            onDelete={can(PERM.tagDelete) ? (id) => (id ? setDeleteId(id) : notify("error", "Tag id is missing")) : undefined}
           />
         )}
       </section>

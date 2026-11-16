@@ -2413,6 +2413,8 @@ export interface components {
             user: components["schemas"]["AuthUserProfile"];
             team: components["schemas"]["AuthTeamProfile"];
             role: string;
+            /** @description Permission codes the role grants (e.g. contact.create). The UI shows only actions in this list; the API enforces the same codes. */
+            permissions: string[];
         };
         AuthTeamProfile: {
             /** Format: uuid */

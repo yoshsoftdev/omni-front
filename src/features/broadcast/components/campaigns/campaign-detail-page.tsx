@@ -18,6 +18,8 @@ import { templatePreviewHeaderType } from "@/features/broadcast/utils/template-p
 import { useToast } from "@/hooks/use-toast";
 import { formatApiErrorMessage } from "@/services/api/errors";
 import { ErrorState } from "@/components/shared/empty-state";
+import { usePermission } from "@/features/team/hooks/use-permission";
+import { PERM } from "@/lib/permissions";
 
 function formatDateTime(iso?: string) {
   if (!iso) return "—";
@@ -36,6 +38,7 @@ function formatCount(value?: number) {
 
 export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
   const { notify, Toast } = useToast();
+  const { can } = usePermission();
   const [campaign, setCampaign] = useState<Campaign | undefined>(undefined);
   const [template, setTemplate] = useState<Template | undefined>(undefined);
   const [loaded, setLoaded] = useState(false);
@@ -107,7 +110,7 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
           <p className="text-sm text-muted-foreground">Created by {campaign.created_by}</p>
         </div>
         <div className="flex gap-2">
-          {campaign.status === "draft" || campaign.status === "scheduled" ? (
+          {(campaign.status === "draft" || campaign.status === "scheduled") && can(PERM.campaignSend) ? (
             <Button
               size="sm"
               disabled={sending}
@@ -129,7 +132,6 @@ export function CampaignDetailPage({ campaignId }: { campaignId: string }) {
               {sending ? "Sending..." : "Send Campaign"}
             </Button>
           ) : null}
-          <Button variant="outline" size="sm">Edit Campaign</Button>
         </div>
       </div>
 

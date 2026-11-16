@@ -131,6 +131,7 @@ export const authService = {
     const response = await apiClient.get<MeResponse>("/auth/me");
     const data = response.data!;
     useAuthStore.getState().setSession(data.user, data.team, data.role, useAuthStore.getState().tokens!);
+    useAuthStore.getState().setPermissions(data.permissions ?? []);
     rememberAuthIdentity(data.user);
     return data;
   },

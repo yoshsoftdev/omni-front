@@ -33,7 +33,10 @@ interface ConversationHeaderProps {
   channelLabel?: string;
   presenceLabel?: string | null;
   replyWindow?: FreeTextWindowState;
-  onAssignClick: () => void;
+  /** Omit to hide Assign (no conversation.assign). */
+  onAssignClick?: () => void;
+  /** False hides Close/Reopen (no conversation.close). */
+  canClose?: boolean;
   onTagClick?: () => void;
   onMoreAction: (action: string) => void;
   onBack?: () => void;
@@ -46,6 +49,7 @@ export function ConversationHeader({
   presenceLabel,
   replyWindow,
   onAssignClick,
+  canClose = true,
   onTagClick,
   onMoreAction,
   onBack,
@@ -118,10 +122,12 @@ export function ConversationHeader({
               <PanelRight className="h-4 w-4" />
             </Button>
           ) : null}
+          {onAssignClick ? (
           <Button size="sm" variant="outline" className="gap-1.5" onClick={onAssignClick}>
             <UserPlus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Assign</span>
           </Button>
+          ) : null}
           {onTagClick ? (
             <Button size="sm" variant="outline" className="gap-1.5" onClick={onTagClick}>
               <Tag className="h-3.5 w-3.5" />
@@ -135,7 +141,7 @@ export function ConversationHeader({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {conversation.status === "closed" ? (
+              {!canClose ? null : conversation.status === "closed" ? (
                 <DropdownMenuItem onSelect={() => onMoreAction("reopen")}>Reopen conversation</DropdownMenuItem>
               ) : (
                 <DropdownMenuItem onSelect={() => onMoreAction("close")}>Close conversation</DropdownMenuItem>

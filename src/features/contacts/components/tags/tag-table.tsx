@@ -24,7 +24,8 @@ export function TagTable({
   onDelete,
 }: {
   tags: ContactTag[];
-  onDelete: (id: string) => void;
+  /** Omit to hide Delete (no permission). */
+  onDelete?: (id: string) => void;
 }) {
   return (
     <DataTable className="rounded-none border-0">
@@ -57,15 +58,17 @@ export function TagTable({
                   <Button variant="ghost" size="sm" asChild>
                     <Link href={`/contacts/tags/${tag.id}`} aria-label={`Edit ${tag.name}`}><Edit3 className="h-4 w-4" /></Link>
                   </Button>
+                  {onDelete ? (
                   <Button
                     variant="ghost"
                     size="sm"
                     disabled={!tag.id}
-                    onClick={() => tag.id && onDelete(tag.id)}
+                    onClick={() => tag.id && onDelete?.(tag.id)}
                     aria-label={`Delete ${tag.name}`}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
+                  ) : null}
                 </div>
               </DataTableCell>
             </DataTableRow>

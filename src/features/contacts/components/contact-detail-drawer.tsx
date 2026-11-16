@@ -24,6 +24,8 @@ import { LinkContactDialog } from "@/features/contacts/components/link-contact-d
 import { LinkedContactsSection } from "@/features/contacts/components/linked-contacts-section";
 import { contactFieldService, contactService } from "@/features/contacts/services/contact.service";
 import { tagService } from "@/features/contacts/services/tag.service";
+import { usePermission } from "@/features/team/hooks/use-permission";
+import { PERM } from "@/lib/permissions";
 import type {
   Contact,
   ContactFieldDefinition,
@@ -86,6 +88,8 @@ export function ContactDetailDrawer({
   const [tagOpen, setTagOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  // TEAM-04: every change in this drawer is a contact update.
+  const canUpdate = usePermission().can(PERM.contactUpdate);
   const [notes, setNotes] = useState(contact.notes ?? "");
   const [editForm, setEditForm] = useState<ContactFormValues>(contactToFormValues(contact));
   const [detail, setDetail] = useState(contact);
@@ -224,6 +228,7 @@ export function ContactDetailDrawer({
         <MessageSquare className="mr-2 h-4 w-4" />
         Send Message
       </Button>
+      {canUpdate ? (
       <div className="grid grid-cols-2 gap-2">
         <Button variant="outline" onClick={() => setTagOpen(true)} disabled={saving}>
           <Tag className="mr-2 h-4 w-4" />
@@ -233,6 +238,7 @@ export function ContactDetailDrawer({
           Change Subscription
         </Button>
       </div>
+      ) : null}
     </div>
   );
 
@@ -267,17 +273,20 @@ export function ContactDetailDrawer({
                 </div>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="ml-auto"
-              onClick={() => {
-                setEditForm(contactToFormValues(detail));
-                setEditOpen(true);
-              }}
-            >
-              <Edit3 className="h-4 w-4" />
-            </Button>
+            {canUpdate ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto"
+                aria-label="Edit contact"
+                onClick={() => {
+                  setEditForm(contactToFormValues(detail));
+                  setEditOpen(true);
+                }}
+              >
+                <Edit3 className="h-4 w-4" />
+              </Button>
+            ) : null}
           </div>
           <RightDrawerTabs
             tabs={[
@@ -342,7 +351,7 @@ export function ContactDetailDrawer({
               <LinkedContactsSection
                 contactId={detail.id}
                 linkedContacts={detail.linked_contacts ?? []}
-                onLink={() => setLinkOpen(true)}
+                onLink={canUpdate ? () => setLinkOpen(true) : undefined}
                 onOpenContact={(linkedContactId) => {
                   if (onOpenLinkedContact) {
                     onOpenLinkedContact(linkedContactId);
@@ -389,9 +398,11 @@ export function ContactDetailDrawer({
               <section>
                 <div className="flex items-center justify-between">
                   <h4 className="text-sm font-semibold">Tags</h4>
-                  <Button variant="ghost" size="sm" onClick={() => setTagOpen(true)}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
+                  {canUpdate ? (
+                    <Button variant="ghost" size="sm" aria-label="Add tag" onClick={() => setTagOpen(true)}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  ) : null}
                 </div>
                 <div className="mt-2"><TagBadgeList tags={detail.tags} /></div>
               </section>
@@ -399,9 +410,11 @@ export function ContactDetailDrawer({
               <section className="rounded-lg border p-3">
                 <h4 className="text-sm font-semibold">Subscription</h4>
                 <p className="mt-1 text-xs text-muted-foreground">{consentLabel(detail.consent_status)}</p>
-                <Button variant="outline" size="sm" className="mt-2" onClick={() => setConsentOpen(true)}>
-                  Update Subscription
-                </Button>
+                {canUpdate ? (
+                  <Button variant="outline" size="sm" className="mt-2" onClick={() => setConsentOpen(true)}>
+                    Update Subscription
+                  </Button>
+                ) : null}
               </section>
             </div>
           ) : null}
@@ -416,14 +429,18 @@ export function ContactDetailDrawer({
                 <p className="text-sm text-muted-foreground">No notes.</p>
               ) : null}
               <textarea
+                aria-label="Contact notes"
+                readOnly={!canUpdate}
                 className="min-h-[200px] w-full rounded-md border bg-background p-3 text-sm"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add notes about this contact..."
               />
-              <Button className="w-full" onClick={saveNotes} disabled={saving}>
-                {saving ? "Saving..." : "Save Notes"}
-              </Button>
+              {canUpdate ? (
+                <Button className="w-full" onClick={saveNotes} disabled={saving}>
+                  {saving ? "Saving..." : "Save Notes"}
+                </Button>
+              ) : null}
             </div>
           ) : null}
         </RightDrawerBody>

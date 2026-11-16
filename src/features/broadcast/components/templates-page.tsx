@@ -28,6 +28,8 @@ import { isWhatsAppChannel } from "@/features/channels/utils/is-whatsapp-channel
 import { formatApiErrorMessage } from "@/services/api/errors";
 import { ErrorState } from "@/components/shared/empty-state";
 import type { WhatsAppTemplate } from "@/types/broadcast";
+import { usePermission } from "@/features/team/hooks/use-permission";
+import { PERM } from "@/lib/permissions";
 
 const PAGE_SIZE = 8;
 
@@ -64,6 +66,7 @@ function formatLastSync(iso: string) {
 
 export function TemplatesPage() {
   const [confirm, confirmDialog] = useConfirm();
+  const { can } = usePermission();
   const [search, setSearch] = useState("");
   const [language, setLanguage] = useState("all");
   const [category, setCategory] = useState("all");
@@ -157,13 +160,15 @@ export function TemplatesPage() {
         description="Kelola message template Meta seperti di WhatsApp Manager — sync, buat, dan pantau status review."
         right={
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" variant="outline" asChild>
-              <Link href="/broadcast/templates/create">
-                <Plus className="h-4 w-4" />
-                Buat Template
-              </Link>
-            </Button>
-            {connectedChannels.length > 1 ? (
+            {can(PERM.templateCreate) ? (
+              <Button type="button" variant="outline" asChild>
+                <Link href="/broadcast/templates/create">
+                  <Plus className="h-4 w-4" />
+                  Buat Template
+                </Link>
+              </Button>
+            ) : null}
+            {can(PERM.templateSync) && connectedChannels.length > 1 ? (
               <FilterSelect
                 label="Channel to sync"
                 value={effectiveSyncChannelId}
@@ -172,15 +177,17 @@ export function TemplatesPage() {
                 className="h-9"
               />
             ) : null}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleSync}
-              disabled={syncing || isFetching || !effectiveSyncChannelId}
-            >
-              <RefreshCw className={syncing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-              Sync Meta Templates
-            </Button>
+            {can(PERM.templateSync) ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSync}
+                disabled={syncing || isFetching || !effectiveSyncChannelId}
+              >
+                <RefreshCw className={syncing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                Sync Meta Templates
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -288,17 +295,19 @@ export function TemplatesPage() {
                     {formatLastSync(template.updated_at)}
                   </DataTableCell>
                   <DataTableCell className="text-right">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      disabled={!template.id || deletingId === template.id}
-                      onClick={() => void handleDelete(template)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      {deletingId === template.id ? "Menghapus..." : "Hapus"}
-                    </Button>
+                    {can(PERM.templateCreate) ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        disabled={!template.id || deletingId === template.id}
+                        onClick={() => void handleDelete(template)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        {deletingId === template.id ? "Menghapus..." : "Hapus"}
+                      </Button>
+                    ) : null}
                   </DataTableCell>
                 </DataTableRow>
               ))

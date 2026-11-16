@@ -27,7 +27,9 @@ import type { ForwardDelivery, ForwardWebhook } from "@/features/automation/type
 import { formatRelativeTime } from "@/features/automation/utils/format";
 import { channelQueryService } from "@/features/channels/services/channel-query.service";
 import type { Channel } from "@/features/channels/types/channel";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
 type EditorState = {
@@ -76,6 +78,9 @@ function channelLabel(channels: Channel[], channelId?: string | null): string {
 export function WebhooksPage() {
   const { notify, Toast } = useToast();
   const [confirm, confirmDialog] = useConfirm();
+  const { can } = usePermission();
+  const canCreate = can(PERM.automationCreate);
+  const canUpdate = can(PERM.automationUpdate);
   const [webhooks, setWebhooks] = useState<ForwardWebhook[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -270,10 +275,12 @@ export function WebhooksPage() {
         title="Webhooks"
         description="Teruskan pesan masuk (WhatsApp/Instagram) dari Omni Chan ke aplikasi Anda."
         right={
-          <Button type="button" onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Register webhook
-          </Button>
+          canCreate ? (
+            <Button type="button" onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Register webhook
+            </Button>
+          ) : undefined
         }
       />
 
@@ -319,12 +326,13 @@ export function WebhooksPage() {
             type="button"
             role="switch"
             aria-checked={inboxAutomationEnabled}
-            disabled={!hasRegisteredWebhook || savingInboxAutomation}
+            aria-label="Enable Automation Agent in Inbox"
+            disabled={!canUpdate || !hasRegisteredWebhook || savingInboxAutomation}
             onClick={() => void handleToggleInboxAutomation(!inboxAutomationEnabled)}
             className={[
               "relative inline-flex h-6 w-11 items-center rounded-full border transition-colors",
               inboxAutomationEnabled ? "border-primary bg-primary" : "border-border bg-muted",
-              !hasRegisteredWebhook || savingInboxAutomation ? "cursor-not-allowed opacity-60" : "cursor-pointer",
+              !canUpdate || !hasRegisteredWebhook || savingInboxAutomation ? "cursor-not-allowed opacity-60" : "cursor-pointer",
             ].join(" ")}
           >
             <span
@@ -356,9 +364,11 @@ export function WebhooksPage() {
             <p className="max-w-md text-sm text-muted-foreground">
               Daftarkan URL aplikasi Anda (ERP, n8n, CRM) agar setiap pesan masuk diteruskan otomatis.
             </p>
-            <Button type="button" onClick={openCreate}>
-              Register webhook
-            </Button>
+            {canCreate ? (
+              <Button type="button" onClick={openCreate}>
+                Register webhook
+              </Button>
+            ) : null}
           </div>
         ) : (
           <DataTable className="">
@@ -423,25 +433,31 @@ export function WebhooksPage() {
                         </DataTableCell>
                         <DataTableCell>
                           <div className="flex flex-wrap justify-end gap-2">
-                            <Button type="button" variant="outline" size="sm" onClick={() => openEdit(item)}>
-                              Edit
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => void handleToggle(item)}
-                            >
-                              {item.status === "active" ? "Disable" : "Enable"}
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => void handleDelete(item)}
-                            >
-                              Delete
-                            </Button>
+                            {canUpdate ? (
+                              <>
+                                <Button type="button" variant="outline" size="sm" onClick={() => openEdit(item)}>
+                                  Edit
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => void handleToggle(item)}
+                                >
+                                  {item.status === "active" ? "Disable" : "Enable"}
+                                </Button>
+                              </>
+                            ) : null}
+                            {can(PERM.automationDelete) ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => void handleDelete(item)}
+                              >
+                                Delete
+                              </Button>
+                            ) : null}
                           </div>
                         </DataTableCell>
                       </DataTableRow>

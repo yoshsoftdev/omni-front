@@ -19,7 +19,9 @@ import type {
   AutomationSummary,
   EndpointStatus,
 } from "@/features/automation/types/endpoint";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import { ErrorState } from "@/components/shared/empty-state";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
@@ -37,6 +39,9 @@ const ACTION_OPTIONS = [
 
 export function AutomationLandingPage({ showSummary = true }: { showSummary?: boolean }) {
   const { notify, Toast } = useToast();
+  const { can } = usePermission();
+  const canCreate = can(PERM.automationCreate);
+  const canUpdate = can(PERM.automationUpdate);
   const [confirm, confirmDialog] = useConfirm();
   const [summary, setSummary] = useState<AutomationSummary | null>(null);
   const [endpoints, setEndpoints] = useState<AutomationEndpoint[]>([]);
@@ -124,12 +129,14 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
             : "Manage immutable automation endpoints your systems can call."
         }
         right={
-          <Button asChild>
-            <Link href="/automation/endpoints/new">
-              <Plus className="h-4 w-4" />
-              Create Endpoint
-            </Link>
-          </Button>
+          canCreate ? (
+            <Button asChild>
+              <Link href="/automation/endpoints/new">
+                <Plus className="h-4 w-4" />
+                Create Endpoint
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 
@@ -166,21 +173,23 @@ export function AutomationLandingPage({ showSummary = true }: { showSummary?: bo
                 — no Meta API knowledge required.
               </p>
             </div>
-            <Button asChild>
-              <Link href="/automation/endpoints/new">
-                <Plus className="h-4 w-4" />
-                Create Endpoint
-              </Link>
-            </Button>
+            {canCreate ? (
+              <Button asChild>
+                <Link href="/automation/endpoints/new">
+                  <Plus className="h-4 w-4" />
+                  Create Endpoint
+                </Link>
+              </Button>
+            ) : null}
           </div>
         ) : (
           <EndpointsTable
             endpoints={endpoints}
             loading={loading}
-            onDisable={(id) => void handleDisable(id)}
-            onEnable={(id) => void handleEnable(id)}
-            onDuplicate={(id) => void handleDuplicate(id)}
-            onDelete={(id) => void handleDelete(id)}
+            onDisable={canUpdate ? (id) => void handleDisable(id) : undefined}
+            onEnable={canUpdate ? (id) => void handleEnable(id) : undefined}
+            onDuplicate={canCreate ? (id) => void handleDuplicate(id) : undefined}
+            onDelete={can(PERM.automationDelete) ? (id) => void handleDelete(id) : undefined}
           />
         )}
 

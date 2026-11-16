@@ -65,20 +65,22 @@ export function ContactTable({
   onDelete,
 }: {
   contacts: Contact[];
-  /** Ids of contacts ticked for a bulk action. */
-  selectedIds: Set<string>;
-  onSelectionChange: (ids: Set<string>) => void;
+  /** Ids of contacts ticked for a bulk action; omit (with onSelectionChange) to hide selection. */
+  selectedIds?: Set<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
   onRowClick: (contact: Contact) => void;
   onView?: (contact: Contact) => void;
   onEdit?: (contact: Contact) => void;
   onDelete?: (contact: Contact) => void;
 }) {
   const router = useRouter();
-  const allSelected = contacts.length > 0 && contacts.every((c) => selectedIds.has(c.id));
-  const someSelected = !allSelected && contacts.some((c) => selectedIds.has(c.id));
+  const selectable = Boolean(selectedIds && onSelectionChange);
+  const allSelected = contacts.length > 0 && contacts.every((c) => selectedIds?.has(c.id));
+  const someSelected = !allSelected && contacts.some((c) => selectedIds?.has(c.id));
 
   function toggle(id: string, checked: boolean) {
     const next = new Set(selectedIds);
+    if (!onSelectionChange) return;
     if (checked) next.add(id);
     else next.delete(id);
     onSelectionChange(next);
@@ -88,6 +90,7 @@ export function ContactTable({
     <DataTable className="rounded-none border-0">
       <DataTableHead>
         <DataTableRow>
+          {selectable ? (
           <DataTableHeaderCell className="w-10">
             <input
               type="checkbox"
@@ -96,9 +99,10 @@ export function ContactTable({
               ref={(el) => {
                 if (el) el.indeterminate = someSelected;
               }}
-              onChange={(e) => onSelectionChange(e.target.checked ? new Set(contacts.map((c) => c.id)) : new Set())}
+              onChange={(e) => onSelectionChange?.(e.target.checked ? new Set(contacts.map((c) => c.id)) : new Set())}
             />
           </DataTableHeaderCell>
+          ) : null}
           {COLUMNS.map((column) => (
             <DataTableHeaderCell key={column} className="whitespace-nowrap">
               {column}
@@ -112,14 +116,16 @@ export function ContactTable({
             key={contact.id || `contact-${index}`}
             className="cursor-pointer hover:bg-muted/40"
           >
-            <DataTableCell>
-              <input
-                type="checkbox"
-                aria-label={`Select ${contact.contact_name}`}
-                checked={selectedIds.has(contact.id)}
-                onChange={(e) => toggle(contact.id, e.target.checked)}
-              />
-            </DataTableCell>
+            {selectable ? (
+              <DataTableCell>
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${contact.contact_name}`}
+                  checked={Boolean(selectedIds?.has(contact.id))}
+                  onChange={(e) => toggle(contact.id, e.target.checked)}
+                />
+              </DataTableCell>
+            ) : null}
             <DataTableCell>
               <button type="button" className="flex items-center gap-3 text-left" onClick={() => onRowClick(contact)}>
                 <ContactAvatar name={contact.contact_name} src={contact.avatar_url} />
@@ -152,9 +158,11 @@ export function ContactTable({
                 <Button variant="ghost" size="sm" onClick={() => (onView ?? onRowClick)(contact)} aria-label={`View ${contact.contact_name}`}>
                   <Eye className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => onEdit?.(contact)} aria-label={`Edit ${contact.contact_name}`}>
-                  <Edit3 className="h-4 w-4" />
-                </Button>
+                {onEdit ? (
+                  <Button variant="ghost" size="sm" onClick={() => onEdit(contact)} aria-label={`Edit ${contact.contact_name}`}>
+                    <Edit3 className="h-4 w-4" />
+                  </Button>
+                ) : null}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" aria-label={`More actions for ${contact.contact_name}`}>
@@ -163,7 +171,9 @@ export function ContactTable({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem onSelect={() => router.push(`/inbox?contact=${contact.id}`)}>Open in Inbox</DropdownMenuItem>
-                    <DropdownMenuItem destructive onSelect={() => onDelete?.(contact)}>Delete Contact</DropdownMenuItem>
+                    {onDelete ? (
+                      <DropdownMenuItem destructive onSelect={() => onDelete(contact)}>Delete Contact</DropdownMenuItem>
+                    ) : null}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

@@ -19,7 +19,9 @@ import { QuickReplyFormModal } from "@/features/settings/components/quick-reply-
 import { SettingsNav } from "@/features/settings/components/settings-nav";
 import { quickReplyService } from "@/features/settings/services/quick-reply.service";
 import type { QuickReply } from "@/features/settings/types/quick-reply";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth-store";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
@@ -29,6 +31,7 @@ export function QuickRepliesPage() {
   const canManage = role === "owner" || role === "admin";
   const { notify, Toast } = useToast();
   const [confirm, confirmDialog] = useConfirm();
+  const { can } = usePermission();
   const [items, setItems] = useState<QuickReply[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -129,10 +132,12 @@ export function QuickRepliesPage() {
             Create canned responses with variables. Agents can use them in inbox with `/` or the Template button.
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Quick Reply
-        </Button>
+        {can(PERM.quickReplyCreate) ? (
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Quick Reply
+          </Button>
+        ) : null}
       </div>
       <section className="rounded-xl border bg-card shadow-sm">
         {loading ? (
@@ -157,12 +162,16 @@ export function QuickRepliesPage() {
                     <DataTableCell className="align-top whitespace-pre-wrap text-muted-foreground">{item.content}</DataTableCell>
                     <DataTableCell className="align-top">
                       <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEdit(item)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => void handleDelete(item.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {can(PERM.quickReplyUpdate) ? (
+                          <Button variant="ghost" size="sm" aria-label="Edit quick reply" onClick={() => openEdit(item)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                        {can(PERM.quickReplyDelete) ? (
+                          <Button variant="ghost" size="sm" aria-label="Delete quick reply" onClick={() => void handleDelete(item.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        ) : null}
                       </div>
                     </DataTableCell>
                   </DataTableRow>

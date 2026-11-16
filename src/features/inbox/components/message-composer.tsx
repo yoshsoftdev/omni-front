@@ -59,6 +59,10 @@ interface MessageComposerProps {
   onCancelReply?: () => void;
   onSend: (input: ComposerSendInput) => void;
   onSaveNote: (content: string) => void;
+  /** False hides the Reply tab (no conversation.reply). */
+  canReply?: boolean;
+  /** False hides the Internal Note tab (no conversation.note). */
+  canNote?: boolean;
   onTypingStart?: () => void;
   onTypingStop?: () => void;
   /**
@@ -77,6 +81,8 @@ export function MessageComposer({
   onCancelReply,
   onSend,
   onSaveNote,
+  canReply = true,
+  canNote = true,
   onTypingStart,
   onTypingStop,
   freeTextAllowed = true,
@@ -91,7 +97,7 @@ export function MessageComposer({
     ? "application/pdf"
     : "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
   const fileAccept = isInstagramChannel ? mediaAccept : undefined;
-  const [activeTab, setActiveTab] = useState<ComposerTab>("reply");
+  const [activeTab, setActiveTab] = useState<ComposerTab>(canReply ? "reply" : "note");
   const [content, setContent] = useState("");
   const [templateOpen, setTemplateOpen] = useState(false);
   const [slashOpen, setSlashOpen] = useState(false);
@@ -300,10 +306,19 @@ export function MessageComposer({
   const channelName = channelLabel?.trim();
   const windowClosed = !freeTextAllowed;
 
+  if (!canReply && !canNote) {
+    return (
+      <div className="sticky bottom-0 z-10 border-t border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+        You can view this conversation but your role cannot reply or add notes.
+      </div>
+    );
+  }
+
   return (
     <div className="sticky bottom-0 z-10 border-t border-border bg-card">
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-1.5">
         <div className="flex gap-1" role="tablist" aria-label="Composer mode">
+          {canReply ? (
           <button
             type="button"
             role="tab"
@@ -318,6 +333,8 @@ export function MessageComposer({
           >
             Reply
           </button>
+          ) : null}
+          {canNote ? (
           <button
             type="button"
             role="tab"
@@ -332,6 +349,7 @@ export function MessageComposer({
           >
             Internal Note
           </button>
+          ) : null}
         </div>
         {activeTab === "reply" ? (
           <div

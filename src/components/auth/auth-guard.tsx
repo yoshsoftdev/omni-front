@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { authService } from "@/features/auth/services/auth.service";
 import { useAuthStore } from "@/store/auth-store";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,11 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     if (!ready) return;
     if (!isAuthenticated()) {
       router.replace("/login");
+      return;
+    }
+    // Load this session's permissions once so the UI hides what the API would refuse.
+    if (useAuthStore.getState().permissions === null) {
+      void authService.me().catch(() => undefined);
     }
   }, [ready, isAuthenticated, router]);
 

@@ -24,7 +24,9 @@ import { CopyButton } from "@/features/automation/components/shared/copy-button"
 import { apiKeyService } from "@/features/automation/services/api-key.service";
 import type { ApiKeyScope, AutomationApiKey } from "@/features/automation/types/api-key";
 import { formatRelativeTime, maskApiKey } from "@/features/automation/utils/format";
+import { usePermission } from "@/features/team/hooks/use-permission";
 import { useToast } from "@/hooks/use-toast";
+import { PERM } from "@/lib/permissions";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
 const SCOPE_OPTIONS: Array<{ value: ApiKeyScope; label: string; available: boolean }> = [
@@ -37,6 +39,7 @@ const SCOPE_OPTIONS: Array<{ value: ApiKeyScope; label: string; available: boole
 export function ApiKeysPage() {
   const { notify, Toast } = useToast();
   const [confirm, confirmDialog] = useConfirm();
+  const { can } = usePermission();
   const [keys, setKeys] = useState<AutomationApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -127,10 +130,12 @@ export function ApiKeysPage() {
         title="API Keys"
         description="Named Automation keys with scopes. Each key can be rotated or disabled independently."
         right={
-          <Button type="button" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Create key
-          </Button>
+          can(PERM.automationCreate) ? (
+            <Button type="button" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              Create key
+            </Button>
+          ) : undefined
         }
       />
 
@@ -150,9 +155,11 @@ export function ApiKeysPage() {
             <p className="max-w-sm text-sm text-muted-foreground">
               Create a named key for each integration (ERP, n8n, staging).
             </p>
-            <Button type="button" onClick={() => setCreateOpen(true)}>
-              Create key
-            </Button>
+            {can(PERM.automationCreate) ? (
+              <Button type="button" onClick={() => setCreateOpen(true)}>
+                Create key
+              </Button>
+            ) : null}
           </div>
         ) : (
           <DataTable className="">
@@ -190,15 +197,21 @@ export function ApiKeysPage() {
                     <DataTableCell className="text-muted-foreground">{formatRelativeTime(key.createdAt)}</DataTableCell>
                     <DataTableCell>
                       <div className="flex flex-wrap justify-end gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={() => void handleRotate(key.id)}>
-                          Rotate
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => void handleToggle(key)}>
-                          {key.status === "active" ? "Disable" : "Enable"}
-                        </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => void handleDelete(key)}>
-                          Delete
-                        </Button>
+                        {can(PERM.automationUpdate) ? (
+                          <>
+                            <Button type="button" variant="outline" size="sm" onClick={() => void handleRotate(key.id)}>
+                              Rotate
+                            </Button>
+                            <Button type="button" variant="outline" size="sm" onClick={() => void handleToggle(key)}>
+                              {key.status === "active" ? "Disable" : "Enable"}
+                            </Button>
+                          </>
+                        ) : null}
+                        {can(PERM.automationDelete) ? (
+                          <Button type="button" variant="outline" size="sm" onClick={() => void handleDelete(key)}>
+                            Delete
+                          </Button>
+                        ) : null}
                       </div>
                     </DataTableCell>
                   </DataTableRow>

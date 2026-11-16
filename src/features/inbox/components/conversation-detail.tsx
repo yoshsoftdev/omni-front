@@ -18,6 +18,8 @@ import type {
   InboxChatMessage,
   InboxConversation,
 } from "@/features/inbox/types";
+import { usePermission } from "@/features/team/hooks/use-permission";
+import { PERM } from "@/lib/permissions";
 import { formatApiErrorMessage } from "@/services/api/errors";
 
 function Kbd({ children }: { children: string }) {
@@ -68,6 +70,7 @@ export function ConversationDetail({
   onTypingStop,
 }: ConversationDetailProps) {
   const [assignOpen, setAssignOpen] = useState(false);
+  const { can } = usePermission();
   const { agents } = useInboxAgents();
   const [replyToMessage, setReplyToMessage] = useState<InboxChatMessage | null>(null);
   const [automationAgentEnabled, setAutomationAgentEnabled] = useState(false);
@@ -183,7 +186,8 @@ export function ConversationDetail({
         channelLabel={channelLabel}
         presenceLabel={presenceLabel}
         replyWindow={freeTextWindow}
-        onAssignClick={() => setAssignOpen(true)}
+        onAssignClick={can(PERM.conversationAssign) ? () => setAssignOpen(true) : undefined}
+        canClose={can(PERM.conversationClose)}
         onTagClick={onAddTag}
         onMoreAction={handleMoreAction}
         onBack={onBack}
@@ -213,6 +217,8 @@ export function ConversationDetail({
         onCancelReply={() => setReplyToMessage(null)}
         onSend={onSendMessage}
         onSaveNote={onSaveNote}
+        canReply={can(PERM.conversationReply)}
+        canNote={can(PERM.conversationNote)}
         onTypingStart={onTypingStart}
         onTypingStop={onTypingStop}
         freeTextAllowed={freeTextWindow.allowed}

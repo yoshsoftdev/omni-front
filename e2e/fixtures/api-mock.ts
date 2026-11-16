@@ -114,7 +114,7 @@ export const TEST_SESSION = {
 };
 
 /** Start the page already signed in (same persisted store the app writes). */
-export async function signIn(page: Page) {
+export async function signIn(page: Page, role: string = TEST_SESSION.role) {
   await page.addInitScript((s) => {
     localStorage.setItem(
       "omni-chan-auth",
@@ -128,13 +128,37 @@ export async function signIn(page: Page) {
         version: 0,
       }),
     );
-  }, TEST_SESSION);
+  }, { ...TEST_SESSION, role });
 }
 
-/** Responses for calls every dashboard page makes (badges, nav). */
-export function mockShell(api: ApiMock) {
+/** Every permission the owner role holds (internal/rbac seed). */
+export const OWNER_PERMISSIONS = [
+  "automation.create", "automation.delete", "automation.invoke", "automation.update", "automation.view",
+  "billing.manage", "billing.view", "campaign.cancel", "campaign.create", "campaign.send", "campaign.view",
+  "contact.create", "contact.delete", "contact.update", "contact.view",
+  "conversation.assign", "conversation.close", "conversation.note", "conversation.reply", "conversation.view",
+  "device.manage", "device.view", "quickreply.create", "quickreply.delete", "quickreply.update", "quickreply.view",
+  "report.view", "tag.create", "tag.delete", "tag.update", "tag.view", "team.manage",
+  "template.create", "template.sync", "template.view",
+  "user.delete", "user.invite", "user.update", "user.view", "workspace.manage",
+];
+
+/** What the seeded agent role holds: view and reply, nothing that manages. */
+export const AGENT_PERMISSIONS = [
+  "automation.view", "contact.view", "conversation.close", "conversation.note", "conversation.reply",
+  "conversation.view", "device.view", "quickreply.view", "template.view",
+];
+
+/** Responses for calls every dashboard page makes (badges, nav, session permissions). */
+export function mockShell(api: ApiMock, permissions: string[] = OWNER_PERMISSIONS) {
   api.ok("GET", "/dashboard", { unread_conversations: 0 });
   api.ok("GET", "/channels", { items: [] });
+  api.ok("GET", "/auth/me", {
+    user: TEST_SESSION.user,
+    team: TEST_SESSION.team,
+    role: permissions === OWNER_PERMISSIONS ? "owner" : "agent",
+    permissions,
+  });
 }
 
 /** Calls of one method+path, in order. */

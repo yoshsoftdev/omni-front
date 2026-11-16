@@ -112,9 +112,11 @@ test("campaign with a Meta-synced image header uploads the header file", async (
   await page.getByText("Toko Utama").first().click();
   await next.click();
 
-  // Search is debounced and goes to the server.
+  // Search is debounced and goes to the server; wait for that request (not the initial load)
+  // so the template is picked from settled results.
+  const searched = page.waitForResponse((r) => r.url().includes("/templates?") && r.url().includes("search=gambar"));
   await page.getByLabel("Search templates").fill("gambar");
-  await expect.poll(() => api.calls.some((c) => c.method === "GET" && c.path === "/templates")).toBe(true);
+  await searched;
   await page.getByText("promo_gambar").first().click();
   await next.click();
 

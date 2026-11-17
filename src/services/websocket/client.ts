@@ -1,15 +1,13 @@
 import { resolveWsCandidates } from "@/services/websocket/resolve-ws-url";
 
 type MessageHandler = (data: MessageEvent) => void;
-type ReconnectHandler = () => void;
+type ConnectedHandler = () => void;
 
 export class WebSocketClient {
   private socket: WebSocket | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private handlers = new Set<MessageHandler>();
-  private reconnectHandlers = new Set<ReconnectHandler>();
-  /** True once a socket has opened; a later open is a reconnect (events may have been missed). */
-  private hasOpened = false;
+  private connectedHandlers = new Set<ConnectedHandler>();
   private shouldReconnect = true;
   private token: string | null = null;
   private currentUrlIndex = 0;
@@ -42,7 +40,6 @@ export class WebSocketClient {
     this.socket?.close();
     this.socket = null;
     this.currentUrlIndex = 0;
-    this.hasOpened = false; // next connect (new session) is a fresh start, not a resync
   }
 
   onMessage(handler: MessageHandler) {
@@ -51,13 +48,14 @@ export class WebSocketClient {
   }
 
   /**
-   * Called after the socket comes back. Realtime fan-out is at-most-once (D9),
-   * so subscribers refetch what they show instead of trusting the event stream.
+   * Called every time a socket opens, the first one included. Realtime fan-out is at-most-once (D9):
+   * events published before this socket was subscribed are lost, whether that gap was a network
+   * drop or the page loading its data before the first connect. Subscribers refetch what they show.
    */
-  onReconnect(handler: ReconnectHandler) {
-    this.reconnectHandlers.add(handler);
+  onConnected(handler: ConnectedHandler) {
+    this.connectedHandlers.add(handler);
     return () => {
-      this.reconnectHandlers.delete(handler);
+      this.connectedHandlers.delete(handler);
     };
   }
 
@@ -82,10 +80,7 @@ export class WebSocketClient {
         clearTimeout(this.reconnectTimer);
         this.reconnectTimer = null;
       }
-      if (this.hasOpened) {
-        this.reconnectHandlers.forEach((handler) => handler());
-      }
-      this.hasOpened = true;
+      this.connectedHandlers.forEach((handler) => handler());
     };
 
     this.socket.onmessage = (event) => {

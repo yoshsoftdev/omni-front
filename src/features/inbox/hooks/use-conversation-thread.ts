@@ -82,9 +82,9 @@ export function useConversationThread({
   const [activitiesById, setActivitiesById] = useState<Record<string, InboxActivityEvent[]>>({});
   const [notesById, setNotesById] = useState<Record<string, InboxWorkspaceNote[]>>({});
   const [loadErrorById, setLoadErrorById] = useState<Record<string, string | null>>({});
-  // Bumped on socket reconnect (D9) or a manual retry, to reload the open thread.
+  // Bumped on every socket open (D9) or a manual retry, to reload the open thread.
   const [reloadTick, setReloadTick] = useState(0);
-  useEffect(() => websocketClient.onReconnect(() => setReloadTick((n) => n + 1)), []);
+  useEffect(() => websocketClient.onConnected(() => setReloadTick((n) => n + 1)), []);
   const pendingRef = useRef<Record<string, { conversationId: string; input: ComposerSendInput }>>({});
 
   const updateMessages = useCallback(

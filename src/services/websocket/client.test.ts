@@ -26,56 +26,56 @@ class FakeSocket {
   send() {}
 }
 
-describe("WebSocketClient reconnect (D9 resync)", () => {
+describe("WebSocketClient onConnected (D9 resync)", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
     FakeSocket.instances = [];
   });
 
-  it("notifies onReconnect only when the socket comes back, not on the first open", () => {
+  // Data the page loaded over HTTP before the first socket opened can miss events too,
+  // so the first open must resync just like a reconnect.
+  it("notifies on the first open and again when the socket comes back", () => {
     vi.useFakeTimers();
     vi.stubGlobal("WebSocket", FakeSocket);
     const client = new WebSocketClient();
-    const onReconnect = vi.fn();
-    client.onReconnect(onReconnect);
+    const onConnected = vi.fn();
+    client.onConnected(onConnected);
 
     client.connect("token");
     FakeSocket.instances[0].open();
-    expect(onReconnect).not.toHaveBeenCalled();
+    expect(onConnected).toHaveBeenCalledTimes(1);
 
     FakeSocket.instances[0].close(); // network drop
     vi.advanceTimersByTime(3000);
     FakeSocket.instances[1].open();
-    expect(onReconnect).toHaveBeenCalledTimes(1);
+    expect(onConnected).toHaveBeenCalledTimes(2);
   });
 
-  it("does not treat a new session after disconnect as a reconnect", () => {
+  it("does not notify for an attempt that never opened", () => {
+    vi.useFakeTimers();
     vi.stubGlobal("WebSocket", FakeSocket);
     const client = new WebSocketClient();
-    const onReconnect = vi.fn();
-    client.onReconnect(onReconnect);
+    const onConnected = vi.fn();
+    client.onConnected(onConnected);
 
-    client.connect("token-a");
-    FakeSocket.instances[0].open();
-    client.disconnect(); // sign out
-    client.connect("token-b");
+    client.connect("token");
+    FakeSocket.instances[0].close(); // first candidate refused
+    expect(onConnected).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(3000);
     FakeSocket.instances[1].open();
-    expect(onReconnect).not.toHaveBeenCalled();
+    expect(onConnected).toHaveBeenCalledTimes(1);
   });
 
   it("stops notifying after unsubscribe", () => {
     vi.useFakeTimers();
     vi.stubGlobal("WebSocket", FakeSocket);
     const client = new WebSocketClient();
-    const onReconnect = vi.fn();
-    const off = client.onReconnect(onReconnect);
+    const onConnected = vi.fn();
+    const off = client.onConnected(onConnected);
     client.connect("token");
-    FakeSocket.instances[0].open();
     off();
-    FakeSocket.instances[0].close();
-    vi.advanceTimersByTime(3000);
-    FakeSocket.instances[1].open();
-    expect(onReconnect).not.toHaveBeenCalled();
+    FakeSocket.instances[0].open();
+    expect(onConnected).not.toHaveBeenCalled();
   });
 });

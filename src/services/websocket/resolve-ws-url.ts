@@ -46,8 +46,10 @@ export function resolveWsCandidates(): string[] {
   const commonFallback = `${wsProtocol}//${window.location.hostname}:8066/ws`;
   const sameOrigin = `${wsProtocol}//${window.location.host}/ws`;
 
-  // In local HTTP dev, Next (3000) often doesn't proxy WS; try backend port first.
-  const ordered = isHttps
+  // In local HTTP dev, Next (3000) often doesn't proxy WS; try backend port first —
+  // unless the deployment says /ws is proxied (each failed candidate costs a 3s retry).
+  const sameOriginFirst = isHttps || process.env.NEXT_PUBLIC_WS_SAME_ORIGIN === "true";
+  const ordered = sameOriginFirst
     ? [sameOrigin, envPortUrl, commonFallback]
     : [envPortUrl, commonFallback, sameOrigin];
 

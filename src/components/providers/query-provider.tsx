@@ -33,8 +33,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(CLEAR_SESSION_CACHE_EVENT, handleClear);
   }, [client]);
 
-  // Events sent while the socket was down are gone (D9): refetch every query on screen.
-  useEffect(() => websocketClient.onReconnect(() => void client.invalidateQueries()), [client]);
+  // Events sent before this socket was up (first load or a drop) are gone (D9): refetch every query on screen.
+  useEffect(() => websocketClient.onConnected(() => void client.invalidateQueries()), [client]);
 
   return <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 }

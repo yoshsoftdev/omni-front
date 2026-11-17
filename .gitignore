@@ -8,6 +8,8 @@ out
 # Playwright
 /test-results/
 /playwright-report/
+/test-results-stack/
+/playwright-report-stack/
 /blob-report/
 /playwright/.cache/
 /coverage/

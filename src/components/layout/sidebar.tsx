@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ComponentType } from "react";
 import {
+  BarChart3,
   Bot,
   LayoutDashboard,
   Inbox,
@@ -51,6 +52,7 @@ const navItems: Array<{
   { href: "/devices", label: "Channels", icon: Smartphone, permission: PERM.deviceView },
   { href: "/broadcast/campaigns", label: "Broadcast", icon: Megaphone, isBroadcastParent: true, permission: PERM.campaignView },
   { href: "/automation", label: "Automation", icon: Sparkles, permission: PERM.automationView },
+  { href: "/reports/inbox", label: "Inbox Reports", icon: BarChart3, permission: PERM.reportView },
   { href: "/team/users", label: "Team", icon: UsersRound, permission: PERM.userView },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/settings/quick-replies", label: "Quick Replies", icon: MessageSquareQuote, permission: PERM.quickReplyView },

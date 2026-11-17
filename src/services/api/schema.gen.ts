@@ -963,6 +963,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/reports/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inbox analytics and agent report
+         * @description Volume, first response time (customer's first message to the first human reply; agent-started conversations and auto-replies excluded), resolution, and per-agent work. Needs report.view.
+         */
+        get: operations["reportsInboxAnalytics"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports/daily": {
         parameters: {
             query?: never;
@@ -2187,6 +2207,80 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/inbox/settings/welcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the welcome message
+         * @description Sent automatically when a customer's first conversation on a channel starts. Needs automation.view.
+         */
+        get: operations["inboxGetWelcomeSettings"];
+        /**
+         * Update the welcome message
+         * @description Needs automation.update. Text is required when enabled (max 1000 characters).
+         */
+        put: operations["inboxUpdateWelcomeSettings"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inbox/keyword-rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List keyword auto-reply rules
+         * @description In evaluation order (sort_order, then creation). The first enabled rule matching an inbound text message answers it, unless a human agent replied in the last 24 hours. Needs automation.view.
+         */
+        get: operations["inboxListKeywordRules"];
+        put?: never;
+        /**
+         * Create a keyword auto-reply rule
+         * @description Needs automation.create. At most 100 rules per team, 20 keywords per rule.
+         */
+        post: operations["inboxCreateKeywordRule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/inbox/keyword-rules/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a keyword auto-reply rule
+         * @description Needs automation.delete.
+         */
+        delete: operations["inboxDeleteKeywordRule"];
+        options?: never;
+        head?: never;
+        /**
+         * Replace a keyword auto-reply rule
+         * @description Needs automation.update. The body replaces the rule.
+         */
+        patch: operations["inboxUpdateKeywordRule"];
+        trace?: never;
+    };
     "/inbox/settings/window-recontact": {
         parameters: {
             query?: never;
@@ -3132,6 +3226,68 @@ export interface components {
             conversations: components["schemas"]["ConversationItem"][] | null;
             next_cursor?: string;
             has_more: boolean;
+        };
+        InboxAnalytics: {
+            summary: components["schemas"]["InboxAnalyticsSummary"];
+            daily: components["schemas"]["InboxAnalyticsDay"][];
+            agents: components["schemas"]["InboxAgentStats"][];
+        };
+        InboxAnalyticsSummary: {
+            conversations_started?: number;
+            messages_received?: number;
+            messages_sent_by_agents?: number;
+            /** @description Seconds; null when there is nothing to measure. */
+            first_response_median_seconds?: number | null;
+            /** @description Seconds; null when there is nothing to measure. */
+            first_response_p90_seconds?: number | null;
+            resolved?: number;
+            /** @description Seconds; null when there is nothing to measure. */
+            resolution_median_seconds?: number | null;
+            unanswered?: number;
+            open_now?: number;
+        };
+        InboxAnalyticsDay: {
+            /** Format: date */
+            date?: string;
+            conversations_started?: number;
+            messages_received?: number;
+            resolved?: number;
+        };
+        InboxAgentStats: {
+            /** Format: uuid */
+            user_id?: string;
+            name?: string;
+            messages_sent?: number;
+            resolved?: number;
+            /** @description Seconds; null when there is nothing to measure. */
+            first_response_median_seconds?: number | null;
+            open_assigned?: number;
+        };
+        InboxWelcomeSettings: {
+            enabled: boolean;
+            text: string;
+        };
+        InboxKeywordRuleRequest: {
+            keywords: string[];
+            /**
+             * @description exact = the whole message equals a keyword; contains = a keyword appears as whole word(s). Case and punctuation are ignored.
+             * @default contains
+             * @enum {string}
+             */
+            match_type: "exact" | "contains";
+            reply_text: string;
+            /** @default true */
+            enabled: boolean;
+            /** @description Lower runs first. */
+            sort_order?: number;
+        };
+        InboxKeywordRule: components["schemas"]["InboxKeywordRuleRequest"] & {
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         InboxWindowRecontactSettings: {
             enabled: boolean;
@@ -5979,6 +6135,38 @@ export interface operations {
             default: components["responses"]["Error"];
         };
     };
+    reportsInboxAnalytics: {
+        parameters: {
+            query: {
+                from: string;
+                /** @description Exclusive; at most 92 days after from. */
+                to: string;
+                /** @description IANA time zone for the daily buckets (default UTC). */
+                tz?: string;
+                channel_id?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxAnalytics"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
     reportsDailyTrend: {
         parameters: {
             query: {
@@ -8471,6 +8659,172 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxGetWelcomeSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxWelcomeSettings"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxUpdateWelcomeSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InboxWelcomeSettings"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxWelcomeSettings"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxListKeywordRules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: {
+                            items?: components["schemas"]["InboxKeywordRule"][];
+                        };
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxCreateKeywordRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InboxKeywordRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxKeywordRule"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            default: components["responses"]["Error"];
+        };
+    };
+    inboxDeleteKeywordRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    inboxUpdateKeywordRule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InboxKeywordRuleRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuccessResponse"] & {
+                        data?: components["schemas"]["InboxKeywordRule"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
             default: components["responses"]["Error"];
         };
     };

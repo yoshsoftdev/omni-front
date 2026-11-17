@@ -84,6 +84,14 @@ function mockAll(api: ApiMock) {
   api.ok("GET", "/inbox/keyword-rules", {
     items: [{ id: "r1", keywords: ["harga"], match_type: "contains", reply_text: "Daftar harga", enabled: true, sort_order: 1, created_at: "", updated_at: "" }],
   });
+  api.ok("GET", "/reports/inbox", {
+    summary: {
+      conversations_started: 3, messages_received: 9, messages_sent_by_agents: 7, first_response_median_seconds: 90,
+      first_response_p90_seconds: 600, resolved: 2, resolution_median_seconds: 3600, unanswered: 1, open_now: 1,
+    },
+    daily: [{ date: "2026-11-16", conversations_started: 3, messages_received: 9, resolved: 2 }],
+    agents: [{ user_id: "u1", name: "Sari Dewi", messages_sent: 7, resolved: 2, first_response_median_seconds: 90, open_assigned: 1 }],
+  });
   api.ok("GET", "/automation/settings", { enabled: false, hasWebhook: false });
   api.ok("GET", "/automation/summary", {});
   api.ok("GET", "/automation/endpoints", { items: [], total: 0 });
@@ -106,6 +114,7 @@ const PAGES: { name: string; path: string; ready: (page: Page) => Promise<void> 
   { name: "team users", path: "/team/users", ready: (p) => expect(p.getByRole("button", { name: "Invite User" })).toBeVisible() },
   { name: "quick replies", path: "/settings/quick-replies", ready: (p) => expect(p.locator("main")).toBeVisible() },
   { name: "auto reply", path: "/settings/auto-reply", ready: (p) => expect(p.getByRole("cell", { name: "harga", exact: true })).toBeVisible() },
+  { name: "inbox reports", path: "/reports/inbox", ready: (p) => expect(p.getByRole("cell", { name: "Sari Dewi" })).toBeVisible() },
 ];
 
 for (const theme of ["light", "dark"] as const) {
